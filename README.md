@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Radar Previdenciário
 
-## Getting Started
+Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-First, run the development server:
+Esta etapa contém apenas a estrutura técnica inicial do projeto. O quiz, banco de dados, autenticação, tracking, e-mails, APIs e regras de negócio ainda não foram implementados.
+
+## Stack
+
+- Next.js 15 com App Router
+- TypeScript
+- React
+- Tailwind CSS
+- shadcn/ui
+- Lucide Icons
+- Supabase
+- React Hook Form
+- Zod
+- ESLint
+- Prettier
+- Husky
+- lint-staged
+- pnpm
+
+## Requisitos
+
+- Node.js 20 ou superior
+- pnpm 11
+
+## Como rodar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `pnpm dev`: inicia o servidor local.
+- `pnpm lint`: executa ESLint.
+- `pnpm typecheck`: valida TypeScript.
+- `pnpm build`: gera build de produção.
+- `pnpm format`: formata os arquivos.
+- `pnpm format:check`: valida formatação.
 
-## Learn More
+## Variáveis de ambiente
 
-To learn more about Next.js, take a look at the following resources:
+Copie `.env.example` para `.env.local` quando for configurar integrações reais:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_SITE_URL=
+RESEND_API_KEY=
+OFFICE_NOTIFICATION_EMAIL=
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estrutura
 
-## Deploy on Vercel
+- `app/`: rotas, layouts e Metadata API.
+- `components/`: componentes reutilizáveis, UI shadcn e layout.
+- `hooks/`: hooks React futuros.
+- `lib/`: utilitários de infraestrutura.
+- `services/`: integrações e serviços futuros.
+- `types/`: tipos compartilhados.
+- `utils/`: funções utilitárias.
+- `styles/`: estilos compartilhados futuros.
+- `public/`: assets públicos.
+- `docs/`: documentação técnica inicial.
+- `supabase/`: estrutura reservada para configuração futura do Supabase.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Rotas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/`
+- `/cadastro`
+- `/quiz`
+- `/resultado`
+- `/privacidade`
+- `/termos`
+
+## Git e commits
+
+O projeto usa Conventional Commits:
+
+```text
+feat: adiciona nova funcionalidade
+fix: corrige comportamento
+docs: altera documentação
+chore: tarefas de manutenção
+ci: altera pipeline
+```
+
+Husky e lint-staged executam validações antes do commit.
+
+## CI
+
+O workflow `.github/workflows/ci.yml` executa em pushes para `main` e pull requests:
+
+- `pnpm install`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm build`
+
+## Deploy
+
+O projeto está pronto para deploy na Vercel. Configure as variáveis necessárias no painel da Vercel antes de habilitar integrações reais.

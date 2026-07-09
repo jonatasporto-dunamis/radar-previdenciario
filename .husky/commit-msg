@@ -1,0 +1,8 @@
+message_file="$1"
+commit_regex='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._-]+\))?!?: .+'
+
+if ! grep -Eq "$commit_regex" "$message_file"; then
+  echo "Commit message must follow Conventional Commits."
+  echo "Example: feat: add landing page shell"
+  exit 1
+fi
