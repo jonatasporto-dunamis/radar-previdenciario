@@ -78,3 +78,68 @@ Inserções e leituras devem ser implementadas futuramente via Server Actions ou
 - Gerar tipos automáticos do Supabase quando o projeto remoto existir.
 - Implementar Server Actions ou endpoints seguros para escrita.
 - Revisar policies de RLS quando autenticação ou painel administrativo forem definidos.
+
+## Supabase CLI
+
+Verifique a instalação:
+
+```bash
+supabase --version
+```
+
+Se a CLI não estiver instalada, instale antes de aplicar migrations. Em Windows, uma opção é usar Scoop; em projetos Node, outra opção é instalar a CLI como dependência de desenvolvimento e executar via pnpm.
+
+```bash
+pnpm add -D supabase
+pnpm supabase --version
+```
+
+## Aplicando migrations
+
+Faça login e vincule o projeto remoto:
+
+```bash
+supabase login
+supabase link --project-ref iuszrzziyrylzbhfiver
+```
+
+Depois aplique as migrations existentes:
+
+```bash
+supabase db push
+```
+
+Esse comando aplica os arquivos em `supabase/migrations/` no banco remoto vinculado. Ele requer autenticação da CLI e permissões suficientes no projeto Supabase.
+
+## Gerando types oficiais
+
+Com a CLI autenticada e o projeto vinculado:
+
+```bash
+supabase gen types typescript --linked --schema public > types/supabase.ts
+```
+
+Alternativamente, usando o project ref diretamente:
+
+```bash
+supabase gen types typescript --project-id iuszrzziyrylzbhfiver --schema public > types/supabase.ts
+```
+
+Após gerar o arquivo, exporte os tipos em `types/index.ts`.
+
+## Validando conexão
+
+Valide o projeto vinculado:
+
+```bash
+supabase migration list --linked
+```
+
+Valide a API pública com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. A publishable key deve ser enviada como `apikey`, não como bearer token em `Authorization`.
+
+## Variáveis sensíveis
+
+- `.env.local` não deve ser commitado.
+- Publishable keys podem ser usadas no cliente, mas não substituem RLS.
+- Secret keys e service role nunca devem ser expostas no navegador, README, logs ou repositório.
+- Use secrets da Vercel/GitHub para credenciais sensíveis de CI e produção.

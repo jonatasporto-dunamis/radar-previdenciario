@@ -50,12 +50,46 @@ Copie `.env.example` para `.env.local` quando for configurar integrações reais
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_WHATSAPP_NUMBER=
 NEXT_PUBLIC_SITE_URL=
 RESEND_API_KEY=
 OFFICE_NOTIFICATION_EMAIL=
 ```
+
+## Supabase Setup
+
+Verifique se a CLI está instalada:
+
+```bash
+supabase --version
+```
+
+Se necessário, instale a CLI antes de aplicar migrations. Uma opção no projeto é:
+
+```bash
+pnpm add -D supabase
+pnpm supabase --version
+```
+
+Configure `.env.local` com as variáveis públicas do projeto Supabase. Esse arquivo é ignorado pelo Git.
+
+Para aplicar migrations no projeto remoto:
+
+```bash
+supabase login
+supabase link --project-ref iuszrzziyrylzbhfiver
+supabase db push
+```
+
+Para gerar os tipos oficiais:
+
+```bash
+supabase gen types typescript --linked --schema public > types/supabase.ts
+```
+
+Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS.
 
 ## Estrutura
 
