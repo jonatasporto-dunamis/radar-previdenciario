@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/supabase";
 
 export function createSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,5 +13,5 @@ export function createSupabaseClient() {
     );
   }
 
-  return createClient(supabaseUrl, supabasePublishableKey);
+  return createClient<Database>(supabaseUrl, supabasePublishableKey);
 }

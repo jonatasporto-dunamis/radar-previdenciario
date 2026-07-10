@@ -94,6 +94,32 @@ pnpm add -D supabase
 pnpm supabase --version
 ```
 
+## Status do projeto remoto
+
+Em 2026-07-09, o projeto local foi vinculado ao projeto Supabase remoto `iuszrzziyrylzbhfiver`.
+
+A migration inicial foi aplicada com:
+
+```bash
+supabase db push
+```
+
+Migration aplicada:
+
+- `20260709010000_initial_leads_quiz_tracking_schema.sql`
+
+Os types oficiais foram gerados com:
+
+```bash
+supabase gen types typescript --linked --schema public > types/supabase.ts
+```
+
+Arquivo gerado:
+
+- `types/supabase.ts`
+
+Nunca commite `.env.local`, arquivos de estado local da CLI em `supabase/.temp/`, secret keys ou service role keys.
+
 ## Aplicando migrations
 
 Faça login e vincule o projeto remoto:

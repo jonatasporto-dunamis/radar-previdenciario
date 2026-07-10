@@ -75,21 +75,16 @@ pnpm supabase --version
 
 Configure `.env.local` com as variáveis públicas do projeto Supabase. Esse arquivo é ignorado pelo Git.
 
-Para aplicar migrations no projeto remoto:
+Comandos definitivos para vincular o projeto, aplicar migrations e gerar types:
 
 ```bash
 supabase login
 supabase link --project-ref iuszrzziyrylzbhfiver
 supabase db push
-```
-
-Para gerar os tipos oficiais:
-
-```bash
 supabase gen types typescript --linked --schema public > types/supabase.ts
 ```
 
-Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS.
+Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS. Nunca commite `.env.local`.
 
 ## Estrutura
 

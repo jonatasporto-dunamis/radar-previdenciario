@@ -15,3 +15,13 @@ export type {
   TrackingEvent,
   TrackingEventName,
 } from "./database";
+
+export type {
+  CompositeTypes as SupabaseCompositeTypes,
+  Database as SupabaseDatabase,
+  Enums as SupabaseEnums,
+  Json as SupabaseJson,
+  Tables as SupabaseTables,
+  TablesInsert as SupabaseTablesInsert,
+  TablesUpdate as SupabaseTablesUpdate,
+} from "./supabase";
