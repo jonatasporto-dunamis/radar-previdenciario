@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { ContentContainer } from "@/components/common/content-container";
 import { PageContainer } from "@/components/common/page-container";
@@ -17,6 +19,12 @@ const previewOptions = [
 ];
 
 export default async function QuizPage() {
+  const cookieStore = await cookies();
+
+  if (!cookieStore.get("rp_lead_session")?.value) {
+    redirect("/cadastro");
+  }
+
   const { brand, legal } = await getAppConfig();
 
   return (

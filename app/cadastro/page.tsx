@@ -5,12 +5,13 @@ import { ContentContainer } from "@/components/common/content-container";
 import { PageContainer } from "@/components/common/page-container";
 import { SectionTitle } from "@/components/common/section-title";
 import { TrustCard } from "@/components/common/trust-card";
+import { LeadRegistrationForm } from "@/components/leads/LeadRegistrationForm";
 import { getAppConfig } from "@/services/configuration";
 
 export const metadata: Metadata = {
   title: "Cadastro",
   description:
-    "Layout preparado para futura etapa de cadastro da análise previdenciária.",
+    "Cadastro inicial para continuidade da análise previdenciária informativa.",
 };
 
 const readinessItems = [
@@ -41,9 +42,9 @@ export default async function CadastroPage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
             <div>
               <SectionTitle
-                description="Esta página ainda não possui formulário funcional. O layout reserva espaço para receber campos, consentimento e ações futuras."
+                description="Informe seus dados para iniciar a análise informativa. O identificador do lead é preservado com cookie seguro, sem aparecer na URL."
                 eyebrow={brand.poweredBy}
-                title="Cadastro preparado para a futura captação"
+                title="Cadastro inicial para continuar a análise"
               />
 
               <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -52,20 +53,15 @@ export default async function CadastroPage() {
                 ))}
               </div>
 
-              <div className="bg-card shadow-card mt-10 rounded-xl border p-6">
-                <div className="grid gap-4">
-                  <div className="bg-muted h-12 rounded-md" />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="bg-muted h-12 rounded-md" />
-                    <div className="bg-muted h-12 rounded-md" />
-                  </div>
-                  <div className="bg-muted h-24 rounded-md" />
-                  <div className="bg-primary h-11 w-full rounded-md sm:w-56" />
-                </div>
-                <p className="text-muted-foreground mt-5 text-sm leading-6">
-                  {legal.disclaimer}
-                </p>
-              </div>
+              <LeadRegistrationForm />
+
+              <p className="text-muted-foreground mt-5 text-sm leading-6">
+                Seus dados serão utilizados para dar continuidade à análise e
+                permitir que o escritório entre em contato com você.
+              </p>
+              <p className="text-muted-foreground mt-3 text-sm leading-6">
+                {legal.disclaimer}
+              </p>
             </div>
 
             <ContactCard />

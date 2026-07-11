@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-Esta etapa contém apenas a estrutura técnica inicial do projeto. O quiz, banco de dados, autenticação, tracking, e-mails, APIs e regras de negócio ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável e o primeiro fluxo funcional de cadastro de lead com captura de atribuição. O quiz, motor de regras, resultado funcional, autenticação, e-mails, APIs públicas e integrações externas de tracking ainda não foram implementados.
 
 ## Stack
 
@@ -52,11 +52,14 @@ Copie `.env.example` para `.env.local` quando for configurar integrações reais
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_WHATSAPP_NUMBER=
 NEXT_PUBLIC_SITE_URL=
 RESEND_API_KEY=
 OFFICE_NOTIFICATION_EMAIL=
 ```
+
+`SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
 
 ## Supabase Setup
 
@@ -85,6 +88,27 @@ supabase gen types typescript --linked --schema public > types/supabase.ts
 ```
 
 Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS. Nunca commite `.env.local`.
+
+## Cadastro de leads
+
+Fluxo implementado:
+
+```text
+Landing page
+→ /cadastro
+→ Server Action
+→ Supabase Admin Client
+→ leads
+→ tracking_events
+→ cookie HTTP-only
+→ /quiz
+```
+
+O formulário de `/cadastro` coleta nome completo, e-mail, telefone e consentimento de privacidade. A validação é feita com React Hook Form e Zod no cliente, e repetida no servidor antes da persistência.
+
+Campos de campanha são capturados pelo componente global de atribuição e preservados em `sessionStorage`. O objeto de atribuição não deve conter dados pessoais. O identificador do lead é salvo apenas no cookie HTTP-only `rp_lead_session`, com duração de 2 horas, sem aparecer na URL.
+
+A deduplicação atual busca leads com o mesmo telefone normalizado nos últimos 15 minutos e reutiliza o `leadId` encontrado. O rate limit por IP é best effort em memória, adequado apenas como camada inicial em ambiente serverless. Para produção em escala, adicionar Redis ou serviço equivalente.
 
 ## Estrutura
 

@@ -8,9 +8,14 @@ import { getAppConfig } from "@/services/configuration";
 type HeroProps = {
   title: string;
   subtitle: string;
+  primaryHref?: string;
 };
 
-export async function Hero({ title, subtitle }: HeroProps) {
+export async function Hero({
+  title,
+  subtitle,
+  primaryHref = "/cadastro",
+}: HeroProps) {
   const { brand, legal, office } = await getAppConfig();
 
   return (
@@ -28,7 +33,7 @@ export async function Hero({ title, subtitle }: HeroProps) {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <PrimaryButton asChild size="lg">
-              <Link href="/cadastro">
+              <Link href={primaryHref}>
                 Iniciar análise gratuita
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>

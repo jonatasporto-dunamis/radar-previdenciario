@@ -26,6 +26,8 @@ export type {
   ThemeConfig,
 } from "./brand";
 
+export type { AttributionData } from "./attribution";
+
 export type {
   AppConfig,
   ConfigurationContext,

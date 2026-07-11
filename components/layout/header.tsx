@@ -43,7 +43,7 @@ export async function Header() {
         </nav>
 
         <PrimaryButton asChild className="shrink-0">
-          <Link href="/quiz">
+          <Link href="/cadastro">
             Iniciar análise
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>

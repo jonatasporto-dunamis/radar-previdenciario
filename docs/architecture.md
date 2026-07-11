@@ -2,9 +2,9 @@
 
 ## Supabase
 
-O Supabase será usado como banco de dados principal do Radar Previdenciário. A aplicação Next.js manterá integrações em `lib/supabase/`, com cliente público baseado em anon key e cliente server-side preparado para uso futuro em Server Actions.
+O Supabase será usado como banco de dados principal do Radar Previdenciário. A aplicação Next.js mantém integrações em `lib/supabase/`, com cliente público baseado em publishable/anon key e cliente administrativo exclusivo de servidor em `lib/supabase/admin.ts`.
 
-Por enquanto, a service role não é exposta no código e nenhuma tela está conectada ao banco.
+A service role é usada somente em Server Actions e serviços server-only. Ela não deve ser importada por Client Components, não deve receber prefixo `NEXT_PUBLIC_` e nunca deve ser exposta em logs, bundle do navegador ou repositório.
 
 ## Brand Config System
 
@@ -59,3 +59,37 @@ hostname
 ```
 
 Quando a aplicação evoluir para SaaS, essa camada poderá buscar configurações no Supabase, adicionar cache seguro por tenant e manter os componentes visuais inalterados.
+
+## Lead Registration Flow
+
+O primeiro fluxo funcional do MVP segue a cadeia:
+
+```text
+Client Form
+    ↓
+Server Action
+    ↓
+Validation
+    ↓
+Deduplication
+    ↓
+Supabase Admin
+    ↓
+leads
+    ↓
+tracking_events
+    ↓
+HTTP-only cookie
+    ↓
+/quiz
+```
+
+O formulário de `/cadastro` roda como Client Component para usar React Hook Form, validação Zod e estado de envio. A persistência acontece apenas em `app/cadastro/actions.ts`, evitando escrita direta no Supabase pelo navegador.
+
+A Server Action valida o payload recebido, rejeita honeypot preenchido com mensagem genérica, normaliza nome, e-mail e telefone, extrai IP somente de headers do servidor, aplica rate limit best effort por IP e chama serviços server-only.
+
+`services/leads/createLead.ts` usa o Supabase Admin Client para buscar leads recentes com o mesmo telefone normalizado nos últimos 15 minutos. Quando encontra registro recente, reutiliza o `leadId` sem sobrescrever dados anteriores. Essa deduplicação é proteção operacional, não regra definitiva de identidade.
+
+Após criar ou reutilizar o lead, `services/tracking/trackEvent.ts` registra o evento interno `LeadSubmitted`. Se o tracking falhar, o lead não é removido e o usuário continua o fluxo; a conversão principal não depende de tracking secundário.
+
+O `leadId` é preservado no cookie HTTP-only `rp_lead_session`, com `SameSite=Lax`, `Secure` em produção e duração de 2 horas. A rota `/quiz` verifica esse cookie no servidor e redireciona para `/cadastro` quando ausente. Nenhum dado pessoal é salvo em URL, cookie público ou `sessionStorage`.

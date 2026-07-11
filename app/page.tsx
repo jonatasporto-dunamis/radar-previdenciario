@@ -20,6 +20,10 @@ import {
   getLegalConfig,
   getSeoConfig,
 } from "@/services/configuration";
+import {
+  buildPathWithSearchParams,
+  type SearchParamsRecord,
+} from "@/utils/search-params";
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoConfig();
@@ -55,8 +59,7 @@ const steps = [
   {
     icon: <ClipboardCheck aria-hidden="true" className="size-6" />,
     title: "Cadastro inicial",
-    description:
-      "Espaço preparado para identificar o interessado antes do questionário.",
+    description: "Identifique o interessado antes do questionário informativo.",
   },
   {
     icon: <ArrowRight aria-hidden="true" className="size-6" />,
@@ -72,15 +75,24 @@ const steps = [
   },
 ];
 
-export default async function Home() {
+type HomeProps = {
+  searchParams?: Promise<SearchParamsRecord>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
   const [brand, legal] = await Promise.all([
     getBrandConfig(),
     getLegalConfig(),
   ]);
+  const cadastroHref = buildPathWithSearchParams(
+    "/cadastro",
+    searchParams ? await searchParams : undefined,
+  );
 
   return (
     <PageContainer>
       <Hero
+        primaryHref={cadastroHref}
         subtitle="Uma experiência digital configurável para escritórios previdenciários capturarem leads com clareza, confiança e responsabilidade."
         title="Análise previdenciária informativa em uma jornada simples e segura."
       />
@@ -105,7 +117,7 @@ export default async function Home() {
         <ContentContainer>
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <SectionTitle
-              description="O fluxo ainda não possui lógica funcional, mas os espaços visuais já foram definidos para receber a implementação futura."
+              description="O cadastro inicial já preserva a atribuição de campanha e prepara a continuidade para o questionário informativo."
               eyebrow="Como funciona"
               title="Da entrada ao resultado com previsibilidade visual"
             />
@@ -145,7 +157,8 @@ export default async function Home() {
       </section>
 
       <CTASection
-        description="A próxima etapa da jornada poderá receber cadastro e questionário quando a regra de negócio for definida."
+        description="Informe seus dados para continuar a jornada. O quiz ainda é um layout placeholder nesta etapa."
+        href={cadastroHref}
         title="Comece pela estrutura visual da análise"
       />
     </PageContainer>

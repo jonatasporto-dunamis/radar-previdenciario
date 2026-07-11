@@ -4,13 +4,13 @@
 
 O Supabase será usado como banco relacional principal do Radar Previdenciário. A modelagem inicial cobre captura de leads, sessões do quiz, respostas, resultados, eventos de tracking e logs de notificação.
 
-Nesta etapa, o banco está preparado apenas como estrutura. Não há formulários, autenticação, APIs públicas ou escrita real conectada à interface.
+Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead. Não há autenticação, APIs públicas, perguntas do quiz, respostas, resultados, e-mails ou notificações funcionais.
 
 ## Tabelas
 
 ### leads
 
-Armazena dados básicos do lead e campos de atribuição de campanha capturados no momento da entrada.
+Armazena dados básicos do lead e campos de atribuição de campanha capturados no momento da entrada. A escrita acontece somente no servidor, pela Server Action de cadastro e pelo Supabase Admin Client.
 
 ### quiz_sessions
 
@@ -26,7 +26,7 @@ Armazena o resultado calculado para uma sessão, incluindo pontuação, classifi
 
 ### tracking_events
 
-Registra eventos previstos da jornada e um payload flexível em `jsonb`.
+Registra eventos previstos da jornada e um payload flexível em `jsonb`. O evento funcional desta etapa é `LeadSubmitted`.
 
 ### notification_logs
 
@@ -69,14 +69,44 @@ As tabelas `leads` e `tracking_events` possuem os campos:
 
 Row Level Security está ativado em todas as tabelas. As policies atuais bloqueiam acesso direto para os papéis `anon` e `authenticated`.
 
-Inserções e leituras devem ser implementadas futuramente via Server Actions ou API segura, usando service role no servidor quando houver fluxo definido. A service role não foi adicionada nesta etapa.
+Inserções do fluxo de cadastro são feitas via Server Action, usando service role somente no servidor. Não há policy pública de `INSERT`, e o navegador não escreve diretamente no Supabase.
+
+## Cadastro de leads
+
+O fluxo `/cadastro` persiste:
+
+- `full_name`
+- `email`
+- `phone`
+- campos de atribuição
+- `user_agent`
+- `ip_address`
+- `status = new`
+
+O telefone é salvo normalizado no formato recomendado `55 + DDD + número`.
+
+## Deduplicação operacional
+
+Antes de criar um lead, o serviço busca um registro com o mesmo telefone normalizado criado nos últimos 15 minutos:
+
+```text
+phone = telefone_normalizado
+created_at >= agora - 15 minutos
+```
+
+Se encontrar, reutiliza o `leadId` existente e não sobrescreve dados anteriores. Essa estratégia reduz duplicidade por reenvio, mas não substitui uma regra definitiva de identidade nem cria constraint `UNIQUE`.
+
+## Falha de tracking
+
+A criação do lead é a operação principal. O evento `LeadSubmitted` é registrado depois.
+
+Como Supabase JS não fornece transação simples entre chamadas independentes neste fluxo, uma falha em `tracking_events` não remove o lead e não bloqueia o redirecionamento para `/quiz`. O erro é logado apenas no servidor.
 
 ## Próximos passos
 
-- Criar projeto Supabase real.
-- Aplicar a migration em ambiente de desenvolvimento.
-- Gerar tipos automáticos do Supabase quando o projeto remoto existir.
-- Implementar Server Actions ou endpoints seguros para escrita.
+- Implementar `quiz_sessions` quando o quiz funcional for criado.
+- Criar limpeza de atribuição ao finalizar o resultado.
+- Avaliar rate limit persistente com Upstash Redis ou equivalente.
 - Revisar policies de RLS quando autenticação ou painel administrativo forem definidos.
 
 ## Supabase CLI

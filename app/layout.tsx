@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { buildThemeCss } from "@/config/theme";
+import { AttributionCapture } from "@/components/tracking/AttributionCapture";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { FloatingWhatsApp } from "@/components/common/floating-whatsapp";
@@ -86,6 +88,9 @@ export default async function RootLayout({
         <a className="skip-link" href="#conteudo">
           Ir para o conteúdo principal
         </a>
+        <Suspense fallback={null}>
+          <AttributionCapture />
+        </Suspense>
         <div className="flex min-h-svh flex-col">
           <Header />
           <main id="conteudo" className="flex-1">
