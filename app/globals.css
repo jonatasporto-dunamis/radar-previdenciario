@@ -2,37 +2,6 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #f8fafc;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #1d4ed8;
-  --primary-foreground: #ffffff;
-  --secondary: #0f766e;
-  --secondary-foreground: #ffffff;
-  --success: #15803d;
-  --success-foreground: #ffffff;
-  --warning: #b45309;
-  --warning-foreground: #111827;
-  --danger: #b91c1c;
-  --danger-foreground: #ffffff;
-  --neutral: #475569;
-  --neutral-foreground: #ffffff;
-  --muted: #e2e8f0;
-  --muted-foreground: #475569;
-  --accent: #e0f2fe;
-  --accent-foreground: #0f172a;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
-  --ring: #2563eb;
-  --radius: 0.5rem;
-  --spacing-page: clamp(1rem, 4vw, 2rem);
-  --shadow-soft: 0 16px 40px -24px rgb(15 23 42 / 0.35);
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -59,43 +28,23 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: var(--radius-sm-config);
+  --radius-md: var(--radius-md-config);
+  --radius-lg: var(--radius-lg-config);
+  --radius-xl: var(--radius-xl-config);
+  --radius-full: var(--radius-full-config);
   --spacing-page: var(--spacing-page);
+  --spacing-section: var(--spacing-section);
+  --spacing-content: var(--spacing-content);
   --shadow-soft: var(--shadow-soft);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+  --font-sans: var(--font-sans-config);
+  --font-mono: var(--font-mono-config);
 }
 
-.dark {
-  --background: #020617;
-  --foreground: #f8fafc;
-  --card: #0f172a;
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  --primary: #60a5fa;
-  --primary-foreground: #082f49;
-  --secondary: #2dd4bf;
-  --secondary-foreground: #042f2e;
-  --success: #4ade80;
-  --success-foreground: #052e16;
-  --warning: #fbbf24;
-  --warning-foreground: #422006;
-  --danger: #f87171;
-  --danger-foreground: #450a0a;
-  --neutral: #94a3b8;
-  --neutral-foreground: #020617;
-  --muted: #1e293b;
-  --muted-foreground: #cbd5e1;
-  --accent: #172554;
-  --accent-foreground: #eff6ff;
-  --border: #334155;
-  --input: #334155;
-  --ring: #93c5fd;
-  --shadow-soft: 0 16px 40px -24px rgb(0 0 0 / 0.7);
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -110,6 +59,11 @@ body {
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .skip-link {

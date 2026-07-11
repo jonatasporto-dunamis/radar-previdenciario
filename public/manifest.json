@@ -4,8 +4,8 @@
   "description": "Aplicação web para análise previdenciária inicial.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#1d4ed8",
+  "background_color": "#fbfaf7",
+  "theme_color": "#12312f",
   "icons": [
     {
       "src": "/favicon.ico",

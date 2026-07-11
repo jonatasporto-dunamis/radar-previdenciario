@@ -1,0 +1,14 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Imagem social placeholder</title>
+  <desc id="desc">Imagem social temporária do Radar Previdenciário</desc>
+  <rect width="1200" height="630" fill="#FBFAF7"/>
+  <rect x="96" y="86" width="1008" height="458" rx="34" fill="#12312F"/>
+  <path d="M210 194H990" stroke="#D4B36A" stroke-width="2"/>
+  <path d="M210 436H990" stroke="#D4B36A" stroke-width="2"/>
+  <circle cx="302" cy="315" r="74" fill="#F5EFE2"/>
+  <path d="M302 259V371" stroke="#12312F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M262 286H342" stroke="#12312F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M500 270H916" stroke="#F7F3EA" stroke-width="22" stroke-linecap="round"/>
+  <path d="M500 326H838" stroke="#D4B36A" stroke-width="16" stroke-linecap="round"/>
+  <path d="M500 378H756" stroke="#F7F3EA" stroke-width="14" stroke-linecap="round" opacity="0.72"/>
+</svg>

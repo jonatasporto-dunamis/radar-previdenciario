@@ -1,0 +1,10 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo placeholder</title>
+  <desc id="desc">Marca temporária configurável para escritório jurídico</desc>
+  <rect width="160" height="160" rx="24" fill="#12312F"/>
+  <path d="M80 38V122" stroke="#D4B36A" stroke-width="8" stroke-linecap="round"/>
+  <path d="M48 58H112" stroke="#D4B36A" stroke-width="8" stroke-linecap="round"/>
+  <path d="M58 58L38 98H78L58 58Z" stroke="#F7F3EA" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M102 58L82 98H122L102 58Z" stroke="#F7F3EA" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M54 122H106" stroke="#D4B36A" stroke-width="8" stroke-linecap="round"/>
+</svg>

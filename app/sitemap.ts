@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getBrandConfig } from "@/services/configuration";
 
 const routes = [
   "/",
@@ -9,8 +10,12 @@ const routes = [
   "/termos",
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const brand = await getBrandConfig();
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    brand.website ||
+    "http://localhost:3000";
 
   return routes.map((route) => ({
     url: `${siteUrl}${route}`,

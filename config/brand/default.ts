@@ -1,0 +1,33 @@
+import type { BrandConfig } from "@/types/brand";
+
+export const defaultBrandConfig: BrandConfig = {
+  name: "Resende Advogados Associados",
+  legalName: "Resende Advogados Associados",
+  logo: "/brand/logo-placeholder.svg",
+  favicon: "/favicon.ico",
+  primaryColor: "#12312f",
+  secondaryColor: "#0f766e",
+  accentColor: "#b78b3b",
+  backgroundColor: "#fbfaf7",
+  foregroundColor: "#171717",
+  whatsapp: "5500000000000",
+  whatsappDefaultMessage:
+    "Olá, gostaria de iniciar uma análise previdenciária informativa.",
+  phone: "(00) 0000-0000",
+  email: "contato@resendeadvogados.example",
+  website: "https://resendeadvogados.example",
+  instagram: "https://instagram.com/resendeadvogados",
+  facebook: "https://facebook.com/resendeadvogados",
+  linkedin: "https://linkedin.com/company/resendeadvogados",
+  youtube: "",
+  tiktok: "",
+  address: "Endereço institucional a configurar",
+  city: "Cidade",
+  state: "UF",
+  zipCode: "00000-000",
+  cnpj: "00.000.000/0000-00",
+  privacyEmail: "privacidade@resendeadvogados.example",
+  supportEmail: "suporte@resendeadvogados.example",
+  copyright: "Todos os direitos reservados.",
+  poweredBy: "Radar Previdenciário",
+};

@@ -17,6 +17,22 @@ export type {
 } from "./database";
 
 export type {
+  BrandConfig,
+  LegalConfig,
+  OfficeConfig,
+  SeoConfig,
+  SocialUrl,
+  ThemeColorScale,
+  ThemeConfig,
+} from "./brand";
+
+export type {
+  AppConfig,
+  ConfigurationContext,
+  ConfigurationSource,
+} from "./configuration";
+
+export type {
   CompositeTypes as SupabaseCompositeTypes,
   Database as SupabaseDatabase,
   Enums as SupabaseEnums,

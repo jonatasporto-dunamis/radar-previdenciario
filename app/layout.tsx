@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { buildThemeCss } from "@/config/theme";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { FloatingWhatsApp } from "@/components/common/floating-whatsapp";
+import {
+  getBrandConfig,
+  getSeoConfig,
+  getThemeConfig,
+} from "@/services/configuration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,48 +21,65 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const siteDescription =
-  "Aplicação web para geração de leads qualificados em advocacia previdenciária.";
+export async function generateMetadata(): Promise<Metadata> {
+  const [brand, seo] = await Promise.all([getBrandConfig(), getSeoConfig()]);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    brand.website ||
+    "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  applicationName: "Radar Previdenciário",
-  title: {
-    default: "Radar Previdenciário",
-    template: "%s | Radar Previdenciário",
-  },
-  description: siteDescription,
-  manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    url: siteUrl,
-    siteName: "Radar Previdenciário",
-    title: "Radar Previdenciário",
-    description: siteDescription,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Radar Previdenciário",
-    description: siteDescription,
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+  return {
+    metadataBase: new URL(siteUrl),
+    applicationName: seo.title,
+    title: {
+      default: seo.title,
+      template: `%s | ${seo.title}`,
+    },
+    description: seo.description,
+    keywords: seo.keywords,
+    manifest: "/manifest.json",
+    icons: {
+      icon: brand.favicon,
+    },
+    openGraph: {
+      type: "website",
+      locale: seo.locale,
+      url: siteUrl,
+      siteName: brand.name,
+      title: seo.title,
+      description: seo.description,
+      images: [seo.ogImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.title,
+      description: seo.description,
+      images: [seo.twitterImage],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const theme = await getThemeConfig();
+  const themeCss = buildThemeCss(theme);
+
   return (
     <html lang="pt-BR">
+      <head>
+        <style
+          id="radar-theme"
+          // Theme values come from local config files and are not user input.
+          dangerouslySetInnerHTML={{ __html: themeCss }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground min-h-svh font-sans antialiased`}
       >

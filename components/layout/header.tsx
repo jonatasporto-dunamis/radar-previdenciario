@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Scale } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { BrandLogo } from "@/components/common/brand-logo";
+import { BrandName } from "@/components/common/brand-name";
+import { PrimaryButton } from "@/components/common/primary-button";
+import { getBrandConfig } from "@/services/configuration";
 
 const menuItems = [
   { href: "/", label: "Início" },
@@ -9,19 +12,19 @@ const menuItems = [
   { href: "/resultado", label: "Resultado" },
 ];
 
-export function Header() {
+export async function Header() {
+  const brand = await getBrandConfig();
+
   return (
     <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="px-page mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-4 py-3">
+      <div className="px-page mx-auto flex min-h-16 w-full max-w-[var(--spacing-content)] items-center justify-between gap-4 py-3">
         <Link
-          aria-label="Radar Previdenciário - página inicial"
+          aria-label={`${brand.name} - página inicial`}
           className="text-foreground flex min-w-0 items-center gap-2 text-base font-semibold"
           href="/"
         >
-          <span className="bg-primary text-primary-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-md">
-            <Scale aria-hidden="true" className="size-5" />
-          </span>
-          <span className="truncate">Radar Previdenciário</span>
+          <BrandLogo className="size-9 shrink-0" />
+          <BrandName className="truncate" />
         </Link>
 
         <nav aria-label="Menu principal" className="hidden md:block">
@@ -39,12 +42,12 @@ export function Header() {
           </ul>
         </nav>
 
-        <Button asChild className="shrink-0">
+        <PrimaryButton asChild className="shrink-0">
           <Link href="/quiz">
             Iniciar análise
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
-        </Button>
+        </PrimaryButton>
       </div>
     </header>
   );

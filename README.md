@@ -90,6 +90,7 @@ Não use secret key ou service role em código público. A publishable key é p�
 
 - `app/`: rotas, layouts e Metadata API.
 - `components/`: componentes reutilizáveis, UI shadcn e layout.
+- `config/`: branding, tema, SEO, jurídico e dados institucionais do escritório.
 - `hooks/`: hooks React futuros.
 - `lib/`: utilitários de infraestrutura.
 - `services/`: integrações e serviços futuros.
@@ -99,6 +100,41 @@ Não use secret key ou service role em código público. A publishable key é p�
 - `public/`: assets públicos.
 - `docs/`: documentação técnica inicial.
 - `supabase/`: estrutura reservada para configuração futura do Supabase.
+
+## Brand Config System
+
+O projeto foi estruturado para operar como SaaS multi-escritório. Nenhum componente deve conter dados institucionais fixos de um escritório.
+
+Para trocar a marca ou adaptar a aplicação para outro escritório, altere apenas os arquivos dentro de `config/`:
+
+- `brand/default.ts`: nome, logo, contatos, redes sociais, endereço e dados institucionais.
+- `theme/default.ts`: cores, fontes, radius, sombras, botões, cards e badges.
+- `office/default.ts`: responsável, OAB, especialidades, regiões atendidas, horário e mensagem de WhatsApp.
+- `seo/default.ts`: título, descrição, keywords, locale e imagens sociais.
+- `legal/default.ts`: política de privacidade, termos, disclaimer e cookies.
+
+O Tailwind usa CSS variables geradas pelo tema configurável, então ajustes visuais devem começar pelo tema local.
+
+## Arquitetura de configurações
+
+No MVP, os arquivos `default.ts` dentro de cada domínio de `config/` são a origem local das configurações.
+
+Componentes e páginas não devem importar esses arquivos diretamente. Toda leitura deve passar por:
+
+```ts
+import { getAppConfig, getBrandConfig } from "@/services/configuration";
+```
+
+A camada funciona assim:
+
+```text
+Component/Page
+  -> services/configuration
+  -> config/loader.ts
+  -> config/*/default.ts
+```
+
+Para trocar os dados do escritório no MVP, edite apenas os arquivos locais dentro de `config/`. Para a fase SaaS, a mesma API interna poderá buscar configurações no Supabase por tenant, domínio ou slug sem alterar os componentes visuais.
 
 ## Rotas
 

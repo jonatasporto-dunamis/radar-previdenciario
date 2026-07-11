@@ -1,9 +1,13 @@
+import { getBrandConfig } from "@/services/configuration";
+
 type PageIntroProps = {
   title: string;
   description: string;
 };
 
-export function PageIntro({ title, description }: PageIntroProps) {
+export async function PageIntro({ title, description }: PageIntroProps) {
+  const brand = await getBrandConfig();
+
   return (
     <section
       aria-labelledby="page-title"
@@ -11,7 +15,7 @@ export function PageIntro({ title, description }: PageIntroProps) {
     >
       <div className="max-w-3xl">
         <p className="text-muted-foreground mb-4 text-sm font-medium uppercase">
-          Radar Previdenciário
+          {brand.poweredBy}
         </p>
         <h1
           id="page-title"
