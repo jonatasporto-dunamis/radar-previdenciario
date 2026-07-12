@@ -4,7 +4,7 @@
 
 O Supabase será usado como banco relacional principal do Radar Previdenciário. A modelagem inicial cobre captura de leads, sessões do quiz, respostas, resultados, eventos de tracking e logs de notificação.
 
-Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead. Não há autenticação, APIs públicas, perguntas do quiz, respostas, resultados, e-mails ou notificações funcionais.
+Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead e pela infraestrutura funcional do quiz. Não há autenticação, APIs públicas, Rule Engine jurídico, resultados calculados, e-mails ou notificações funcionais.
 
 ## Tabelas
 
@@ -14,11 +14,11 @@ Armazena dados básicos do lead e campos de atribuição de campanha capturados 
 
 ### quiz_sessions
 
-Representa uma sessão de questionário associada a um lead, com início, conclusão e status.
+Representa uma sessão de questionário associada a um lead, com início, conclusão e status. A página `/quiz` reutiliza a sessão aberta mais recente com `status = started` ou cria uma nova quando não existe sessão aberta.
 
 ### quiz_answers
 
-Armazena respostas individuais de uma sessão do quiz, vinculadas ao lead e à sessão.
+Armazena respostas individuais de uma sessão do quiz, vinculadas ao lead e à sessão. A camada de serviço atualiza a resposta existente para `session_id + question_id` quando ela já existe, evitando duplicidade no fluxo atual sem alterar schema.
 
 ### quiz_results
 
@@ -26,7 +26,7 @@ Armazena o resultado calculado para uma sessão, incluindo pontuação, classifi
 
 ### tracking_events
 
-Registra eventos previstos da jornada e um payload flexível em `jsonb`. O evento funcional desta etapa é `LeadSubmitted`.
+Registra eventos previstos da jornada e um payload flexível em `jsonb`. Os eventos funcionais são `LeadSubmitted`, `QuizStarted`, `QuestionAnswered` e `QuizCompleted`.
 
 ### notification_logs
 
@@ -98,13 +98,42 @@ Se encontrar, reutiliza o `leadId` existente e não sobrescreve dados anteriores
 
 ## Falha de tracking
 
-A criação do lead é a operação principal. O evento `LeadSubmitted` é registrado depois.
+A criação do lead e o salvamento das respostas são as operações principais. Eventos em `tracking_events` são registrados depois.
 
-Como Supabase JS não fornece transação simples entre chamadas independentes neste fluxo, uma falha em `tracking_events` não remove o lead e não bloqueia o redirecionamento para `/quiz`. O erro é logado apenas no servidor.
+Como Supabase JS não fornece transação simples entre chamadas independentes neste fluxo, uma falha em `tracking_events` não remove o lead, não remove resposta e não bloqueia a navegação. O erro é logado apenas no servidor.
+
+## Sessões do quiz
+
+Ao entrar em `/quiz`, a aplicação:
+
+- lê o cookie HTTP-only `rp_lead_session`;
+- valida a existência do lead;
+- busca sessão aberta em `quiz_sessions`;
+- cria uma sessão com `status = started` se necessário;
+- carrega respostas já salvas;
+- calcula a pergunta de retomada;
+- salva `rp_quiz_session` via Server Action para preservar o identificador da sessão.
+
+Quando a última pergunta é salva e todas as obrigatórias foram respondidas, a sessão é marcada como `completed` com `completed_at`.
+
+## Respostas do quiz
+
+Cada resposta salva em `quiz_answers` contém:
+
+- `session_id`
+- `lead_id`
+- `question_id`
+- `question_label`
+- `answer_value`
+- `answer_label`
+- `benefit_context`
+
+Respostas do tipo `checkbox` são serializadas em JSON dentro de `answer_value`. O campo `answer_label` armazena uma versão humana das opções escolhidas. Esta etapa não altera schema nem cria constraint `UNIQUE`; a prevenção de duplicidade é feita no serviço.
 
 ## Próximos passos
 
-- Implementar `quiz_sessions` quando o quiz funcional for criado.
+- Criar Rule Engine em camada separada.
+- Avaliar constraint ou upsert para respostas quando a regra de histórico estiver definida.
 - Criar limpeza de atribuição ao finalizar o resultado.
 - Avaliar rate limit persistente com Upstash Redis ou equivalente.
 - Revisar policies de RLS quando autenticação ou painel administrativo forem definidos.

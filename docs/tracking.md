@@ -50,7 +50,55 @@ Campos persistidos no evento:
 - `user_agent`
 - `ip_address`
 
-Falhas no registro desse evento são tratadas como secundárias: o erro é logado apenas no servidor e o usuário segue para o quiz placeholder.
+Falhas no registro desse evento são tratadas como secundárias: o erro é logado apenas no servidor e o usuário segue para o quiz.
+
+## Eventos do quiz
+
+### QuizStarted
+
+Registrado quando `/quiz` cria uma nova sessão aberta em `quiz_sessions`.
+
+Payload:
+
+```json
+{
+  "source": "quiz",
+  "flowSlug": "triagem-previdenciaria-inicial",
+  "flowVersion": 1
+}
+```
+
+### QuestionAnswered
+
+Registrado a cada resposta salva em `quiz_answers`.
+
+Payload:
+
+```json
+{
+  "source": "quiz",
+  "questionId": "primary-interest",
+  "questionSlug": "interesse-principal",
+  "questionType": "checkbox",
+  "questionVersion": 1
+}
+```
+
+### QuizCompleted
+
+Registrado quando a última pergunta do fluxo é salva e todas as perguntas obrigatórias estão respondidas.
+
+Payload:
+
+```json
+{
+  "source": "quiz",
+  "answeredRequiredQuestions": 7,
+  "totalRequiredQuestions": 7
+}
+```
+
+Todos os eventos do quiz são internos e gravados somente via servidor. A atribuição do lead é reaproveitada em `tracking_events`.
 
 ## Preservação de UTMs
 
@@ -58,7 +106,7 @@ Parâmetros de campanha são capturados por `components/tracking/AttributionCapt
 
 Novos parâmetros não vazios prevalecem sobre valores antigos. Valores vazios não apagam atribuição já capturada. O objeto de atribuição não deve armazenar dados pessoais.
 
-A atribuição não é limpa após o cadastro porque será reutilizada nos eventos futuros do quiz. A limpeza será implementada em etapa futura, ao concluir o fluxo de resultado.
+A atribuição não é limpa após o cadastro porque é reutilizada nos eventos do quiz. A limpeza será implementada em etapa futura, ao concluir o fluxo de resultado.
 
 ## Tracking interno e integrações externas
 

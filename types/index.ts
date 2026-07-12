@@ -29,6 +29,24 @@ export type {
 export type { AttributionData } from "./attribution";
 
 export type {
+  BenefitDefinition,
+  FlowDefinition,
+  QuestionAnswerPrimitive,
+  QuestionAnswerValue,
+  QuestionDefinition,
+  QuestionNavigationTarget,
+  QuestionOption,
+  QuestionType,
+  QuestionValidationDefinition,
+  QuestionVisibilityCondition,
+  QuestionVisibilityOperator,
+  QuizAnswerMap,
+  QuizNavigationState,
+  QuizProgress,
+  QuizStoredAnswer,
+} from "./quiz";
+
+export type {
   AppConfig,
   ConfigurationContext,
   ConfigurationSource,

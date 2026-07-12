@@ -93,3 +93,50 @@ A Server Action valida o payload recebido, rejeita honeypot preenchido com mensa
 Após criar ou reutilizar o lead, `services/tracking/trackEvent.ts` registra o evento interno `LeadSubmitted`. Se o tracking falhar, o lead não é removido e o usuário continua o fluxo; a conversão principal não depende de tracking secundário.
 
 O `leadId` é preservado no cookie HTTP-only `rp_lead_session`, com `SameSite=Lax`, `Secure` em produção e duração de 2 horas. A rota `/quiz` verifica esse cookie no servidor e redireciona para `/cadastro` quando ausente. Nenhum dado pessoal é salvo em URL, cookie público ou `sessionStorage`.
+
+## Question Engine
+
+A infraestrutura do quiz foi criada como um Question Engine configurável, sem arrays hardcoded dentro da tela e sem Rule Engine jurídico.
+
+Camadas principais:
+
+- `config/quiz/questions/`: definições versionadas de perguntas.
+- `config/quiz/flows/`: fluxos com ordem de passos.
+- `config/quiz/benefits/`: catálogo inicial de benefícios e contextos.
+- `types/quiz/`: contratos `QuestionDefinition`, `BenefitDefinition`, `FlowDefinition` e tipos auxiliares.
+- `services/quiz/engine/`: resolução de perguntas ativas e visibilidade.
+- `services/quiz/navigation/`: cálculo de anterior, próximo e retomada.
+- `services/quiz/progress/`: progresso real por perguntas obrigatórias respondidas.
+- `services/quiz/session/`: criação/reuso de sessão e persistência server-only.
+- `components/quiz/renderer/`: renderer por registro de componentes, sem switch gigante.
+- `components/quiz/experience/`: experiência cliente com autosave e navegação.
+
+Fluxo de execução:
+
+```text
+/quiz
+    ↓
+Cookie rp_lead_session
+    ↓
+Load lead
+    ↓
+Create or reuse quiz_session
+    ↓
+Load latest quiz_answers
+    ↓
+Resolve visible questions
+    ↓
+Resume first unanswered question
+    ↓
+QuestionRenderer
+    ↓
+Server Action saveQuizAnswerAction
+    ↓
+quiz_answers + tracking_events
+```
+
+O primeiro fluxo exemplo possui 8 perguntas e serve para validar arquitetura, persistência e navegação. Ele não classifica benefício, não calcula direito, não gera resultado jurídico e não usa IA.
+
+Cada resposta é salva imediatamente em `quiz_answers`. Como a tabela atual não possui constraint única por pergunta/sessão, a camada de serviço aplica idempotência operacional: procura uma resposta existente para `session_id + question_id`, atualiza quando encontra e insere apenas na primeira resposta daquela pergunta. Isso evita duplicidade no fluxo atual sem alterar schema nesta etapa.
+
+`QuizStarted` é registrado quando uma sessão aberta é criada. `QuestionAnswered` é registrado a cada resposta salva. `QuizCompleted` é registrado quando a última pergunta do fluxo é salva e todas as obrigatórias estão respondidas.

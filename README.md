@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-O projeto já contém a estrutura técnica inicial, o sistema visual configurável e o primeiro fluxo funcional de cadastro de lead com captura de atribuição. O quiz, motor de regras, resultado funcional, autenticação, e-mails, APIs públicas e integrações externas de tracking ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição e a infraestrutura do quiz com persistência automática. O motor de regras jurídico, resultado funcional, autenticação, e-mails, APIs públicas e integrações externas de tracking ainda não foram implementados.
 
 ## Stack
 
@@ -110,11 +110,32 @@ Campos de campanha são capturados pelo componente global de atribuição e pres
 
 A deduplicação atual busca leads com o mesmo telefone normalizado nos últimos 15 minutos e reutiliza o `leadId` encontrado. O rate limit por IP é best effort em memória, adequado apenas como camada inicial em ambiente serverless. Para produção em escala, adicionar Redis ou serviço equivalente.
 
+## Question Engine
+
+O quiz foi estruturado para suportar múltiplos benefícios e múltiplos escritórios sem hardcode de perguntas dentro da tela.
+
+Principais diretórios:
+
+- `config/quiz/questions/`: perguntas versionadas.
+- `config/quiz/flows/`: fluxos e ordem dos passos.
+- `config/quiz/benefits/`: benefícios e contextos.
+- `types/quiz/`: contratos do Question Engine.
+- `services/quiz/engine/`: resolução de perguntas ativas e visibilidade.
+- `services/quiz/session/`: criação/reuso de sessão, respostas e conclusão.
+- `services/quiz/progress/`: progresso real.
+- `services/quiz/navigation/`: anterior, próximo e retomada.
+- `components/quiz/renderer/`: componentes por tipo de pergunta.
+
+O primeiro fluxo exemplo possui 8 perguntas. Ele salva respostas em `quiz_answers`, cria/reutiliza `quiz_sessions`, calcula progresso real e registra `QuizStarted`, `QuestionAnswered` e `QuizCompleted` em `tracking_events`.
+
+Ainda não há Rule Engine, cálculo de benefício, resultado jurídico, IA ou envio de e-mail.
+
 ## Estrutura
 
 - `app/`: rotas, layouts e Metadata API.
 - `components/`: componentes reutilizáveis, UI shadcn e layout.
 - `config/`: branding, tema, SEO, jurídico e dados institucionais do escritório.
+- `config/quiz/`: perguntas, fluxos e benefícios do Question Engine.
 - `hooks/`: hooks React futuros.
 - `lib/`: utilitários de infraestrutura.
 - `services/`: integrações e serviços futuros.
