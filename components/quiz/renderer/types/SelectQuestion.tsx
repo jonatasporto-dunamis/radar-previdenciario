@@ -18,7 +18,6 @@ export function SelectQuestion({
       className={inputClassName}
       disabled={disabled}
       id={question.id}
-      onBlur={() => onCommit(selectedValue)}
       onChange={(event) => {
         onChange(event.target.value);
         onCommit(event.target.value);

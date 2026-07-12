@@ -10,7 +10,6 @@ export function PhoneQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -20,7 +19,6 @@ export function PhoneQuestion({
       disabled={disabled}
       id={question.id}
       inputMode="tel"
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(formatBrazilianPhone(event.target.value))}
       placeholder={question.placeholder ?? "(00) 00000-0000"}
       type="tel"

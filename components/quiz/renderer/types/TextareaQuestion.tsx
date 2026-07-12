@@ -9,7 +9,6 @@ export function TextareaQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -18,7 +17,6 @@ export function TextareaQuestion({
       className={`${inputClassName} min-h-32 py-3 leading-6`}
       disabled={disabled}
       id={question.id}
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(event.target.value)}
       placeholder={question.placeholder}
       value={stringValue}

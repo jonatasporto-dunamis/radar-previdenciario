@@ -9,7 +9,6 @@ export function TextQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -18,7 +17,6 @@ export function TextQuestion({
       className={inputClassName}
       disabled={disabled}
       id={question.id}
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(event.target.value)}
       placeholder={question.placeholder}
       type="text"

@@ -9,7 +9,6 @@ export function DateQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -18,7 +17,6 @@ export function DateQuestion({
       className={inputClassName}
       disabled={disabled}
       id={question.id}
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(event.target.value)}
       type="date"
       value={stringValue}

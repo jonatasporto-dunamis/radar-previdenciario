@@ -9,7 +9,6 @@ export function EmailQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -19,7 +18,6 @@ export function EmailQuestion({
       disabled={disabled}
       id={question.id}
       inputMode="email"
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(event.target.value)}
       placeholder={question.placeholder ?? "voce@email.com"}
       type="email"

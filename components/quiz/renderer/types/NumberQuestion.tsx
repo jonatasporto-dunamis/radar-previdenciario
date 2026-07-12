@@ -9,7 +9,6 @@ export function NumberQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -19,7 +18,6 @@ export function NumberQuestion({
       disabled={disabled}
       id={question.id}
       inputMode="numeric"
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(event.target.value)}
       placeholder={question.placeholder}
       type="number"

@@ -9,7 +9,6 @@ export function CurrencyQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -23,7 +22,6 @@ export function CurrencyQuestion({
         disabled={disabled}
         id={question.id}
         inputMode="decimal"
-        onBlur={() => onCommit(stringValue)}
         onChange={(event) => onChange(event.target.value)}
         placeholder={question.placeholder}
         type="text"

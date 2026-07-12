@@ -30,7 +30,6 @@ export function CpfQuestion({
   value,
   disabled,
   onChange,
-  onCommit,
 }: QuestionInputProps) {
   const stringValue = getStringValue(value);
 
@@ -40,7 +39,6 @@ export function CpfQuestion({
       disabled={disabled}
       id={question.id}
       inputMode="numeric"
-      onBlur={() => onCommit(stringValue)}
       onChange={(event) => onChange(formatCpf(event.target.value))}
       placeholder={question.placeholder ?? "000.000.000-00"}
       type="text"
