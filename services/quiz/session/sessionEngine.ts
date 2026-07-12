@@ -155,6 +155,7 @@ export async function getQuizSessionState(
     const { data: newSession, error: createSessionError } = await supabase
       .from("quiz_sessions")
       .insert({
+        id: leadId,
         lead_id: leadId,
         status: "started",
       })
@@ -162,11 +163,21 @@ export async function getQuizSessionState(
       .single();
 
     if (createSessionError || !newSession) {
-      throw new QuizSessionServiceError("Failed to create quiz session.");
-    }
+      const { data: fallbackSession, error: fallbackError } = await supabase
+        .from("quiz_sessions")
+        .select("*")
+        .eq("id", leadId)
+        .maybeSingle();
 
-    session = newSession;
-    createdSession = true;
+      if (fallbackError || !fallbackSession) {
+        throw new QuizSessionServiceError("Failed to create quiz session.");
+      }
+
+      session = fallbackSession;
+    } else {
+      session = newSession;
+      createdSession = true;
+    }
   }
 
   if (createdSession) {

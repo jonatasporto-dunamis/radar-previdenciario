@@ -120,7 +120,7 @@ Cookie rp_lead_session
     ↓
 Load lead
     ↓
-Create or reuse quiz_session
+Create or reuse idempotent quiz_session
     ↓
 Load latest quiz_answers
     ↓
@@ -140,3 +140,5 @@ O primeiro fluxo exemplo possui 8 perguntas e serve para validar arquitetura, pe
 Cada resposta é salva imediatamente em `quiz_answers`. Como a tabela atual não possui constraint única por pergunta/sessão, a camada de serviço aplica idempotência operacional: procura uma resposta existente para `session_id + question_id`, atualiza quando encontra e insere apenas na primeira resposta daquela pergunta. Isso evita duplicidade no fluxo atual sem alterar schema nesta etapa.
 
 `QuizStarted` é registrado quando uma sessão aberta é criada. `QuestionAnswered` é registrado a cada resposta salva. `QuizCompleted` é registrado quando a última pergunta do fluxo é salva e todas as obrigatórias estão respondidas.
+
+Para evitar duplicidade por requisições simultâneas na entrada do quiz, a sessão inicial do lead é criada de forma idempotente usando o UUID do lead como identificador da sessão no MVP. Se outra requisição criar a sessão primeiro, o serviço reutiliza a sessão existente.

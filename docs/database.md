@@ -114,6 +114,8 @@ Ao entrar em `/quiz`, a aplicação:
 - calcula a pergunta de retomada;
 - salva `rp_quiz_session` via Server Action para preservar o identificador da sessão.
 
+No MVP, a criação da sessão é idempotente por lead: a primeira `quiz_session` usa o UUID do lead como identificador da sessão. Isso evita duas sessões abertas quando o App Router dispara requisições próximas para `/quiz`.
+
 Quando a última pergunta é salva e todas as obrigatórias foram respondidas, a sessão é marcada como `completed` com `completed_at`.
 
 ## Respostas do quiz
