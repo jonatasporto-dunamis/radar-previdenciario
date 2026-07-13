@@ -40,6 +40,12 @@ export type OfficeConfig = {
   serviceMode: string;
   workingHours: string;
   whatsappDefaultMessage: string;
+  email: {
+    fromName: string;
+    fromAddress: string;
+    replyTo: string;
+    notificationEmail: string;
+  };
 };
 
 export type SeoConfig = {

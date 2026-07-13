@@ -197,13 +197,24 @@ Email Provider
 Resend Provider
 ```
 
+Identidade institucional de e-mail:
+
+```mermaid
+flowchart TD
+  A["config/office/default.ts"] --> B["services/configuration/getOfficeConfig()"]
+  B --> C["EmailProvider"]
+  C --> D["ResendProvider"]
+  D --> E["Resend API"]
+  E --> F["Office recipient"]
+```
+
 Camadas:
 
 - `services/qualification/`: converte `classification` em prioridade, decisão de envio e providers.
 - `services/notification/pipeline/`: orquestra lead, resultado, payload, hash e idempotência.
 - `services/notification/queue/`: abstração de fila inicialmente síncrona, preparada para BullMQ, Redis, QStash ou Inngest.
 - `services/notification/dispatcher/`: controla tentativas, retry, estados do log e tracking interno.
-- `services/notification/providers/`: contratos e providers. `EmailProvider` encapsula `ResendProvider`.
+- `services/notification/providers/`: contratos e providers. `EmailProvider` encapsula `ResendProvider`, que consome `getOfficeConfig()` para remetente, reply-to e destinatário.
 - `emails/templates/`: templates React Email para leads de alto e médio potencial.
 
 Regras de qualificação:
@@ -241,9 +252,15 @@ Retry:
 Segurança:
 
 - `RESEND_API_KEY` só é lida em servidor;
-- `OFFICE_NOTIFICATION_EMAIL` define o destinatário do escritório;
+- `OfficeConfig.email.notificationEmail` define o destinatário do escritório;
+- `OfficeConfig.email.fromName` e `OfficeConfig.email.fromAddress` definem o remetente;
+- `OfficeConfig.email.replyTo` define o Reply-To enviado ao Resend;
+- as variáveis `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_REPLY_TO` e `OFFICE_NOTIFICATION_EMAIL` são fallback do MVP apenas na camada `services/configuration`;
+- `fromAddress` deve usar domínio verificado na Resend;
 - Resend só é acessado por `ResendProvider`;
 - logs não devem conter API key, payload completo, e-mail ou telefone em claro.
+
+Quando `RESEND_API_KEY` ou `OfficeConfig.email` estiverem incompletos, o provider retorna falha controlada, atualiza `notification_logs` e preserva a página de resultado.
 
 ## Quality Gate
 

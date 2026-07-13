@@ -60,6 +60,9 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=
 NEXT_PUBLIC_SITE_URL=
 RESEND_API_KEY=
 OFFICE_NOTIFICATION_EMAIL=
+EMAIL_FROM_NAME=
+EMAIL_FROM_ADDRESS=
+EMAIL_REPLY_TO=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
@@ -201,7 +204,32 @@ Templates React Email ficam em `emails/templates/`:
 - `components/Table.tsx`
 - `components/CTA.tsx`
 
-O e-mail é enviado para `OFFICE_NOTIFICATION_EMAIL` com o assunto `Novo lead qualificado — Radar Previdenciário`. A API key fica em `RESEND_API_KEY`, somente no servidor.
+O e-mail é enviado com o assunto `Novo lead qualificado — Radar Previdenciário`. A API key fica em `RESEND_API_KEY`, somente no servidor.
+
+## Office Email Configuration
+
+A identidade institucional de envio vem de `OfficeConfig`, em `config/office/default.ts`, e é lida por `getOfficeConfig()`:
+
+```ts
+email: {
+  fromName: "Resende Advogados Associados",
+  fromAddress: "contato@mail.radarprevidenciario.com.br",
+  replyTo: "contato@resendeadvogados.com.br",
+  notificationEmail: ""
+}
+```
+
+Prioridade de resolução no MVP:
+
+```text
+OfficeConfig
+→ variáveis de ambiente
+→ erro explícito
+```
+
+As variáveis `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_REPLY_TO` e `OFFICE_NOTIFICATION_EMAIL` continuam existindo apenas como fallback do MVP. O `ResendProvider` não lê essas variáveis diretamente; ele consome `getOfficeConfig()`.
+
+O domínio de `EMAIL_FROM_ADDRESS` deve estar verificado na Resend. O campo `replyTo` define para onde respostas ao e-mail serão encaminhadas.
 
 Idempotência:
 
@@ -219,6 +247,8 @@ Eventos internos adicionados:
 - `NotificationIgnored`
 
 Falha de e-mail não bloqueia `/resultado`. O erro é registrado de forma sanitizada, sem payload completo, API key, e-mail/telefone expostos em logs de aplicação.
+
+Testes automatizados não enviam e-mails reais: `E2E_MOCK_SUPABASE=true` ativa Supabase em memória e `NODE_ENV=test`/dry-run evita chamada externa ao provider.
 
 ## Estrutura
 

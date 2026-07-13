@@ -72,6 +72,12 @@ export const officeConfigSchema = z.object({
   serviceMode: requiredString,
   workingHours: requiredString,
   whatsappDefaultMessage: requiredString,
+  email: z.object({
+    fromName: z.string().trim(),
+    fromAddress: z.string().trim(),
+    replyTo: z.string().trim(),
+    notificationEmail: z.string().trim(),
+  }),
 });
 
 export const seoConfigSchema = z.object({

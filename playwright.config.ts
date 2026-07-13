@@ -34,6 +34,9 @@ export default defineConfig({
       NEXT_PUBLIC_WHATSAPP_NUMBER: "5571981533737",
       RESEND_API_KEY: "test-resend-key",
       OFFICE_NOTIFICATION_EMAIL: "office@example.com",
+      EMAIL_FROM_NAME: "Radar Previdenciario",
+      EMAIL_FROM_ADDRESS: "no-reply@example.com",
+      EMAIL_REPLY_TO: "reply@example.com",
     },
   },
   projects: [

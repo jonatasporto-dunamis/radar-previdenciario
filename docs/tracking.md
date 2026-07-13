@@ -228,3 +228,5 @@ Payload:
 ```
 
 Nenhum desses eventos dispara Meta, GA4, Pixel, CAPI, CRM ou WhatsApp automático.
+
+Os payloads desses eventos devem conter apenas identificadores operacionais, provider, prioridade, tentativa e motivo sanitizado. Não registre e-mail completo, telefone completo, payload do template ou chaves de provider.

@@ -14,4 +14,10 @@ export const defaultOfficeConfig: OfficeConfig = {
   workingHours: "Segunda a sexta, das 9h às 18h",
   whatsappDefaultMessage:
     "Olá, gostaria de iniciar uma análise previdenciária informativa.",
+  email: {
+    fromName: "Resende Advogados Associados",
+    fromAddress: "contato@mail.radarprevidenciario.com.br",
+    replyTo: "contato@resendeadvogados.com.br",
+    notificationEmail: "",
+  },
 };

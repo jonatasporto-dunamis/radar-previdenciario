@@ -9,8 +9,6 @@ import type { NotificationProvider } from "@/services/notification/providers";
 
 const log = createNotificationLogFixture() as NotificationLogRow;
 const providerInput = {
-  to: "office@example.com",
-  from: "Radar Previdenciario <onboarding@resend.dev>",
   subject: "Novo lead qualificado — Radar Previdenciário",
   html: "<p>Lead</p>",
   text: "Lead",

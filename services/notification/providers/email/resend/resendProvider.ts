@@ -3,6 +3,8 @@ import {
   validateNotificationRuntimeConfig,
 } from "@/services/notification/config";
 import { sanitizeErrorMessage } from "@/services/notification/security";
+import { getOfficeConfig } from "@/services/configuration";
+import type { OfficeConfig } from "@/types/brand";
 import type {
   NotificationProvider,
   NotificationProviderHealth,
@@ -16,6 +18,13 @@ type ResendProviderOptions = {
   apiKey?: string | null;
   dryRun?: boolean;
   fetcher?: FetchLike;
+  loadOfficeConfig?: () => Promise<OfficeConfig>;
+};
+
+type OfficeEmailIdentity = {
+  from: string;
+  replyTo: string;
+  destination: string;
 };
 
 export class ResendProvider implements NotificationProvider {
@@ -24,6 +33,7 @@ export class ResendProvider implements NotificationProvider {
   private readonly apiKey: string | null;
   private readonly dryRun: boolean;
   private readonly fetcher: FetchLike;
+  private readonly loadOfficeConfig: () => Promise<OfficeConfig>;
 
   constructor(options: ResendProviderOptions = {}) {
     const runtime = getNotificationRuntimeConfig();
@@ -31,6 +41,25 @@ export class ResendProvider implements NotificationProvider {
     this.apiKey = options.apiKey ?? runtime.resendApiKey;
     this.dryRun = options.dryRun ?? runtime.dryRun;
     this.fetcher = options.fetcher ?? fetch;
+    this.loadOfficeConfig = options.loadOfficeConfig ?? getOfficeConfig;
+  }
+
+  private async getOfficeEmailIdentity(): Promise<OfficeEmailIdentity> {
+    const office = await this.loadOfficeConfig();
+    const fromName = office.email.fromName.trim();
+    const fromAddress = office.email.fromAddress.trim();
+    const replyTo = office.email.replyTo.trim();
+    const destination = office.email.notificationEmail.trim();
+
+    if (!fromName || !fromAddress || !replyTo || !destination) {
+      throw new Error("Office email configuration is incomplete.");
+    }
+
+    return {
+      from: `${fromName} <${fromAddress}>`,
+      replyTo,
+      destination,
+    };
   }
 
   async validate(): Promise<NotificationProviderHealth> {
@@ -45,6 +74,16 @@ export class ResendProvider implements NotificationProvider {
         ok: false,
         provider: this.id,
         reason: validation.reason,
+      };
+    }
+
+    try {
+      await this.getOfficeEmailIdentity();
+    } catch (error) {
+      return {
+        ok: false,
+        provider: this.id,
+        reason: sanitizeErrorMessage(error),
       };
     }
 
@@ -71,6 +110,8 @@ export class ResendProvider implements NotificationProvider {
       };
     }
 
+    const identity = await this.getOfficeEmailIdentity();
+
     if (this.dryRun) {
       return {
         ok: true,
@@ -87,8 +128,9 @@ export class ResendProvider implements NotificationProvider {
           "Idempotency-Key": input.idempotencyKey,
         },
         body: JSON.stringify({
-          from: input.from,
-          to: [input.to],
+          from: identity.from,
+          to: [identity.destination],
+          reply_to: identity.replyTo,
           subject: input.subject,
           html: input.html,
           text: input.text,

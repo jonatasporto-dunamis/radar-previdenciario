@@ -5,7 +5,6 @@ export const notificationConfig = {
   providers: {
     email: {
       enabled: true,
-      from: "Radar Previdenciario <onboarding@resend.dev>",
       notificationType: "lead_qualified",
       subject: "Novo lead qualificado — Radar Previdenciário",
     },
@@ -27,14 +26,12 @@ export const notificationConfig = {
 
 export type NotificationRuntimeConfig = {
   resendApiKey: string | null;
-  officeNotificationEmail: string | null;
   dryRun: boolean;
 };
 
 export function getNotificationRuntimeConfig(): NotificationRuntimeConfig {
   return {
     resendApiKey: process.env.RESEND_API_KEY ?? null,
-    officeNotificationEmail: process.env.OFFICE_NOTIFICATION_EMAIL ?? null,
     dryRun:
       process.env.E2E_MOCK_SUPABASE === "true" ||
       process.env.NOTIFICATION_DRY_RUN === "true" ||
@@ -45,13 +42,6 @@ export function getNotificationRuntimeConfig(): NotificationRuntimeConfig {
 export function validateNotificationRuntimeConfig(
   config = getNotificationRuntimeConfig(),
 ): { valid: true } | { valid: false; reason: string } {
-  if (!config.officeNotificationEmail) {
-    return {
-      valid: false,
-      reason: "OFFICE_NOTIFICATION_EMAIL is not configured.",
-    };
-  }
-
   if (!config.dryRun && !config.resendApiKey) {
     return {
       valid: false,

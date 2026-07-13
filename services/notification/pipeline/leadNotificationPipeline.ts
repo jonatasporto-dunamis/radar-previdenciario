@@ -1,8 +1,9 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getOfficeConfig } from "@/services/configuration";
 import { qualifyLeadFromResult } from "@/services/qualification";
 import { trackEvent } from "@/services/tracking";
-import { notificationConfig, getNotificationRuntimeConfig } from "../config";
+import { notificationConfig } from "../config";
 import { EmailProvider } from "../providers";
 import {
   createNotificationLog,
@@ -114,8 +115,8 @@ export async function runLeadQualificationNotificationPipeline(
     }
 
     const qualification = qualifyLeadFromResult(input.computedResult);
-    const runtime = getNotificationRuntimeConfig();
-    const recipient = runtime.officeNotificationEmail ?? "not-configured";
+    const office = await getOfficeConfig();
+    const recipient = office.email.notificationEmail || "not-configured";
     const template = selectLeadNotificationTemplate(
       input.computedResult.classification,
     );
@@ -224,8 +225,6 @@ export async function runLeadQualificationNotificationPipeline(
       provider: new EmailProvider(),
       sessionId: input.sessionId,
       providerInput: {
-        to: recipient,
-        from: notificationConfig.providers.email.from,
         subject: notificationConfig.providers.email.subject,
         html: rendered.html,
         text: rendered.text,

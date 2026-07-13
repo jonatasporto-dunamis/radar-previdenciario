@@ -255,6 +255,15 @@ Status por cenário:
 
 O payload completo do e-mail não é salvo no banco. `payload_hash` é usado para idempotência, e erros são sanitizados antes de persistir.
 
+Para validar `notification_logs`, confirme:
+
+- `provider = email`;
+- `priority = high` para `alto_potencial` e `medium` para `medio_potencial`;
+- `status = sent` quando o provider confirma envio;
+- `status = ignored` para `baixo_potencial`;
+- `payload_hash`, `queued_at`, `processing_started_at` e `sent_at` preenchidos em envios concluídos;
+- `last_error` sanitizado em falhas controladas.
+
 ## Próximos passos
 
 - Avaliar constraint ou upsert para respostas quando a regra de histórico estiver definida.

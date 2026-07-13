@@ -10,8 +10,6 @@ export type NotificationProviderHealth = {
 };
 
 export type NotificationProviderSendInput = {
-  to: string;
-  from: string;
   subject: string;
   html: string;
   text: string;
