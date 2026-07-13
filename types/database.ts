@@ -17,7 +17,19 @@ export type TrackingEventName =
   | "QualifiedLead"
   | "WhatsAppClick";
 
-export type NotificationStatus = "pending" | "sent" | "failed";
+export type NotificationProvider =
+  "email" | "whatsapp" | "slack" | "discord" | "crm" | "webhook";
+
+export type NotificationPriority = "low" | "medium" | "high" | "critical";
+
+export type NotificationStatus =
+  | "pending"
+  | "processing"
+  | "sent"
+  | "failed"
+  | "retrying"
+  | "ignored"
+  | "cancelled";
 
 export type JsonObject = Record<string, unknown>;
 
@@ -112,8 +124,16 @@ export type NotificationLog = {
   result_id: string | null;
   notification_type: string;
   recipient: string;
+  provider: NotificationProvider;
+  priority: NotificationPriority;
   status: NotificationStatus;
+  attempt: number;
+  payload_hash: string | null;
+  queued_at: string | null;
+  processing_started_at: string | null;
   error_message: string | null;
+  last_error: string | null;
   sent_at: string | null;
+  failed_at: string | null;
   created_at: string;
 };

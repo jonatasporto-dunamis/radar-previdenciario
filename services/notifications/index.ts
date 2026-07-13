@@ -1,10 +1,7 @@
 import type { NotificationLog } from "@/types/database";
+import type { NotificationLogInsertInput } from "@/lib/validations/notification";
 
-export type CreateNotificationLogInput = Omit<
-  NotificationLog,
-  "created_at" | "id" | "status"
-> &
-  Partial<Pick<NotificationLog, "status">>;
+export type CreateNotificationLogInput = NotificationLogInsertInput;
 
 export async function createNotificationLog(
   input: CreateNotificationLogInput,

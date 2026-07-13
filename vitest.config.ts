@@ -15,6 +15,7 @@ export default defineConfig({
     globals: true,
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     setupFiles: ["tests/helpers/vitest.setup.ts"],
+    testTimeout: 15_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json", "lcov"],

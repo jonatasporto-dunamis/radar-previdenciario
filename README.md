@@ -154,6 +154,22 @@ O resultado é persistido em `quiz_results` com `lead_id`, `session_id`, `potent
 
 `quiz_results.session_id` possui constraint única no banco remoto para evitar múltiplos resultados da mesma sessão. A camada de persistência usa `upsert` por `session_id`, e eventos de resultado possuem deduplicação em aplicação para evitar repetição em refresh ou dupla conclusão. `ResultViewed` é disparado por Server Action e protegido por cookie HTTP-only por resultado.
 
+## Notification Logs
+
+A tabela `notification_logs` está preparada para o futuro Lead Qualification Pipeline + Notification Engine, sem envio funcional nesta etapa.
+
+O schema suporta:
+
+- providers planejados: `email`, `whatsapp`, `slack`, `discord`, `crm`, `webhook`;
+- prioridades: `low`, `medium`, `high`, `critical`;
+- status: `pending`, `processing`, `sent`, `failed`, `retrying`, `ignored`, `cancelled`;
+- tentativas com `attempt`;
+- idempotência por `provider + payload_hash`;
+- observabilidade com `queued_at`, `processing_started_at`, `sent_at` e `failed_at`;
+- compatibilidade com `error_message`, mantendo `last_error` como campo preferencial para o novo pipeline.
+
+`payload_hash` deve ser um hash sanitizado e não deve conter payload completo, PII ou segredos. A tabela continua bloqueada por RLS para `anon` e `authenticated`; futuras escritas devem ocorrer apenas no servidor.
+
 ## Estrutura
 
 - `app/`: rotas, layouts e Metadata API.

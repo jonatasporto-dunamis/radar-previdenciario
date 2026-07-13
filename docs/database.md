@@ -30,7 +30,63 @@ Registra eventos previstos da jornada e um payload flexível em `jsonb`. Os even
 
 ### notification_logs
 
-Registra tentativas futuras de notificação associadas a leads e resultados.
+Registra notificações futuras associadas a leads e resultados. A tabela foi endurecida para suportar o pipeline posterior de qualificação e entrega, mas ainda não existe envio funcional, provider, fila ou retry real implementado.
+
+## Notification Logs
+
+Estado anterior da tabela:
+
+- `id`
+- `lead_id`
+- `result_id`
+- `notification_type`
+- `recipient`
+- `status`
+- `error_message`
+- `sent_at`
+- `created_at`
+
+Campos adicionados para o pipeline:
+
+- `provider`: canal/provider planejado. Valores permitidos inicialmente: `email`, `whatsapp`, `slack`, `discord`, `crm`, `webhook`.
+- `priority`: prioridade planejada da fila. Valores permitidos: `low`, `medium`, `high`, `critical`.
+- `attempt`: número de tentativas de processamento já realizadas. Deve ser maior ou igual a zero.
+- `payload_hash`: hash sanitizado para idempotência. Não deve conter payload completo nem PII.
+- `queued_at`: momento em que a notificação entrar na fila futura.
+- `processing_started_at`: início do processamento da tentativa atual.
+- `failed_at`: momento da falha mais recente.
+- `last_error`: resumo sanitizado do último erro.
+
+Status permitidos:
+
+- `pending`
+- `processing`
+- `sent`
+- `failed`
+- `retrying`
+- `ignored`
+- `cancelled`
+
+Compatibilidade:
+
+- `error_message` permanece por compatibilidade com o schema inicial.
+- `last_error` é o campo preferencial para o novo pipeline.
+- `sent_at` foi preservado e não deve ser recalculado automaticamente.
+- Registros antigos recebem `provider = email`, `priority = medium` e `attempt = 0`.
+
+Idempotência:
+
+O índice único parcial `notification_logs_payload_hash_provider_unique` impede duplicação de uma mesma notificação para o mesmo provider quando `payload_hash` está preenchido e o status está em `pending`, `processing`, `retrying` ou `sent`.
+
+Retries futuros devem atualizar a mesma linha e incrementar `attempt`, não criar uma nova linha para a mesma notificação.
+
+Observabilidade:
+
+Os timestamps `queued_at`, `processing_started_at`, `sent_at` e `failed_at` permitem medir tempo em fila, tempo de processamento, sucesso e falha. O campo `last_error` deve receber apenas mensagem resumida e sanitizada, sem stack trace completo, API keys, payload com PII ou resposta integral do provider.
+
+RLS:
+
+Row Level Security continua ativa. Não há policy pública para `anon` ou `authenticated`; a tabela permanece restrita a operações server-only com Supabase Admin Client.
 
 ## Relacionamentos
 
@@ -207,6 +263,7 @@ Migration aplicada:
 
 - `20260709010000_initial_leads_quiz_tracking_schema.sql`
 - `20260712090000_add_unique_constraint_quiz_results_session_id.sql`
+- `20260712120000_expand_notification_logs_for_pipeline.sql`
 
 Os types oficiais foram gerados com:
 

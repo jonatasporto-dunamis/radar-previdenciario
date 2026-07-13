@@ -94,33 +94,57 @@ export type Database = {
       };
       notification_logs: {
         Row: {
+          attempt: number;
           created_at: string | null;
           error_message: string | null;
+          failed_at: string | null;
           id: string;
+          last_error: string | null;
           lead_id: string | null;
           notification_type: string;
+          payload_hash: string | null;
+          priority: string;
+          processing_started_at: string | null;
+          provider: string;
+          queued_at: string | null;
           recipient: string;
           result_id: string | null;
           sent_at: string | null;
           status: string;
         };
         Insert: {
+          attempt?: number;
           created_at?: string | null;
           error_message?: string | null;
+          failed_at?: string | null;
           id?: string;
+          last_error?: string | null;
           lead_id?: string | null;
           notification_type: string;
+          payload_hash?: string | null;
+          priority?: string;
+          processing_started_at?: string | null;
+          provider?: string;
+          queued_at?: string | null;
           recipient: string;
           result_id?: string | null;
           sent_at?: string | null;
           status?: string;
         };
         Update: {
+          attempt?: number;
           created_at?: string | null;
           error_message?: string | null;
+          failed_at?: string | null;
           id?: string;
+          last_error?: string | null;
           lead_id?: string | null;
           notification_type?: string;
+          payload_hash?: string | null;
+          priority?: string;
+          processing_started_at?: string | null;
+          provider?: string;
+          queued_at?: string | null;
           recipient?: string;
           result_id?: string | null;
           sent_at?: string | null;
@@ -239,7 +263,7 @@ export type Database = {
           {
             foreignKeyName: "quiz_results_session_id_fkey";
             columns: ["session_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "quiz_sessions";
             referencedColumns: ["id"];
           },

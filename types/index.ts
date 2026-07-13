@@ -6,6 +6,8 @@ export type {
   Lead,
   LeadStatus,
   NotificationLog,
+  NotificationPriority,
+  NotificationProvider,
   NotificationStatus,
   QuizAnswer,
   QuizResult,

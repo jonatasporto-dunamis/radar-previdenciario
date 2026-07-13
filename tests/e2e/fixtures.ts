@@ -28,6 +28,12 @@ export const test = base.extend<E2EFixtures>({
 
 export { expect };
 
+async function waitForAutosave(page: import("@playwright/test").Page) {
+  await expect(page.getByText("Resposta salva")).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
 export async function startLeadRegistration(
   page: import("@playwright/test").Page,
   lead: LeadFixture,
@@ -56,19 +62,23 @@ export async function answerRequiredQuiz(
   page: import("@playwright/test").Page,
 ) {
   await page.getByText("Aposentadoria", { exact: true }).click();
+  await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page.locator("#birth-date").fill("1970-01-01");
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page.getByRole("button", { name: /^Sim$/ }).click();
+  await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page
     .getByText("Empregado com carteira assinada", { exact: true })
     .click();
+  await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page.locator("#contribution-years").fill("20");
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page.locator("#last-income").fill("2500");
   await page.getByRole("button", { name: /Próximo/i }).click();
   await page.getByRole("button", { name: /^Não$/ }).click();
+  await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
 }

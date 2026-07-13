@@ -177,6 +177,35 @@ O banco remoto possui a constraint `quiz_results_session_id_unique`, criada apó
 
 Durante a validação em produção, o tracking server-side direto no Server Component de `/resultado` duplicou `ResultViewed` em refreshes próximos. A correção foi mover esse evento para uma Server Action idempotente, mantendo o segredo no servidor e evitando repetição por cookie e consulta prévia em `tracking_events`.
 
+## Notification Pipeline Preparation
+
+A tabela `notification_logs` foi preparada para a próxima etapa do produto, sem implementar envio ou fila funcional nesta fase.
+
+Fluxo planejado:
+
+```text
+Lead Qualification Pipeline
+    ↓
+Notification Log
+    ↓
+Queue
+    ↓
+Provider
+    ↓
+Delivery
+```
+
+Responsabilidades já modeladas no banco:
+
+- `provider`: identifica canal futuro como `email`, `whatsapp`, `slack`, `discord`, `crm` ou `webhook`.
+- `priority`: orienta ordenação futura de fila entre `low`, `medium`, `high` e `critical`.
+- `attempt`: prepara retries sem criar novos registros para a mesma notificação.
+- `payload_hash`: permite idempotência sem persistir payload completo ou PII.
+- `queued_at`, `processing_started_at`, `sent_at`, `failed_at`: sustentam observabilidade do ciclo de entrega.
+- `last_error`: passa a ser o campo preferencial para erro sanitizado, mantendo `error_message` por compatibilidade.
+
+O índice único parcial em `provider + payload_hash` protege notificações ativas ou já enviadas contra duplicidade quando a camada de envio for criada. O schema mantém RLS ativa e não adiciona policies públicas; futuras escritas devem permanecer em serviços server-only.
+
 ## Quality Gate
 
 A camada de qualidade usa Vitest para testes unitários e de integração, Testing Library para componentes React e Playwright para E2E multi-browser.
