@@ -177,25 +177,42 @@ O banco remoto possui a constraint `quiz_results_session_id_unique`, criada apó
 
 Durante a validação em produção, o tracking server-side direto no Server Component de `/resultado` duplicou `ResultViewed` em refreshes próximos. A correção foi mover esse evento para uma Server Action idempotente, mantendo o segredo no servidor e evitando repetição por cookie e consulta prévia em `tracking_events`.
 
-## Notification Pipeline Preparation
+## Lead Qualification Pipeline e Notification Engine
 
-A tabela `notification_logs` foi preparada para a próxima etapa do produto, sem implementar envio ou fila funcional nesta fase.
+Ao concluir o quiz, o resultado preliminar alimenta uma pipeline separada da geração do resultado. Falhas de notificação não bloqueiam a experiência do usuário.
 
-Fluxo planejado:
+Fluxo atual:
 
 ```text
-Lead Qualification Pipeline
+QuizCompleted
+    ↓
+Lead Qualification
     ↓
 Notification Log
     ↓
-Queue
+Sync Notification Queue
     ↓
-Provider
+Email Provider
     ↓
-Delivery
+Resend Provider
 ```
 
-Responsabilidades já modeladas no banco:
+Camadas:
+
+- `services/qualification/`: converte `classification` em prioridade, decisão de envio e providers.
+- `services/notification/pipeline/`: orquestra lead, resultado, payload, hash e idempotência.
+- `services/notification/queue/`: abstração de fila inicialmente síncrona, preparada para BullMQ, Redis, QStash ou Inngest.
+- `services/notification/dispatcher/`: controla tentativas, retry, estados do log e tracking interno.
+- `services/notification/providers/`: contratos e providers. `EmailProvider` encapsula `ResendProvider`.
+- `emails/templates/`: templates React Email para leads de alto e médio potencial.
+
+Regras de qualificação:
+
+- `alto_potencial`: notifica por e-mail, prioridade `high`.
+- `medio_potencial`: notifica por e-mail, prioridade `medium`.
+- `baixo_potencial`: não envia e registra `ignored`.
+
+Responsabilidades do banco:
 
 - `provider`: identifica canal futuro como `email`, `whatsapp`, `slack`, `discord`, `crm` ou `webhook`.
 - `priority`: orienta ordenação futura de fila entre `low`, `medium`, `high` e `critical`.
@@ -205,6 +222,28 @@ Responsabilidades já modeladas no banco:
 - `last_error`: passa a ser o campo preferencial para erro sanitizado, mantendo `error_message` por compatibilidade.
 
 O índice único parcial em `provider + payload_hash` protege notificações ativas ou já enviadas contra duplicidade quando a camada de envio for criada. O schema mantém RLS ativa e não adiciona policies públicas; futuras escritas devem permanecer em serviços server-only.
+
+Idempotência:
+
+- o hash considera provider, destinatário, lead, resultado e template;
+- `sent` nunca é reenviado;
+- estados ativos não criam novo log;
+- `failed` pode ser reutilizado para retry controlado;
+- payload completo não é salvo em `notification_logs`.
+
+Retry:
+
+- erros temporários do provider usam status `retrying`;
+- o limite atual é de 3 tentativas;
+- o backoff é exponencial;
+- erro final usa status `failed` e tracking `NotificationFailed`.
+
+Segurança:
+
+- `RESEND_API_KEY` só é lida em servidor;
+- `OFFICE_NOTIFICATION_EMAIL` define o destinatário do escritório;
+- Resend só é acessado por `ResendProvider`;
+- logs não devem conter API key, payload completo, e-mail ou telefone em claro.
 
 ## Quality Gate
 

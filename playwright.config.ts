@@ -32,6 +32,8 @@ export default defineConfig({
       SUPABASE_SERVICE_ROLE_KEY: "test-service-role",
       NEXT_PUBLIC_SITE_URL: BASE_URL,
       NEXT_PUBLIC_WHATSAPP_NUMBER: "5571981533737",
+      RESEND_API_KEY: "test-resend-key",
+      OFFICE_NOTIFICATION_EMAIL: "office@example.com",
     },
   },
   projects: [

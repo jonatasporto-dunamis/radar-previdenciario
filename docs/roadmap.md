@@ -3,6 +3,11 @@
 ## Concluído na fundação
 
 - Notification schema hardening.
+- Lead Qualification Pipeline.
+- Notification Engine com Email Provider e Resend Provider.
+- Templates React Email.
+- Idempotência por payload hash.
+- Retry com backoff exponencial.
 
 ## Próximas fases do quiz
 
@@ -17,10 +22,10 @@
 
 ## Próxima fase de qualificação e notificações
 
-- Implementar Lead Qualification Pipeline + Notification Engine.
-- Definir geração de logs de notificação a partir de leads qualificados.
-- Implementar fila funcional somente após contrato de provider estar definido.
-- Adicionar providers reais, templates e retries em etapa própria.
+- Avaliar fila assíncrona quando houver volume real.
+- Evoluir observabilidade de delivery.
+- Adicionar novos providers somente quando houver necessidade de produto.
+- Definir política operacional de retentativas manuais.
 
 ## Fase SaaS
 

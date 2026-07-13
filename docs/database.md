@@ -4,7 +4,7 @@
 
 O Supabase será usado como banco relacional principal do Radar Previdenciário. A modelagem inicial cobre captura de leads, sessões do quiz, respostas, resultados, eventos de tracking e logs de notificação.
 
-Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestrutura funcional do quiz e pela persistência de resultado preliminar. Não há autenticação, APIs públicas, Rule Engine jurídico definitivo, e-mails ou notificações funcionais.
+Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestrutura funcional do quiz, pela persistência de resultado preliminar e pelos logs do pipeline de notificação. Não há autenticação, APIs públicas, Rule Engine jurídico definitivo, CRM, WhatsApp automático ou integrações externas de tracking.
 
 ## Tabelas
 
@@ -30,7 +30,7 @@ Registra eventos previstos da jornada e um payload flexível em `jsonb`. Os even
 
 ### notification_logs
 
-Registra notificações futuras associadas a leads e resultados. A tabela foi endurecida para suportar o pipeline posterior de qualificação e entrega, mas ainda não existe envio funcional, provider, fila ou retry real implementado.
+Registra notificações associadas a leads e resultados. A tabela suporta o pipeline de qualificação, envio por e-mail, idempotência, retry e observabilidade.
 
 ## Notification Logs
 
@@ -78,7 +78,7 @@ Idempotência:
 
 O índice único parcial `notification_logs_payload_hash_provider_unique` impede duplicação de uma mesma notificação para o mesmo provider quando `payload_hash` está preenchido e o status está em `pending`, `processing`, `retrying` ou `sent`.
 
-Retries futuros devem atualizar a mesma linha e incrementar `attempt`, não criar uma nova linha para a mesma notificação.
+Retries atualizam a mesma linha e incrementam `attempt`, sem criar uma nova linha para a mesma notificação.
 
 Observabilidade:
 
@@ -227,12 +227,41 @@ Resultado da auditoria em 2026-07-12: nenhuma duplicidade encontrada.
 
 Na validação de concorrência em produção, a combinação `upsert` + constraint manteve apenas um `quiz_results` por sessão mesmo com duplo clique em finalizar.
 
+## Notificações
+
+Após `quiz_results` ser persistido e `QuizCompleted` ser registrado, a aplicação executa o Lead Qualification Pipeline.
+
+Persistência em `notification_logs`:
+
+- `lead_id`
+- `result_id`
+- `provider = email`
+- `priority`
+- `status`
+- `attempt`
+- `payload_hash`
+- `queued_at`
+- `processing_started_at`
+- `sent_at`
+- `failed_at`
+- `last_error`
+
+Status por cenário:
+
+- `alto_potencial`: `pending` → `processing` → `sent` ou `retrying`/`failed`.
+- `medio_potencial`: mesmo fluxo, com prioridade `medium`.
+- `baixo_potencial`: `ignored`.
+- duplicidade já enviada: sem reenvio e evento `NotificationIgnored`.
+
+O payload completo do e-mail não é salvo no banco. `payload_hash` é usado para idempotência, e erros são sanitizados antes de persistir.
+
 ## Próximos passos
 
 - Avaliar constraint ou upsert para respostas quando a regra de histórico estiver definida.
 - Criar limpeza de atribuição ao finalizar o resultado.
 - Avaliar rate limit persistente com Upstash Redis ou equivalente.
 - Revisar policies de RLS quando autenticação ou painel administrativo forem definidos.
+- Avaliar fila assíncrona quando volume de notificações justificar.
 
 ## Supabase CLI
 

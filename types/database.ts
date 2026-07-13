@@ -15,6 +15,10 @@ export type TrackingEventName =
   | "ResultGenerated"
   | "ResultViewed"
   | "QualifiedLead"
+  | "NotificationQueued"
+  | "NotificationSent"
+  | "NotificationFailed"
+  | "NotificationIgnored"
   | "WhatsAppClick";
 
 export type NotificationProvider =

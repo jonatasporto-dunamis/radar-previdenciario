@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática e a geração preliminar de resultado informativo. Autenticação, e-mails, APIs públicas, IA, painel administrativo e integrações externas de tracking ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática, a geração preliminar de resultado informativo e o pipeline interno de qualificação/notificação. Autenticação, APIs públicas, IA, painel administrativo, CRM, WhatsApp automático e integrações externas de tracking ainda não foram implementados.
 
 ## Stack
 
@@ -156,7 +156,7 @@ O resultado é persistido em `quiz_results` com `lead_id`, `session_id`, `potent
 
 ## Notification Logs
 
-A tabela `notification_logs` está preparada para o futuro Lead Qualification Pipeline + Notification Engine, sem envio funcional nesta etapa.
+A tabela `notification_logs` sustenta o Lead Qualification Pipeline + Notification Engine.
 
 O schema suporta:
 
@@ -169,6 +169,56 @@ O schema suporta:
 - compatibilidade com `error_message`, mantendo `last_error` como campo preferencial para o novo pipeline.
 
 `payload_hash` deve ser um hash sanitizado e não deve conter payload completo, PII ou segredos. A tabela continua bloqueada por RLS para `anon` e `authenticated`; futuras escritas devem ocorrer apenas no servidor.
+
+## Lead Qualification Pipeline
+
+Ao concluir o quiz, o resultado passa por:
+
+```text
+QuizCompleted
+→ Lead Qualification
+→ Notification Log
+→ Sync Notification Queue
+→ Email Provider
+→ Resend Provider
+```
+
+Regras atuais:
+
+- `alto_potencial`: envia e-mail com prioridade `high`.
+- `medio_potencial`: envia e-mail com prioridade `medium`.
+- `baixo_potencial`: não envia e registra `ignored`.
+
+O envio usa `services/notification/providers/email/EmailProvider`, que encapsula `ResendProvider`. O Resend nunca deve ser chamado diretamente fora dessa abstração.
+
+Templates React Email ficam em `emails/templates/`:
+
+- `lead-qualified.tsx`
+- `lead-medium.tsx`
+- `components/Header.tsx`
+- `components/Footer.tsx`
+- `components/Section.tsx`
+- `components/Table.tsx`
+- `components/CTA.tsx`
+
+O e-mail é enviado para `OFFICE_NOTIFICATION_EMAIL` com o assunto `Novo lead qualificado — Radar Previdenciário`. A API key fica em `RESEND_API_KEY`, somente no servidor.
+
+Idempotência:
+
+- cada payload gera `payload_hash`;
+- antes do envio, a aplicação busca `provider + payload_hash`;
+- se já existir `sent`, não reenvia;
+- registros ativos (`pending`, `processing`, `retrying`) não geram duplicidade;
+- falhas temporárias entram em retry até 3 tentativas com backoff exponencial.
+
+Eventos internos adicionados:
+
+- `NotificationQueued`
+- `NotificationSent`
+- `NotificationFailed`
+- `NotificationIgnored`
+
+Falha de e-mail não bloqueia `/resultado`. O erro é registrado de forma sanitizada, sem payload completo, API key, e-mail/telefone expostos em logs de aplicação.
 
 ## Estrutura
 
@@ -212,7 +262,7 @@ pnpm test:coverage
 pnpm test:e2e
 ```
 
-Os testes unitários e de integração ficam em `tests/unit/` e `tests/integration/`. Eles cobrem validações, helpers de atribuição, normalização de telefone, Rule Engine, Result Engine, persistência de resultado, tracking e Server Actions.
+Os testes unitários e de integração ficam em `tests/unit/` e `tests/integration/`. Eles cobrem validações, helpers de atribuição, normalização de telefone, Rule Engine, Result Engine, persistência de resultado, tracking, Notification Engine e Server Actions.
 
 O coverage gate exige no mínimo 90% de statements, 90% de lines, 85% de functions e 80% de branches nos módulos críticos configurados em `vitest.config.ts`.
 

@@ -10,6 +10,7 @@ import {
   persistQuizResult,
   trackResultGeneratedOnce,
 } from "@/services/quiz/results";
+import { runLeadQualificationNotificationPipeline } from "@/services/notification/pipeline";
 import { evaluateQuizRules } from "@/services/quiz/rules";
 import {
   completeQuizSession,
@@ -270,6 +271,14 @@ export async function saveQuizAnswerAction(input: {
       } catch {
         console.error("Failed to track quiz completed event.");
       }
+
+      await runLeadQualificationNotificationPipeline({
+        leadId,
+        sessionId: session.id,
+        result: persistedResult,
+        computedResult,
+        answers,
+      });
     }
 
     await setQuizSessionCookie(session.id);

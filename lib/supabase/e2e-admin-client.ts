@@ -6,7 +6,8 @@ type TableName =
   | "quiz_sessions"
   | "quiz_answers"
   | "quiz_results"
-  | "tracking_events";
+  | "tracking_events"
+  | "notification_logs";
 
 const now = () => new Date().toISOString();
 
@@ -16,6 +17,7 @@ const store: Record<TableName, Row[]> = {
   quiz_answers: [],
   quiz_results: [],
   tracking_events: [],
+  notification_logs: [],
 };
 
 function clone<T>(value: T): T {
@@ -44,6 +46,24 @@ function createRow(table: TableName, row: Row): Row {
       status: "new",
       created_at: timestamp,
       updated_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (table === "notification_logs") {
+    return {
+      id,
+      provider: "email",
+      priority: "medium",
+      status: "pending",
+      attempt: 0,
+      queued_at: null,
+      processing_started_at: null,
+      sent_at: null,
+      failed_at: null,
+      error_message: null,
+      last_error: null,
+      created_at: timestamp,
       ...row,
     };
   }

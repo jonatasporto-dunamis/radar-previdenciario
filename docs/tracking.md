@@ -11,6 +11,10 @@
 - `ResultGenerated`
 - `ResultViewed`
 - `QualifiedLead`
+- `NotificationQueued`
+- `NotificationSent`
+- `NotificationFailed`
+- `NotificationIgnored`
 - `WhatsAppClick`
 
 ## Campos de atribuição
@@ -159,3 +163,68 @@ A atribuição não é limpa após o cadastro porque é reutilizada nos eventos 
 Tracking interno significa persistir eventos próprios na tabela `tracking_events` do Supabase, via servidor.
 
 Integrações externas como Meta Pixel, Meta CAPI, GA4 e GTM ainda não foram implementadas. Nenhum evento externo é disparado nesta etapa.
+
+## Eventos de notificação
+
+Os eventos de notificação são internos e server-only.
+
+### NotificationQueued
+
+Registrado quando um lead notificável cria um log `pending`.
+
+Payload:
+
+```json
+{
+  "notificationLogId": "uuid",
+  "provider": "email",
+  "priority": "high",
+  "resultId": "uuid"
+}
+```
+
+### NotificationSent
+
+Registrado após o provider confirmar envio.
+
+Payload:
+
+```json
+{
+  "notificationLogId": "uuid",
+  "provider": "email",
+  "attempt": 1,
+  "providerMessageId": "email_123"
+}
+```
+
+### NotificationFailed
+
+Registrado quando todas as tentativas falham ou o erro não é temporário.
+
+Payload:
+
+```json
+{
+  "notificationLogId": "uuid",
+  "provider": "email",
+  "attempt": 3,
+  "temporary": true,
+  "error": "mensagem sanitizada"
+}
+```
+
+### NotificationIgnored
+
+Registrado quando `baixo_potencial` não deve ser enviado ou quando a idempotência impede duplicidade.
+
+Payload:
+
+```json
+{
+  "notificationLogId": "uuid",
+  "reason": "already_sent"
+}
+```
+
+Nenhum desses eventos dispara Meta, GA4, Pixel, CAPI, CRM ou WhatsApp automático.
