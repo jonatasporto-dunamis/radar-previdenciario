@@ -40,10 +40,18 @@ export type {
   QuestionValidationDefinition,
   QuestionVisibilityCondition,
   QuestionVisibilityOperator,
+  BenefitRuleDefinition,
   QuizAnswerMap,
   QuizNavigationState,
   QuizProgress,
+  QuizResultClassification,
+  QuizResultComputation,
   QuizStoredAnswer,
+  RuleCandidate,
+  RuleConditionDefinition,
+  RuleConditionOperator,
+  RuleEvaluation,
+  RuleMatchReason,
 } from "./quiz";
 
 export type {

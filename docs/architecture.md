@@ -135,10 +135,65 @@ Server Action saveQuizAnswerAction
 quiz_answers + tracking_events
 ```
 
-O primeiro fluxo exemplo possui 8 perguntas e serve para validar arquitetura, persistência e navegação. Ele não classifica benefício, não calcula direito, não gera resultado jurídico e não usa IA.
+O primeiro fluxo exemplo possui 8 perguntas e serve para validar arquitetura, persistência, navegação e resultado informativo preliminar. Ele não calcula direito previdenciário definitivo, não gera resultado jurídico vinculante e não usa IA.
 
 Cada resposta é salva imediatamente em `quiz_answers`. Como a tabela atual não possui constraint única por pergunta/sessão, a camada de serviço aplica idempotência operacional: procura uma resposta existente para `session_id + question_id`, atualiza quando encontra e insere apenas na primeira resposta daquela pergunta. Isso evita duplicidade no fluxo atual sem alterar schema nesta etapa.
 
-`QuizStarted` é registrado quando uma sessão aberta é criada. `QuestionAnswered` é registrado a cada resposta salva. `QuizCompleted` é registrado quando a última pergunta do fluxo é salva e todas as obrigatórias estão respondidas.
+`QuizStarted` é registrado quando uma sessão aberta é criada. `QuestionAnswered` é registrado a cada resposta salva. `ResultGenerated` é registrado após o Rule Engine, Result Engine e a persistência de `quiz_results`. `QuizCompleted` é registrado quando a última pergunta do fluxo é salva, todas as obrigatórias estão respondidas e a sessão é concluída. `ResultViewed` é registrado na primeira visualização da página de resultado.
 
 Para evitar duplicidade por requisições simultâneas na entrada do quiz, a sessão inicial do lead é criada de forma idempotente usando o UUID do lead como identificador da sessão no MVP. Se outra requisição criar a sessão primeiro, o serviço reutiliza a sessão existente.
+
+## Rule Engine e Result Engine
+
+A etapa de resultado foi separada em camadas para manter o Question Engine focado apenas na coleta de respostas:
+
+```text
+Question Engine
+    ↓
+Rule Engine
+    ↓
+Result Engine
+    ↓
+Result Persistence
+    ↓
+/resultado
+```
+
+Responsabilidades:
+
+- `config/quiz/rules/`: regras preliminares por benefício, sem acoplamento com componentes.
+- `services/quiz/rules/`: avalia respostas salvas e gera candidatos por benefício.
+- `services/quiz/results/resultEngine.ts`: calcula score, classificação e síntese informativa.
+- `services/quiz/results/resultPersistence.ts`: grava ou atualiza `quiz_results` no Supabase usando service role somente no servidor.
+- `services/quiz/results/resultTracking.ts`: registra `ResultGenerated` e `ResultViewed` com deduplicação em aplicação.
+- `app/resultado/actions.ts` e `components/tracking/ResultViewedTracker.tsx`: disparam `ResultViewed` por Server Action após a página carregar, com cookie HTTP-only por resultado para evitar duplicidade em refresh.
+- `app/resultado/page.tsx`: lê o último resultado do lead pelo cookie HTTP-only e exibe a resposta informativa.
+
+As classificações atuais são `alto_potencial`, `medio_potencial` e `baixo_potencial`. Elas indicam apenas uma triagem preliminar. A camada não implementa Rule Engine jurídico definitivo, cálculo previdenciário, IA ou recomendação vinculante.
+
+Quando a última pergunta obrigatória é salva, `saveQuizAnswerAction` avalia as regras, persiste o resultado por `upsert`, registra `ResultGenerated`, marca a sessão como `completed`, registra `QuizCompleted` com deduplicação por sessão e retorna o destino `/resultado` para o Client Component.
+
+O banco remoto possui a constraint `quiz_results_session_id_unique`, criada após auditoria confirmar ausência de duplicidades em `quiz_results`. Essa constraint permite idempotência real para concorrência de dupla conclusão.
+
+Durante a validação em produção, o tracking server-side direto no Server Component de `/resultado` duplicou `ResultViewed` em refreshes próximos. A correção foi mover esse evento para uma Server Action idempotente, mantendo o segredo no servidor e evitando repetição por cookie e consulta prévia em `tracking_events`.
+
+## Quality Gate
+
+A camada de qualidade usa Vitest para testes unitários e de integração, Testing Library para componentes React e Playwright para E2E multi-browser.
+
+Estrutura:
+
+- `vitest.config.ts`: ambiente `jsdom`, aliases do projeto, setup global e thresholds de coverage.
+- `playwright.config.ts`: matriz Chromium, Firefox, WebKit e mobile Chromium com servidor Next.js local.
+- `tests/helpers/`: utilitários de teste e setup.
+- `tests/fixtures/`: dados estáveis para leads, quiz e resultados.
+- `tests/mocks/`: mocks de dependências server-only e Supabase.
+- `tests/unit/`: testes de unidades críticas.
+- `tests/integration/`: testes de Server Actions, tracking e persistência.
+- `tests/e2e/`: fluxo completo de cadastro, quiz, retomada e resultado.
+
+O E2E usa `E2E_MOCK_SUPABASE=true` para ativar `lib/supabase/e2e-admin-client.ts`, um cliente server-only em memória compatível com as operações usadas pela aplicação. Esse mock evita dependência do Supabase real no CI e impede uso de service role em testes automatizados.
+
+O coverage gate cobre módulos de validação, atribuição, telefone, engines do quiz, Rule Engine, Result Engine, persistência e tracking. Os thresholds globais são 90% para statements e lines, 85% para functions e 80% para branches.
+
+O CI executa instalação, lint, typecheck, build, Vitest, coverage, instalação dos browsers Playwright e E2E em pushes para `main` e pull requests.

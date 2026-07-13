@@ -1,9 +1,16 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
+import { getLegalConfig } from "@/services/configuration";
 import { getQuestionsForFlow } from "@/services/quiz/engine";
 import { getQuizNavigationState } from "@/services/quiz/navigation";
 import { calculateQuizProgress } from "@/services/quiz/progress";
+import {
+  buildQuizResult,
+  persistQuizResult,
+  trackResultGeneratedOnce,
+} from "@/services/quiz/results";
+import { evaluateQuizRules } from "@/services/quiz/rules";
 import {
   completeQuizSession,
   getLeadAttribution,
@@ -12,6 +19,7 @@ import {
   saveQuizAnswer,
 } from "@/services/quiz/session";
 import { trackEvent } from "@/services/tracking";
+import { trackEventOnce } from "@/services/tracking";
 import type {
   QuestionAnswerValue,
   QuizAnswerMap,
@@ -34,6 +42,8 @@ export type SaveQuizAnswerActionResult =
       progress: QuizProgress;
       navigation: QuizNavigationState;
       completed: boolean;
+      resultId?: string;
+      redirectTo?: "/resultado";
     }
   | {
       success: false;
@@ -202,12 +212,42 @@ export async function saveQuizAnswerAction(input: {
     }
 
     const shouldComplete = progress.isComplete && navigation.isLastQuestion;
+    let resultId: string | undefined;
 
     if (shouldComplete) {
+      const legal = await getLegalConfig();
+      const ruleEvaluation = evaluateQuizRules(answers);
+      const computedResult = buildQuizResult({
+        answers,
+        ruleEvaluation,
+        ethicalDisclaimer: legal.disclaimer,
+      });
+      const persistedResult = await persistQuizResult({
+        leadId,
+        sessionId: session.id,
+        result: computedResult,
+      });
+
+      resultId = persistedResult.id;
+
+      try {
+        await trackResultGeneratedOnce({
+          leadId,
+          sessionId: session.id,
+          resultId,
+          result: computedResult,
+          rulesVersion: ruleEvaluation.rulesVersion,
+          attribution,
+          context,
+        });
+      } catch {
+        console.error("Failed to track result generated event.");
+      }
+
       await completeQuizSession(session.id);
 
       try {
-        await trackEvent({
+        await trackEventOnce({
           leadId,
           sessionId: session.id,
           eventName: "QuizCompleted",
@@ -215,6 +255,13 @@ export async function saveQuizAnswerAction(input: {
             source: "quiz",
             answeredRequiredQuestions: progress.answeredRequiredQuestions,
             totalRequiredQuestions: progress.totalRequiredQuestions,
+            resultId,
+            score: computedResult.score,
+            classification: computedResult.classification,
+            potentialBenefit: computedResult.potentialBenefit,
+          },
+          eventPayloadContains: {
+            resultId,
           },
           attribution,
           userAgent: context.userAgent,
@@ -234,6 +281,8 @@ export async function saveQuizAnswerAction(input: {
       progress,
       navigation,
       completed: shouldComplete,
+      resultId,
+      redirectTo: shouldComplete ? "/resultado" : undefined,
     };
   } catch {
     console.error("Failed to save quiz answer.");

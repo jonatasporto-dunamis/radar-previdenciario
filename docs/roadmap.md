@@ -2,14 +2,14 @@
 
 ## Próximas fases do quiz
 
-- Criar Rule Engine separado do Question Engine.
 - Criar catálogo real de benefícios previdenciários.
 - Mapear perguntas por benefício e por escritório.
 - Definir estratégia de versionamento de fluxos em banco.
-- Criar cálculo/classificação de resultado.
-- Persistir `quiz_results` somente quando o motor jurídico estiver definido.
+- Evoluir regras preliminares para Rule Engine jurídico definitivo.
+- Definir critérios jurídicos e documentais para classificação real.
 - Implementar limpeza de atribuição ao concluir o fluxo.
 - Avaliar upsert ou constraint para resposta única por sessão/pergunta.
+- Avaliar constraint de tracking quando houver coluna dedicada para `result_id`.
 
 ## Fase SaaS
 

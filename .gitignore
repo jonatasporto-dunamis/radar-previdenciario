@@ -12,6 +12,8 @@ next-env.d.ts
 
 # Tests and coverage
 coverage/
+playwright-report/
+test-results/
 
 # Environment
 .env

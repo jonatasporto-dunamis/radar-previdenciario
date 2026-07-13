@@ -4,7 +4,7 @@
 
 O Supabase será usado como banco relacional principal do Radar Previdenciário. A modelagem inicial cobre captura de leads, sessões do quiz, respostas, resultados, eventos de tracking e logs de notificação.
 
-Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead e pela infraestrutura funcional do quiz. Não há autenticação, APIs públicas, Rule Engine jurídico, resultados calculados, e-mails ou notificações funcionais.
+Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestrutura funcional do quiz e pela persistência de resultado preliminar. Não há autenticação, APIs públicas, Rule Engine jurídico definitivo, e-mails ou notificações funcionais.
 
 ## Tabelas
 
@@ -22,7 +22,7 @@ Armazena respostas individuais de uma sessão do quiz, vinculadas ao lead e à s
 
 ### quiz_results
 
-Armazena o resultado calculado para uma sessão, incluindo pontuação, classificação e textos explicativos futuros.
+Armazena o resultado preliminar calculado para uma sessão, incluindo benefício em destaque, pontuação, classificação, síntese e aviso ético.
 
 ### tracking_events
 
@@ -116,7 +116,7 @@ Ao entrar em `/quiz`, a aplicação:
 
 No MVP, a criação da sessão é idempotente por lead: a primeira `quiz_session` usa o UUID do lead como identificador da sessão. Isso evita duas sessões abertas quando o App Router dispara requisições próximas para `/quiz`.
 
-Quando a última pergunta é salva e todas as obrigatórias foram respondidas, a sessão é marcada como `completed` com `completed_at`.
+Quando a última pergunta é salva e todas as obrigatórias foram respondidas, a aplicação gera o resultado preliminar, persiste `quiz_results` e marca a sessão como `completed` com `completed_at`.
 
 ## Respostas do quiz
 
@@ -132,9 +132,47 @@ Cada resposta salva em `quiz_answers` contém:
 
 Respostas do tipo `checkbox` são serializadas em JSON dentro de `answer_value`. O campo `answer_label` armazena uma versão humana das opções escolhidas. Esta etapa não altera schema nem cria constraint `UNIQUE`; a prevenção de duplicidade é feita no serviço.
 
+## Resultados do quiz
+
+Ao concluir o quiz, `saveQuizAnswerAction` executa:
+
+```text
+loadQuizAnswers
+→ evaluateQuizRules
+→ buildQuizResult
+→ persistQuizResult
+→ completeQuizSession
+```
+
+Campos persistidos em `quiz_results`:
+
+- `session_id`
+- `lead_id`
+- `potential_benefit`
+- `score`
+- `classification`
+- `summary`
+- `ethical_disclaimer`
+
+A persistência é idempotente por `session_id`: se já existir resultado para a sessão, ele é atualizado; se não existir, um novo registro é criado. A migration `20260712090000_add_unique_constraint_quiz_results_session_id.sql` adiciona a constraint `quiz_results_session_id_unique` para reforçar essa regra no banco.
+
+Antes da criação da constraint, foi validada a ausência de duplicidades equivalentes a:
+
+```sql
+select
+  session_id,
+  count(*)
+from quiz_results
+group by session_id
+having count(*) > 1;
+```
+
+Resultado da auditoria em 2026-07-12: nenhuma duplicidade encontrada.
+
+Na validação de concorrência em produção, a combinação `upsert` + constraint manteve apenas um `quiz_results` por sessão mesmo com duplo clique em finalizar.
+
 ## Próximos passos
 
-- Criar Rule Engine em camada separada.
 - Avaliar constraint ou upsert para respostas quando a regra de histórico estiver definida.
 - Criar limpeza de atribuição ao finalizar o resultado.
 - Avaliar rate limit persistente com Upstash Redis ou equivalente.
@@ -168,6 +206,7 @@ supabase db push
 Migration aplicada:
 
 - `20260709010000_initial_leads_quiz_tracking_schema.sql`
+- `20260712090000_add_unique_constraint_quiz_results_session_id.sql`
 
 Os types oficiais foram gerados com:
 

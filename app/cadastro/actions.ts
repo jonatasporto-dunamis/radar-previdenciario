@@ -89,7 +89,10 @@ export async function createLeadAction(
     requestHeaders.get("x-real-ip");
   const userAgent = requestHeaders.get("user-agent")?.slice(0, 1000) ?? null;
 
-  const rateLimit = checkLeadSubmissionRateLimit(ipAddress);
+  const shouldCheckRateLimit = process.env.E2E_MOCK_SUPABASE !== "true";
+  const rateLimit = shouldCheckRateLimit
+    ? checkLeadSubmissionRateLimit(ipAddress)
+    : { allowed: true };
 
   if (!rateLimit.allowed) {
     return {

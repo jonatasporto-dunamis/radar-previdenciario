@@ -12,6 +12,8 @@ export type TrackingEventName =
   | "QuizStarted"
   | "QuestionAnswered"
   | "QuizCompleted"
+  | "ResultGenerated"
+  | "ResultViewed"
   | "QualifiedLead"
   | "WhatsAppClick";
 

@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição e a infraestrutura do quiz com persistência automática. O motor de regras jurídico, resultado funcional, autenticação, e-mails, APIs públicas e integrações externas de tracking ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática e a geração preliminar de resultado informativo. Autenticação, e-mails, APIs públicas, IA, painel administrativo e integrações externas de tracking ainda não foram implementados.
 
 ## Stack
 
@@ -41,6 +41,9 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `pnpm lint`: executa ESLint.
 - `pnpm typecheck`: valida TypeScript.
 - `pnpm build`: gera build de produção.
+- `pnpm test`: executa testes unitários e de integração com Vitest.
+- `pnpm test:coverage`: executa Vitest com coverage gate.
+- `pnpm test:e2e`: executa testes E2E com Playwright.
 - `pnpm format`: formata os arquivos.
 - `pnpm format:check`: valida formatação.
 
@@ -126,9 +129,30 @@ Principais diretórios:
 - `services/quiz/navigation/`: anterior, próximo e retomada.
 - `components/quiz/renderer/`: componentes por tipo de pergunta.
 
-O primeiro fluxo exemplo possui 8 perguntas. Ele salva respostas em `quiz_answers`, cria/reutiliza `quiz_sessions`, calcula progresso real e registra `QuizStarted`, `QuestionAnswered` e `QuizCompleted` em `tracking_events`.
+O primeiro fluxo exemplo possui 8 perguntas. Ele salva respostas em `quiz_answers`, cria/reutiliza `quiz_sessions`, calcula progresso real e registra `QuizStarted`, `QuestionAnswered`, `QuizCompleted`, `ResultGenerated` e `ResultViewed` em `tracking_events`.
 
-Ainda não há Rule Engine, cálculo de benefício, resultado jurídico, IA ou envio de e-mail.
+## Rule Engine e Result Engine
+
+Ao finalizar o quiz, o fluxo passa por camadas separadas:
+
+```text
+Question Engine
+→ coleta respostas
+Rule Engine
+→ interpreta respostas por benefício
+Result Engine
+→ consolida candidato, score e classificação
+Result Persistence
+→ grava ou atualiza quiz_results
+Result Page
+→ exibe resultado informativo
+```
+
+As regras preliminares ficam em `config/quiz/rules/` e usam operadores simples como `includes`, `equals`, `min` e `max`. Essa camada não calcula direito previdenciário definitivo e não substitui avaliação jurídica individual.
+
+O resultado é persistido em `quiz_results` com `lead_id`, `session_id`, `potential_benefit`, `score`, `classification`, `summary` e `ethical_disclaimer`. A rota `/resultado` lê o resultado mais recente do lead autenticado pelo cookie HTTP-only `rp_lead_session`.
+
+`quiz_results.session_id` possui constraint única no banco remoto para evitar múltiplos resultados da mesma sessão. A camada de persistência usa `upsert` por `session_id`, e eventos de resultado possuem deduplicação em aplicação para evitar repetição em refresh ou dupla conclusão. `ResultViewed` é disparado por Server Action e protegido por cookie HTTP-only por resultado.
 
 ## Estrutura
 
@@ -159,6 +183,24 @@ Para trocar a marca ou adaptar a aplicação para outro escritório, altere apen
 - `legal/default.ts`: política de privacidade, termos, disclaimer e cookies.
 
 O Tailwind usa CSS variables geradas pelo tema configurável, então ajustes visuais devem começar pelo tema local.
+
+## Quality Gate
+
+O projeto possui uma camada de validação automatizada com Vitest, Testing Library, coverage V8 e Playwright.
+
+Comandos principais:
+
+```bash
+pnpm test
+pnpm test:coverage
+pnpm test:e2e
+```
+
+Os testes unitários e de integração ficam em `tests/unit/` e `tests/integration/`. Eles cobrem validações, helpers de atribuição, normalização de telefone, Rule Engine, Result Engine, persistência de resultado, tracking e Server Actions.
+
+O coverage gate exige no mínimo 90% de statements, 90% de lines, 85% de functions e 80% de branches nos módulos críticos configurados em `vitest.config.ts`.
+
+Os testes E2E ficam em `tests/e2e/` e rodam em Chromium, Firefox, WebKit e mobile Chromium. Durante E2E, `E2E_MOCK_SUPABASE=true` ativa um cliente Supabase server-only em memória, sem depender do banco real e sem expor secrets.
 
 ## Arquitetura de configurações
 
@@ -212,6 +254,9 @@ O workflow `.github/workflows/ci.yml` executa em pushes para `main` e pull reque
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm build`
+- `pnpm test`
+- `pnpm test:coverage`
+- `pnpm test:e2e`
 
 ## Deploy
 

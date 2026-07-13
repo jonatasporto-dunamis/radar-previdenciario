@@ -119,3 +119,54 @@ export type QuizNavigationState = {
   isFirstQuestion: boolean;
   isLastQuestion: boolean;
 };
+
+export type RuleConditionOperator =
+  "equals" | "not_equals" | "includes" | "min" | "max" | "exists";
+
+export type RuleConditionDefinition = {
+  questionId: string;
+  operator: RuleConditionOperator;
+  value?: QuestionAnswerPrimitive;
+  score: number;
+  reason: string;
+};
+
+export type BenefitRuleDefinition = {
+  benefitSlug: string;
+  active: boolean;
+  conditions: RuleConditionDefinition[];
+};
+
+export type RuleMatchReason = {
+  questionId: string;
+  reason: string;
+  score: number;
+};
+
+export type RuleCandidate = {
+  benefitSlug: string;
+  benefitTitle: string;
+  priority: number;
+  score: number;
+  matched: boolean;
+  reasons: RuleMatchReason[];
+};
+
+export type RuleEvaluation = {
+  rulesVersion: number;
+  candidates: RuleCandidate[];
+  topCandidate: RuleCandidate | null;
+  answeredQuestionCount: number;
+};
+
+export type QuizResultClassification =
+  "alto_potencial" | "medio_potencial" | "baixo_potencial";
+
+export type QuizResultComputation = {
+  potentialBenefit: string | null;
+  score: number;
+  classification: QuizResultClassification;
+  summary: string;
+  ethicalDisclaimer: string;
+  candidates: RuleCandidate[];
+};

@@ -7,6 +7,7 @@ import { PageContainer } from "@/components/common/page-container";
 import { SectionTitle } from "@/components/common/section-title";
 import { QuizExperience } from "@/components/quiz/experience";
 import { getAppConfig } from "@/services/configuration";
+import { getLatestQuizResultForLead } from "@/services/quiz/results";
 import { getQuizSessionState } from "@/services/quiz/session";
 
 export const metadata: Metadata = {
@@ -43,6 +44,16 @@ export default async function QuizPage() {
 
   if (!sessionState) {
     redirect("/cadastro");
+  }
+
+  if (sessionState.session.status === "completed") {
+    const result = await getLatestQuizResultForLead(leadId);
+
+    if (!result) {
+      redirect("/cadastro");
+    }
+
+    redirect("/resultado");
   }
 
   const { brand, legal } = await getAppConfig();

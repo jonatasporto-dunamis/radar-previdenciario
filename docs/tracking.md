@@ -8,6 +8,8 @@
 - `QuizStarted`
 - `QuestionAnswered`
 - `QuizCompleted`
+- `ResultGenerated`
+- `ResultViewed`
 - `QualifiedLead`
 - `WhatsAppClick`
 
@@ -94,11 +96,55 @@ Payload:
 {
   "source": "quiz",
   "answeredRequiredQuestions": 7,
-  "totalRequiredQuestions": 7
+  "totalRequiredQuestions": 7,
+  "resultId": "uuid",
+  "score": 75,
+  "classification": "alto_potencial",
+  "potentialBenefit": "Aposentadoria"
 }
 ```
 
 Todos os eventos do quiz são internos e gravados somente via servidor. A atribuição do lead é reaproveitada em `tracking_events`.
+
+O evento é gravado após a persistência de `quiz_results` e conclusão da sessão. O payload contém apenas dados operacionais da triagem, sem enviar eventos para Meta, GA4 ou outras plataformas externas.
+
+### ResultGenerated
+
+Registrado somente após:
+
+- Rule Engine concluído;
+- Result Engine concluído;
+- `quiz_results` persistido com sucesso.
+
+Payload:
+
+```json
+{
+  "classification": "alto_potencial",
+  "potentialBenefit": "Aposentadoria",
+  "rulesVersion": 1,
+  "source": "rule_engine"
+}
+```
+
+O evento é deduplicado em aplicação por `event_name`, `lead_id` e `session_id`.
+
+### ResultViewed
+
+Registrado somente na primeira visualização do resultado.
+
+Payload:
+
+```json
+{
+  "resultId": "uuid",
+  "classification": "alto_potencial",
+  "potentialBenefit": "Aposentadoria",
+  "source": "result_page"
+}
+```
+
+Como `tracking_events` não possui coluna `result_id`, a deduplicação ocorre por `event_name` e `event_payload.resultId`. A chamada é feita por Server Action acionada por `ResultViewedTracker`, e um cookie HTTP-only por resultado evita novo evento em refresh simples da página.
 
 ## Preservação de UTMs
 
@@ -106,7 +152,7 @@ Parâmetros de campanha são capturados por `components/tracking/AttributionCapt
 
 Novos parâmetros não vazios prevalecem sobre valores antigos. Valores vazios não apagam atribuição já capturada. O objeto de atribuição não deve armazenar dados pessoais.
 
-A atribuição não é limpa após o cadastro porque é reutilizada nos eventos do quiz. A limpeza será implementada em etapa futura, ao concluir o fluxo de resultado.
+A atribuição não é limpa após o cadastro porque é reutilizada nos eventos do quiz. A limpeza será implementada em etapa futura, quando a política de retenção do fluxo estiver definida.
 
 ## Tracking interno e integrações externas
 

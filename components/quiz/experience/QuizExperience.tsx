@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Save } from "lucide-react";
 import {
   persistQuizSessionCookieAction,
@@ -72,6 +73,7 @@ export function QuizExperience({
   initialProgress,
   disclaimer,
 }: QuizExperienceProps) {
+  const router = useRouter();
   const [answers, setAnswers] = useState<QuizAnswerMap>(initialAnswers);
   const [values, setValues] = useState(getInitialValues(initialAnswers));
   const [savedFingerprints, setSavedFingerprints] = useState(
@@ -168,6 +170,7 @@ export function QuizExperience({
       setSaveState("saved");
 
       if (result.completed) {
+        router.replace(result.redirectTo ?? "/resultado");
         setCompleted(true);
         return;
       }
@@ -209,11 +212,11 @@ export function QuizExperience({
           <CheckCircle2 aria-hidden="true" className="size-6" />
         </div>
         <h1 className="text-foreground text-2xl font-semibold">
-          Questionário salvo
+          Resultado em preparação
         </h1>
         <p className="text-muted-foreground mt-3 leading-7">
-          Suas respostas foram registradas. A etapa de resultado jurídico ainda
-          não está implementada.
+          Suas respostas foram registradas. Você será redirecionado para o
+          resultado informativo.
         </p>
         <p className="text-muted-foreground mt-6 text-sm leading-6">
           {disclaimer}

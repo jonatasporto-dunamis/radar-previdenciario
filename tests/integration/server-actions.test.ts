@@ -1,0 +1,122 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mockCookies, mockHeaders } from "@/tests/helpers";
+
+describe("server actions", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("creates a lead and sets the HTTP-only session cookie", async () => {
+    const cookiesStore = mockCookies();
+    const headersStore = mockHeaders({
+      "x-forwarded-for": "127.0.0.1",
+      "user-agent": "Vitest",
+    });
+    const createLead = vi.fn().mockResolvedValue({
+      id: "lead-1",
+      reused: false,
+    });
+    const trackEvent = vi.fn().mockResolvedValue(undefined);
+    vi.doMock("next/headers", () => ({
+      cookies: () => Promise.resolve(cookiesStore),
+      headers: () => Promise.resolve(headersStore),
+    }));
+    vi.doMock("@/services/leads", () => ({ createLead }));
+    vi.doMock("@/services/tracking", () => ({ trackEvent }));
+    const { createLeadAction } = await import("@/app/cadastro/actions");
+
+    const result = await createLeadAction({
+      fullName: "Maria Previdencia",
+      email: "maria@example.com",
+      phone: "(71) 98153-3737",
+      privacyConsent: true,
+      website: "",
+      attribution: {
+        utmSource: "meta",
+      },
+    });
+
+    expect(result).toEqual({ success: true, leadId: "lead-1" });
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leadId: "lead-1",
+        eventName: "LeadSubmitted",
+      }),
+    );
+    expect(cookiesStore.set).toHaveBeenCalledWith(
+      "rp_lead_session",
+      "lead-1",
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: "lax",
+      }),
+    );
+  });
+
+  it("rejects invalid lead registration without calling services", async () => {
+    const createLead = vi.fn();
+    vi.doMock("@/services/leads", () => ({ createLead }));
+    const { createLeadAction } = await import("@/app/cadastro/actions");
+
+    const result = await createLeadAction({
+      fullName: "Maria",
+      email: "invalid",
+      phone: "123",
+      privacyConsent: false,
+      website: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(createLead).not.toHaveBeenCalled();
+  });
+
+  it("tracks ResultViewed once through the resultado action", async () => {
+    const cookiesStore = mockCookies({ rp_lead_session: "lead-1" });
+    const headersStore = mockHeaders({
+      "x-forwarded-for": "127.0.0.1",
+      "user-agent": "Vitest",
+    });
+    const getQuizResultForLead = vi.fn().mockResolvedValue({
+      id: "result-1",
+      session_id: "session-1",
+      lead_id: "lead-1",
+      classification: "alto_potencial",
+      potential_benefit: "Aposentadoria",
+    });
+    const trackResultViewedOnce = vi.fn().mockResolvedValue(true);
+    const getLeadAttribution = vi.fn().mockResolvedValue({
+      utmSource: "meta",
+    });
+    vi.doMock("next/headers", () => ({
+      cookies: () => Promise.resolve(cookiesStore),
+      headers: () => Promise.resolve(headersStore),
+    }));
+    vi.doMock("@/services/quiz/results", () => ({
+      getQuizResultForLead,
+      trackResultViewedOnce,
+    }));
+    vi.doMock("@/services/quiz/session", () => ({
+      getLeadAttribution,
+    }));
+    const { trackResultViewedAction } = await import("@/app/resultado/actions");
+
+    await expect(trackResultViewedAction("result-1")).resolves.toEqual({
+      success: true,
+    });
+
+    expect(trackResultViewedOnce).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leadId: "lead-1",
+        sessionId: "session-1",
+        resultId: "result-1",
+        classification: "alto_potencial",
+      }),
+    );
+    expect(cookiesStore.set).toHaveBeenCalledWith(
+      "rp_result_viewed_result-1",
+      "1",
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+});
