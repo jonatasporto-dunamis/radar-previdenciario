@@ -5,6 +5,7 @@ import type {
   SeoConfig,
   ThemeConfig,
 } from "@/types/brand";
+import type { TrackingConfig } from "@/config/tracking";
 
 export interface AppConfig {
   brand: BrandConfig;
@@ -12,6 +13,7 @@ export interface AppConfig {
   theme: ThemeConfig;
   seo: SeoConfig;
   legal: LegalConfig;
+  tracking: TrackingConfig;
 }
 
 export type ConfigurationSource = "local" | "remote";

@@ -8,6 +8,8 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { createLeadAction } from "@/app/cadastro/actions";
 import { PrimaryButton } from "@/components/common/primary-button";
+import { useTrackingConfig } from "@/components/tracking/TrackingProvider";
+import { dispatchBrowserExternalEvent } from "@/lib/tracking";
 import { getAttributionFromSession } from "@/lib/attribution";
 import { leadFormSchema, type LeadFormInput } from "@/lib/validations/lead";
 import { formatBrazilianPhone } from "@/utils/phone";
@@ -17,8 +19,10 @@ const genericFormError =
 
 export function LeadRegistrationForm() {
   const router = useRouter();
+  const trackingConfig = useTrackingConfig();
   const [isPending, startTransition] = useTransition();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [leadStartedTracked, setLeadStartedTracked] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -57,6 +61,20 @@ export function LeadRegistrationForm() {
       });
 
       if (result.success) {
+        if (result.externalEventId) {
+          dispatchBrowserExternalEvent({
+            config: trackingConfig,
+            eventName: "LeadSubmitted",
+            eventId: result.externalEventId,
+            leadId: result.leadId,
+            metadata: {
+              source: "lead_registration",
+              form_version: "v1",
+            },
+            scope: result.leadId,
+          });
+        }
+
         router.push("/quiz");
         return;
       }
@@ -83,6 +101,22 @@ export function LeadRegistrationForm() {
       className="bg-card shadow-card mt-10 rounded-xl border p-6"
       method="post"
       noValidate
+      onFocusCapture={() => {
+        if (leadStartedTracked) {
+          return;
+        }
+
+        setLeadStartedTracked(true);
+        dispatchBrowserExternalEvent({
+          config: trackingConfig,
+          eventName: "LeadStarted",
+          metadata: {
+            source: "lead_form_interaction",
+            form_version: "v1",
+          },
+          scope: "lead-form",
+        });
+      }}
       onSubmit={handleSubmit(onSubmit)}
     >
       <div className="grid gap-5">

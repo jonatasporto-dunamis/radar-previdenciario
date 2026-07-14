@@ -50,6 +50,25 @@ export default async function PrivacidadePage() {
                   {office.workingHours}.
                 </p>
                 <p>{legal.cookiePolicy}</p>
+                <p>
+                  Quando habilitado, o sistema pode usar cookies e tecnologias
+                  de mensuração para entender páginas visitadas, origem de
+                  campanhas e etapas genéricas do funil. Isso pode envolver Meta
+                  Pixel, Meta Conversions API, Google Analytics 4 e Google Tag
+                  Manager.
+                </p>
+                <p>
+                  A mensuração externa depende de consentimento quando essa
+                  exigência estiver ativa. A preferência pode ser recusada ou
+                  alterada posteriormente no próprio site, sem impedir o
+                  cadastro, o quiz ou a visualização do resultado informativo.
+                </p>
+                <p>
+                  Respostas do quiz, documentos, dados de saúde, classificação,
+                  score, benefício provável, nome, e-mail e telefone em texto
+                  puro não são enviados para Meta, Google Analytics ou GTM para
+                  finalidade publicitária.
+                </p>
                 <p>{legal.disclaimer}</p>
               </div>
             </article>

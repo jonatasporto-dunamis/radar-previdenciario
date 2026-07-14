@@ -7,7 +7,8 @@ type TableName =
   | "quiz_answers"
   | "quiz_results"
   | "tracking_events"
-  | "notification_logs";
+  | "notification_logs"
+  | "external_tracking_deliveries";
 
 const now = () => new Date().toISOString();
 
@@ -18,6 +19,7 @@ const store: Record<TableName, Row[]> = {
   quiz_results: [],
   tracking_events: [],
   notification_logs: [],
+  external_tracking_deliveries: [],
 };
 
 function clone<T>(value: T): T {
@@ -64,6 +66,23 @@ function createRow(table: TableName, row: Row): Row {
       error_message: null,
       last_error: null,
       created_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (table === "external_tracking_deliveries") {
+    return {
+      id,
+      status: "pending",
+      attempt: 0,
+      test_event: false,
+      queued_at: null,
+      processing_started_at: null,
+      sent_at: null,
+      failed_at: null,
+      last_error: null,
+      created_at: timestamp,
+      updated_at: timestamp,
       ...row,
     };
   }
@@ -227,12 +246,15 @@ class QueryBuilder {
     if (this.upsertRows) {
       const rows = this.upsertRows.map((row) => {
         const conflictColumn = this.onConflict;
-        const existingIndex =
-          conflictColumn && row[conflictColumn]
-            ? store[this.table].findIndex(
-                (item) => item[conflictColumn] === row[conflictColumn],
-              )
-            : -1;
+        const conflictColumns = conflictColumn
+          ?.split(",")
+          .map((column) => column.trim())
+          .filter(Boolean);
+        const existingIndex = conflictColumns?.length
+          ? store[this.table].findIndex((item) =>
+              conflictColumns.every((column) => item[column] === row[column]),
+            )
+          : -1;
 
         if (existingIndex >= 0) {
           store[this.table][existingIndex] = {

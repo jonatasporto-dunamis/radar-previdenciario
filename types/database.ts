@@ -35,6 +35,13 @@ export type NotificationStatus =
   | "ignored"
   | "cancelled";
 
+export type ExternalTrackingProvider =
+  "meta_pixel" | "meta_capi" | "ga4" | "gtm";
+
+export type ExternalTrackingChannel = "browser" | "server";
+
+export type ExternalTrackingDeliveryStatus = NotificationStatus;
+
 export type JsonObject = Record<string, unknown>;
 
 export type Lead = {
@@ -140,4 +147,28 @@ export type NotificationLog = {
   sent_at: string | null;
   failed_at: string | null;
   created_at: string;
+};
+
+export type ExternalTrackingDelivery = {
+  id: string;
+  tracking_event_id: string | null;
+  lead_id: string | null;
+  session_id: string | null;
+  result_id: string | null;
+  event_name: TrackingEventName;
+  event_id: string;
+  provider: ExternalTrackingProvider;
+  channel: ExternalTrackingChannel;
+  status: ExternalTrackingDeliveryStatus;
+  attempt: number;
+  test_event: boolean;
+  request_payload_hash: string | null;
+  provider_event_id: string | null;
+  queued_at: string | null;
+  processing_started_at: string | null;
+  sent_at: string | null;
+  failed_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
 };

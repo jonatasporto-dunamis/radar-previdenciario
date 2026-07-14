@@ -14,6 +14,107 @@ export type Database = {
   };
   public: {
     Tables: {
+      external_tracking_deliveries: {
+        Row: {
+          attempt: number;
+          channel: string;
+          created_at: string;
+          event_id: string;
+          event_name: string;
+          failed_at: string | null;
+          id: string;
+          last_error: string | null;
+          lead_id: string | null;
+          processing_started_at: string | null;
+          provider: string;
+          provider_event_id: string | null;
+          queued_at: string | null;
+          request_payload_hash: string | null;
+          result_id: string | null;
+          sent_at: string | null;
+          session_id: string | null;
+          status: string;
+          test_event: boolean;
+          tracking_event_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          attempt?: number;
+          channel: string;
+          created_at?: string;
+          event_id: string;
+          event_name: string;
+          failed_at?: string | null;
+          id?: string;
+          last_error?: string | null;
+          lead_id?: string | null;
+          processing_started_at?: string | null;
+          provider: string;
+          provider_event_id?: string | null;
+          queued_at?: string | null;
+          request_payload_hash?: string | null;
+          result_id?: string | null;
+          sent_at?: string | null;
+          session_id?: string | null;
+          status?: string;
+          test_event?: boolean;
+          tracking_event_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          attempt?: number;
+          channel?: string;
+          created_at?: string;
+          event_id?: string;
+          event_name?: string;
+          failed_at?: string | null;
+          id?: string;
+          last_error?: string | null;
+          lead_id?: string | null;
+          processing_started_at?: string | null;
+          provider?: string;
+          provider_event_id?: string | null;
+          queued_at?: string | null;
+          request_payload_hash?: string | null;
+          result_id?: string | null;
+          sent_at?: string | null;
+          session_id?: string | null;
+          status?: string;
+          test_event?: boolean;
+          tracking_event_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "external_tracking_deliveries_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "external_tracking_deliveries_result_id_fkey";
+            columns: ["result_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_results";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "external_tracking_deliveries_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "external_tracking_deliveries_tracking_event_id_fkey";
+            columns: ["tracking_event_id"];
+            isOneToOne: false;
+            referencedRelation: "tracking_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       leads: {
         Row: {
           ad_id: string | null;

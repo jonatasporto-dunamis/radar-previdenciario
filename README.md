@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática, a geração preliminar de resultado informativo e o pipeline interno de qualificação/notificação. Autenticação, APIs públicas, IA, painel administrativo, CRM, WhatsApp automático e integrações externas de tracking ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática, a geração preliminar de resultado informativo, o pipeline interno de qualificação/notificação e a camada de tracking externo em dry-run/configurável. Autenticação, APIs públicas, IA, painel administrativo, CRM e WhatsApp automático ainda não foram implementados.
 
 ## Stack
 
@@ -63,9 +63,21 @@ OFFICE_NOTIFICATION_EMAIL=
 EMAIL_FROM_NAME=
 EMAIL_FROM_ADDRESS=
 EMAIL_REPLY_TO=
+NEXT_PUBLIC_META_PIXEL_ID=
+META_CONVERSIONS_API_ACCESS_TOKEN=
+META_CONVERSIONS_API_VERSION=
+META_TEST_EVENT_CODE=
+META_TRACKING_TEST_MODE=
+NEXT_PUBLIC_GA4_MEASUREMENT_ID=
+NEXT_PUBLIC_GTM_CONTAINER_ID=
+NEXT_PUBLIC_TRACKING_ENABLED=
+NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
+EXTERNAL_TRACKING_DRY_RUN=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
+
+`META_CONVERSIONS_API_ACCESS_TOKEN` também é server-only e nunca deve receber prefixo `NEXT_PUBLIC_`. Pixel ID, GA4 Measurement ID e GTM Container ID podem ser públicos.
 
 ## Supabase Setup
 
@@ -249,6 +261,53 @@ Eventos internos adicionados:
 Falha de e-mail não bloqueia `/resultado`. O erro é registrado de forma sanitizada, sem payload completo, API key, e-mail/telefone expostos em logs de aplicação.
 
 Testes automatizados não enviam e-mails reais: `E2E_MOCK_SUPABASE=true` ativa Supabase em memória e `NODE_ENV=test`/dry-run evita chamada externa ao provider.
+
+## External Tracking Setup
+
+A camada externa fica desacoplada em `services/external-tracking/`, `lib/tracking/`, `components/tracking/`, `config/tracking/` e `types/tracking/`.
+
+Eventos implementados:
+
+- `PageView`
+- `LeadStarted`
+- `LeadSubmitted`
+- `QuizStarted`
+- `QuizCompleted`
+- `QualifiedLead`
+- `ResultViewed`
+- `WhatsAppClick`
+
+Estratégia:
+
+```text
+tracking_events
+→ event_payload.external_event_id
+→ Browser: dataLayer, Meta Pixel, GA4 fallback
+→ Server: Meta Conversions API
+→ external_tracking_deliveries
+```
+
+O `dataLayer` é o contrato central do navegador. GA4 deve ser configurado preferencialmente via GTM; `gtag.js` direto é fallback quando não houver GTM configurado.
+
+Mapeamentos principais:
+
+- `LeadSubmitted`: Meta `Lead`, GA4 `generate_lead`.
+- `WhatsAppClick`: Meta `Contact`, GA4 `whatsapp_click`.
+- `QualifiedLead`: evento customizado Meta `QualifiedLead`, GA4 `qualified_lead`.
+
+Ativação local em dry-run:
+
+```env
+NEXT_PUBLIC_TRACKING_ENABLED=true
+NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=true
+EXTERNAL_TRACKING_DRY_RUN=true
+```
+
+Para validação real, configure os IDs/tokens na Vercel por ambiente e use `META_TRACKING_TEST_MODE=true` com `META_TEST_EVENT_CODE` apenas durante testes no Events Manager.
+
+Documentação operacional completa:
+
+- `docs/external-tracking.md`
 
 ## Estrutura
 

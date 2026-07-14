@@ -5,6 +5,7 @@ import {
   getQuizResultForLead,
   trackResultViewedOnce,
 } from "@/services/quiz/results";
+import { createExternalEventId } from "@/services/external-tracking";
 import { getLeadAttribution } from "@/services/quiz/session";
 
 const LEAD_SESSION_COOKIE = "rp_lead_session";
@@ -27,7 +28,7 @@ function getResultViewedCookieName(resultId: string): string {
 
 export async function trackResultViewedAction(
   resultId: string,
-): Promise<{ success: true } | { success: false }> {
+): Promise<{ success: true; externalEventId?: string } | { success: false }> {
   const cookieStore = await cookies();
   const leadId = cookieStore.get(LEAD_SESSION_COOKIE)?.value;
 
@@ -49,13 +50,17 @@ export async function trackResultViewedAction(
 
   const requestHeaders = await headers();
 
+  const externalEventId = createExternalEventId("ResultViewed");
+  let tracked = false;
+
   try {
-    await trackResultViewedOnce({
+    tracked = await trackResultViewedOnce({
       leadId,
       sessionId: result.session_id,
       resultId: result.id,
       classification: result.classification,
       potentialBenefit: result.potential_benefit,
+      externalEventId,
       attribution: await getLeadAttribution(leadId),
       context: {
         ipAddress:
@@ -77,5 +82,8 @@ export async function trackResultViewedAction(
     maxAge: 60 * 60 * 2,
   });
 
-  return { success: true };
+  return {
+    success: true,
+    externalEventId: tracked ? externalEventId : undefined,
+  };
 }

@@ -39,6 +39,7 @@ export async function trackResultViewedOnce(input: {
   resultId: string;
   classification: string;
   potentialBenefit?: string | null;
+  externalEventId?: string;
   attribution?: AttributionData;
   context?: ResultTrackingContext;
 }): Promise<boolean> {
@@ -51,6 +52,9 @@ export async function trackResultViewedOnce(input: {
       classification: input.classification,
       potentialBenefit: input.potentialBenefit ?? null,
       source: "result_page",
+      ...(input.externalEventId
+        ? { external_event_id: input.externalEventId }
+        : {}),
     },
     eventPayloadContains: {
       resultId: input.resultId,

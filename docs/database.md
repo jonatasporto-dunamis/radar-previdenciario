@@ -4,7 +4,7 @@
 
 O Supabase será usado como banco relacional principal do Radar Previdenciário. A modelagem inicial cobre captura de leads, sessões do quiz, respostas, resultados, eventos de tracking e logs de notificação.
 
-Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestrutura funcional do quiz, pela persistência de resultado preliminar e pelos logs do pipeline de notificação. Não há autenticação, APIs públicas, Rule Engine jurídico definitivo, CRM, WhatsApp automático ou integrações externas de tracking.
+Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestrutura funcional do quiz, pela persistência de resultado preliminar, pelos logs do pipeline de notificação e pela auditoria de entregas externas de tracking. Não há autenticação, APIs públicas, Rule Engine jurídico definitivo, CRM ou WhatsApp automático.
 
 ## Tabelas
 
@@ -31,6 +31,10 @@ Registra eventos previstos da jornada e um payload flexível em `jsonb`. Os even
 ### notification_logs
 
 Registra notificações associadas a leads e resultados. A tabela suporta o pipeline de qualificação, envio por e-mail, idempotência, retry e observabilidade.
+
+### external_tracking_deliveries
+
+Registra auditoria de entrega para Meta Pixel, Meta Conversions API, GA4 e GTM. A tabela existe porque `tracking_events` não modela provider, canal, tentativa, status de entrega, payload hash, modo de teste ou retry.
 
 ## Notification Logs
 
@@ -88,6 +92,40 @@ RLS:
 
 Row Level Security continua ativa. Não há policy pública para `anon` ou `authenticated`; a tabela permanece restrita a operações server-only com Supabase Admin Client.
 
+## External Tracking Deliveries
+
+Migration:
+
+- `20260714010000_create_external_tracking_deliveries.sql`
+
+Campos principais:
+
+- `tracking_event_id`: referência opcional ao evento interno.
+- `lead_id`, `session_id`, `result_id`: contexto operacional opcional.
+- `event_name`: evento externo do funil.
+- `event_id`: identificador compartilhado entre browser e servidor.
+- `provider`: `meta_pixel`, `meta_capi`, `ga4` ou `gtm`.
+- `channel`: `browser` ou `server`.
+- `status`: `pending`, `processing`, `sent`, `failed`, `retrying`, `ignored` ou `cancelled`.
+- `attempt`: número da tentativa.
+- `test_event`: indica modo de teste.
+- `request_payload_hash`: SHA-256 do payload sanitizado.
+- `provider_event_id`: identificador retornado pelo provider quando houver.
+- `queued_at`, `processing_started_at`, `sent_at`, `failed_at`: observabilidade.
+- `last_error`: erro resumido e sanitizado.
+
+Idempotência:
+
+O índice único `external_tracking_deliveries_event_provider_channel_unique` evita duplicar a mesma entrega para `event_id + provider + channel`.
+
+RLS:
+
+RLS está ativo e há policy bloqueando acesso direto para `anon` e `authenticated`. Escritas devem ocorrer somente por Server Actions e serviços server-only com Supabase Admin Client.
+
+Privacidade:
+
+A tabela não armazena payload bruto, respostas do quiz, classificação, score, benefício provável, e-mail, telefone, documentos ou dados sensíveis. Apenas hash de payload sanitizado e metadados operacionais.
+
 ## Relacionamentos
 
 - `leads` 1:N `quiz_sessions`
@@ -99,6 +137,7 @@ Row Level Security continua ativa. Não há policy pública para `anon` ou `auth
 - `quiz_sessions` 1:N `tracking_events`
 - `leads` 1:N `notification_logs`
 - `quiz_results` 1:N `notification_logs`
+- `tracking_events` 1:N `external_tracking_deliveries`
 
 ## Campos de tracking
 
@@ -302,6 +341,7 @@ Migration aplicada:
 - `20260709010000_initial_leads_quiz_tracking_schema.sql`
 - `20260712090000_add_unique_constraint_quiz_results_session_id.sql`
 - `20260712120000_expand_notification_logs_for_pipeline.sql`
+- `20260714010000_create_external_tracking_deliveries.sql`
 
 Os types oficiais foram gerados com:
 

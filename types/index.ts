@@ -3,6 +3,10 @@ export type AppRoute =
 
 export type {
   JsonObject,
+  ExternalTrackingChannel as DatabaseExternalTrackingChannel,
+  ExternalTrackingDelivery as DatabaseExternalTrackingDelivery,
+  ExternalTrackingDeliveryStatus as DatabaseExternalTrackingDeliveryStatus,
+  ExternalTrackingProvider as DatabaseExternalTrackingProvider,
   Lead,
   LeadStatus,
   NotificationLog,
@@ -61,6 +65,20 @@ export type {
   ConfigurationContext,
   ConfigurationSource,
 } from "./configuration";
+
+export type {
+  ExternalTrackingChannel,
+  ExternalTrackingDelivery,
+  ExternalTrackingDeliveryStatus,
+  ExternalTrackingEvent,
+  ExternalTrackingEventName,
+  ExternalTrackingProvider,
+  SafeAttributionData,
+  SafeExternalMetadata,
+  SanitizedExternalPayload,
+  TrackingConsentDecision,
+  TrackingConsentStatus,
+} from "./tracking";
 
 export type {
   CompositeTypes as SupabaseCompositeTypes,

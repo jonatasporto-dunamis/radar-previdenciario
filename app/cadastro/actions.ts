@@ -4,6 +4,10 @@ import { cookies, headers } from "next/headers";
 import { normalizeAttributionData } from "@/lib/attribution";
 import { checkLeadSubmissionRateLimit } from "@/lib/rate-limit";
 import { createLeadSchema, leadFormSchema } from "@/lib/validations/lead";
+import {
+  createExternalEventId,
+  dispatchExternalEvent,
+} from "@/services/external-tracking";
 import { createLead } from "@/services/leads";
 import { trackEvent } from "@/services/tracking";
 import { normalizeBrazilianPhone } from "@/utils/phone";
@@ -16,6 +20,7 @@ export type CreateLeadActionResult =
   | {
       success: true;
       leadId: string;
+      externalEventId?: string;
     }
   | {
       success: false;
@@ -51,6 +56,20 @@ function getFieldErrors(
 
 function normalizeFullName(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeEventSourceUrl(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return undefined;
+  }
 }
 
 function hasHoneypotValue(input: unknown): boolean {
@@ -126,21 +145,49 @@ export async function createLeadAction(
 
   try {
     const lead = await createLead(normalizedPayload.data);
+    const externalEventId = lead.reused
+      ? undefined
+      : createExternalEventId("LeadSubmitted");
+    const eventTime = Math.floor(Date.now() / 1000);
+    const eventSourceUrl = sanitizeEventSourceUrl(
+      requestHeaders.get("referer"),
+    );
 
-    try {
-      await trackEvent({
-        leadId: lead.id,
-        eventName: "LeadSubmitted",
-        eventPayload: {
-          source: "lead_registration",
-          version: 1,
+    if (!lead.reused && externalEventId) {
+      try {
+        await trackEvent({
+          leadId: lead.id,
+          eventName: "LeadSubmitted",
+          eventPayload: {
+            source: "lead_registration",
+            version: 1,
+            external_event_id: externalEventId,
+          },
+          attribution,
+          userAgent,
+          ipAddress,
+        });
+      } catch {
+        console.error("Failed to track lead submission event.");
+      }
+
+      void dispatchExternalEvent({
+        event: {
+          eventName: "LeadSubmitted",
+          eventId: externalEventId,
+          eventTime,
+          eventSourceUrl,
+          leadId: lead.id,
+          attribution,
+          metadata: {
+            source: "lead_registration",
+            form_version: "v1",
+          },
         },
-        attribution,
-        userAgent,
+        server: true,
         ipAddress,
-      });
-    } catch {
-      console.error("Failed to track lead submission event.");
+        userAgent,
+      }).catch(() => undefined);
     }
 
     const cookieStore = await cookies();
@@ -156,6 +203,7 @@ export async function createLeadAction(
     return {
       success: true,
       leadId: lead.id,
+      externalEventId,
     };
   } catch {
     console.error("Failed to create lead: database insert error");

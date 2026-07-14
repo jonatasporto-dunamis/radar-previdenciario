@@ -43,7 +43,8 @@ O evento interno `LeadSubmitted` foi implementado para o cadastro inicial do lea
 ```json
 {
   "source": "lead_registration",
-  "version": 1
+  "version": 1,
+  "external_event_id": "rp_LeadSubmitted_uuid"
 }
 ```
 
@@ -70,7 +71,8 @@ Payload:
 {
   "source": "quiz",
   "flowSlug": "triagem-previdenciaria-inicial",
-  "flowVersion": 1
+  "flowVersion": 1,
+  "external_event_id": "rp_QuizStarted_uuid"
 }
 ```
 
@@ -104,13 +106,14 @@ Payload:
   "resultId": "uuid",
   "score": 75,
   "classification": "alto_potencial",
-  "potentialBenefit": "Aposentadoria"
+  "potentialBenefit": "Aposentadoria",
+  "external_event_id": "rp_QuizCompleted_uuid"
 }
 ```
 
-Todos os eventos do quiz são internos e gravados somente via servidor. A atribuição do lead é reaproveitada em `tracking_events`.
+Todos os eventos do quiz continuam registrados internamente via servidor. A atribuição do lead é reaproveitada em `tracking_events`.
 
-O evento é gravado após a persistência de `quiz_results` e conclusão da sessão. O payload contém apenas dados operacionais da triagem, sem enviar eventos para Meta, GA4 ou outras plataformas externas.
+`QuizCompleted` também pode acionar tracking externo com o mesmo `external_event_id`, mas o payload enviado para Meta, GA4 e GTM é sanitizado e não contém respostas, classificação, score ou benefício provável.
 
 ### ResultGenerated
 
@@ -144,11 +147,29 @@ Payload:
   "resultId": "uuid",
   "classification": "alto_potencial",
   "potentialBenefit": "Aposentadoria",
-  "source": "result_page"
+  "source": "result_page",
+  "external_event_id": "rp_ResultViewed_uuid"
 }
 ```
 
 Como `tracking_events` não possui coluna `result_id`, a deduplicação ocorre por `event_name` e `event_payload.resultId`. A chamada é feita por Server Action acionada por `ResultViewedTracker`, e um cookie HTTP-only por resultado evita novo evento em refresh simples da página.
+
+### QualifiedLead
+
+Registrado quando o Lead Qualification Pipeline considera o resultado notificável.
+
+Payload interno:
+
+```json
+{
+  "source": "qualification_pipeline",
+  "resultId": "uuid",
+  "qualified": true,
+  "external_event_id": "rp_QualifiedLead_uuid"
+}
+```
+
+O payload externo de `QualifiedLead` não inclui classificação, score, benefício, motivo de qualificação ou respostas. Ele envia somente metadados genéricos como `source` e `qualified`.
 
 ## Preservação de UTMs
 
@@ -162,7 +183,37 @@ A atribuição não é limpa após o cadastro porque é reutilizada nos eventos 
 
 Tracking interno significa persistir eventos próprios na tabela `tracking_events` do Supabase, via servidor.
 
-Integrações externas como Meta Pixel, Meta CAPI, GA4 e GTM ainda não foram implementadas. Nenhum evento externo é disparado nesta etapa.
+Tracking externo é desacoplado em `services/external-tracking/` e usa `dataLayer` como contrato central no navegador. Meta Pixel, Meta CAPI, GA4 e GTM nunca recebem respostas do quiz, classificação, score, benefício provável, renda, dados de saúde, nome, e-mail ou telefone em texto puro.
+
+Eventos externos implementados:
+
+- `PageView`
+- `LeadStarted`
+- `LeadSubmitted`
+- `QuizStarted`
+- `QuizCompleted`
+- `QualifiedLead`
+- `ResultViewed`
+- `WhatsAppClick`
+
+O `event_id` é salvo como `external_event_id` no payload do evento interno e reutilizado por Meta Pixel e Meta CAPI. Essa é a base da deduplicação browser/server.
+
+Mapeamento externo:
+
+| Evento          | Meta            | GA4               |
+| --------------- | --------------- | ----------------- |
+| `PageView`      | `PageView`      | `page_view`       |
+| `LeadStarted`   | `LeadStarted`   | `begin_lead_form` |
+| `LeadSubmitted` | `Lead`          | `generate_lead`   |
+| `QuizStarted`   | `QuizStarted`   | `quiz_started`    |
+| `QuizCompleted` | `QuizCompleted` | `quiz_completed`  |
+| `QualifiedLead` | `QualifiedLead` | `qualified_lead`  |
+| `ResultViewed`  | `ResultViewed`  | `result_viewed`   |
+| `WhatsAppClick` | `Contact`       | `whatsapp_click`  |
+
+`Lead`, `PageView` e `Contact` são eventos padrão Meta. Os demais eventos Meta são customizados. `page_view` e `generate_lead` são eventos recomendados GA4; os demais são customizados.
+
+O catálogo completo e o runbook operacional ficam em `docs/external-tracking.md`.
 
 ## Eventos de notificação
 

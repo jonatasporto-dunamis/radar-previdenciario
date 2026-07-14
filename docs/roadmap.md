@@ -8,6 +8,10 @@
 - Templates React Email.
 - Idempotência por payload hash.
 - Retry com backoff exponencial.
+- Tracking externo com Meta Pixel, Meta CAPI, GA4/GTM e dataLayer.
+- Consentimento de mensuração.
+- Delivery logs em `external_tracking_deliveries`.
+- Dry-run e test mode para validação segura.
 
 ## Próximas fases do quiz
 
@@ -26,6 +30,17 @@
 - Evoluir observabilidade de delivery.
 - Adicionar novos providers somente quando houver necessidade de produto.
 - Definir política operacional de retentativas manuais.
+
+## Próxima fase de tracking externo
+
+- Receber IDs reais de Meta Pixel, GA4 e GTM.
+- Configurar `META_CONVERSIONS_API_ACCESS_TOKEN` na Vercel.
+- Aplicar a migration `external_tracking_deliveries` no Supabase remoto.
+- Validar Meta Events Manager com Test Events.
+- Validar GA4 DebugView.
+- Validar GTM Preview e publicar container somente com autorização.
+- Definir se `generate_lead` e `qualified_lead` serão eventos principais.
+- Remover `META_TEST_EVENT_CODE` após validação.
 
 ## Fase SaaS
 

@@ -37,6 +37,9 @@ export default defineConfig({
       EMAIL_FROM_NAME: "Radar Previdenciario",
       EMAIL_FROM_ADDRESS: "no-reply@example.com",
       EMAIL_REPLY_TO: "reply@example.com",
+      NEXT_PUBLIC_TRACKING_ENABLED: "true",
+      NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED: "true",
+      EXTERNAL_TRACKING_DRY_RUN: "true",
     },
   },
   projects: [

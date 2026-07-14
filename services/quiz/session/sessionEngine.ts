@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createExternalEventId } from "@/services/external-tracking";
 import { trackEvent } from "@/services/tracking";
 import type { AttributionData } from "@/types/attribution";
 import type {
@@ -40,6 +41,7 @@ export type QuizSessionState = {
   answers: QuizAnswerMap;
   currentQuestionId: string;
   progress: QuizProgress;
+  quizStartedExternalEventId?: string;
 };
 
 function leadAttributionToTracking(lead: LeadRow): AttributionData {
@@ -93,7 +95,9 @@ async function trackQuizStarted(
   session: QuizSessionRow,
   flow: FlowDefinition,
   context: QuizRequestContext,
-) {
+): Promise<string | undefined> {
+  const externalEventId = createExternalEventId("QuizStarted");
+
   try {
     await trackEvent({
       leadId: lead.id,
@@ -103,13 +107,17 @@ async function trackQuizStarted(
         source: "quiz",
         flowSlug: flow.slug,
         flowVersion: flow.version,
+        external_event_id: externalEventId,
       },
       attribution: leadAttributionToTracking(lead),
       userAgent: context.userAgent ?? null,
       ipAddress: context.ipAddress ?? null,
     });
+
+    return externalEventId;
   } catch {
     console.error("Failed to track quiz started event.");
+    return undefined;
   }
 }
 
@@ -150,6 +158,7 @@ export async function getQuizSessionState(
 
   let session = existingSession;
   let createdSession = false;
+  let quizStartedExternalEventId: string | undefined;
 
   if (!session) {
     const { data: newSession, error: createSessionError } = await supabase
@@ -181,7 +190,12 @@ export async function getQuizSessionState(
   }
 
   if (createdSession) {
-    await trackQuizStarted(lead, session, flow, context);
+    quizStartedExternalEventId = await trackQuizStarted(
+      lead,
+      session,
+      flow,
+      context,
+    );
   }
 
   const { data: rows, error: answersError } = await supabase
@@ -211,6 +225,7 @@ export async function getQuizSessionState(
     answers,
     currentQuestionId,
     progress,
+    quizStartedExternalEventId,
   };
 }
 

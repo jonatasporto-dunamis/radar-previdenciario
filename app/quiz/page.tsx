@@ -76,6 +76,9 @@ export default async function QuizPage() {
               initialAnswers={sessionState.answers}
               initialProgress={sessionState.progress}
               initialQuestionId={sessionState.currentQuestionId}
+              quizStartedExternalEventId={
+                sessionState.quizStartedExternalEventId
+              }
               questions={sessionState.questions}
               sessionId={sessionState.session.id}
             />

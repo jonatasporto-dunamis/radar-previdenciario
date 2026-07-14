@@ -1,8 +1,12 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getOfficeConfig } from "@/services/configuration";
+import {
+  createExternalEventId,
+  dispatchExternalEvent,
+} from "@/services/external-tracking";
 import { qualifyLeadFromResult } from "@/services/qualification";
-import { trackEvent } from "@/services/tracking";
+import { trackEvent, trackEventOnce } from "@/services/tracking";
 import { notificationConfig } from "../config";
 import { EmailProvider } from "../providers";
 import {
@@ -21,6 +25,7 @@ import {
 } from "./payload";
 import { getNotificationIdempotencyDecision } from "./idempotency";
 import type { Database } from "@/types/supabase";
+import type { AttributionData } from "@/types/attribution";
 import type { QuizAnswerMap, QuizResultComputation } from "@/types/quiz";
 
 type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
@@ -64,6 +69,39 @@ async function getLeadForNotification(leadId: string): Promise<LeadRow | null> {
   return data;
 }
 
+function leadAttributionToTracking(lead: LeadRow): AttributionData {
+  return {
+    utmSource: lead.utm_source,
+    utmMedium: lead.utm_medium,
+    utmCampaign: lead.utm_campaign,
+    utmContent: lead.utm_content,
+    utmTerm: lead.utm_term,
+    fbclid: lead.fbclid,
+    gclid: lead.gclid,
+    campaignId: lead.campaign_id,
+    adsetId: lead.adset_id,
+    adId: lead.ad_id,
+    placement: lead.placement,
+    siteSourceName: lead.site_source_name,
+    referrer: lead.referrer,
+    landingPage: lead.landing_page,
+  };
+}
+
+function sanitizeEventSourceUrl(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return undefined;
+  }
+}
+
 async function trackNotificationQueued(input: {
   log: NotificationLogRow;
   sessionId: string;
@@ -96,6 +134,56 @@ async function trackNotificationIgnored(input: {
       reason: input.reason,
     },
   });
+}
+
+async function trackQualifiedLead(input: {
+  lead: LeadRow;
+  sessionId: string;
+  resultId: string;
+}): Promise<void> {
+  const externalEventId = createExternalEventId("QualifiedLead");
+  const attribution = leadAttributionToTracking(input.lead);
+  const tracked = await trackEventOnce({
+    leadId: input.lead.id,
+    sessionId: input.sessionId,
+    eventName: "QualifiedLead",
+    eventPayload: {
+      source: "qualification_pipeline",
+      resultId: input.resultId,
+      qualified: true,
+      external_event_id: externalEventId,
+    },
+    eventPayloadContains: {
+      resultId: input.resultId,
+    },
+    attribution,
+    userAgent: input.lead.user_agent,
+    ipAddress: input.lead.ip_address,
+  });
+
+  if (!tracked) {
+    return;
+  }
+
+  void dispatchExternalEvent({
+    event: {
+      eventName: "QualifiedLead",
+      eventId: externalEventId,
+      eventTime: Math.floor(Date.now() / 1000),
+      eventSourceUrl: sanitizeEventSourceUrl(input.lead.landing_page),
+      leadId: input.lead.id,
+      sessionId: input.sessionId,
+      resultId: input.resultId,
+      attribution,
+      metadata: {
+        source: "qualification_pipeline",
+        qualified: true,
+      },
+    },
+    server: true,
+    ipAddress: input.lead.ip_address,
+    userAgent: input.lead.user_agent,
+  }).catch(() => undefined);
 }
 
 export async function runLeadQualificationNotificationPipeline(
@@ -162,6 +250,16 @@ export async function runLeadQualificationNotificationPipeline(
         reason: qualification.reason,
         logId: log.id,
       };
+    }
+
+    try {
+      await trackQualifiedLead({
+        lead,
+        sessionId: input.sessionId,
+        resultId: input.result.id,
+      });
+    } catch {
+      console.error("Failed to track qualified lead event.");
     }
 
     const payload = buildLeadNotificationPayload({

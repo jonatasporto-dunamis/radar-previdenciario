@@ -25,6 +25,23 @@ export type TrackEventOnceInput = TrackEventInput & {
   eventPayloadContains?: Record<string, unknown>;
 };
 
+export type FindExternalTrackingEventIdInput = {
+  leadId?: string | null;
+  sessionId?: string | null;
+  eventName: TrackingEventName;
+  eventPayloadContains?: Record<string, unknown>;
+};
+
+function readExternalEventId(payload: Json | null): string | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  const value = payload.external_event_id;
+
+  return typeof value === "string" && value.startsWith("rp_") ? value : null;
+}
+
 export async function trackEvent(input: TrackEventInput): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const attribution = input.attribution ?? {};
@@ -92,4 +109,36 @@ export async function trackEventOnce(
   await trackEvent(input);
 
   return true;
+}
+
+export async function findExternalTrackingEventId(
+  input: FindExternalTrackingEventIdInput,
+): Promise<string | null> {
+  const supabase = createSupabaseAdminClient();
+  let query = supabase
+    .from("tracking_events")
+    .select("event_payload")
+    .eq("event_name", input.eventName)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (input.leadId) {
+    query = query.eq("lead_id", input.leadId);
+  }
+
+  if (input.sessionId) {
+    query = query.eq("session_id", input.sessionId);
+  }
+
+  if (input.eventPayloadContains) {
+    query = query.contains("event_payload", input.eventPayloadContains);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return readExternalEventId(data.event_payload);
 }

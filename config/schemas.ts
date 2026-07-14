@@ -139,10 +139,48 @@ export const themeConfigSchema = z.object({
   }),
 });
 
+const externalTrackingEventConfigSchema = z.object({
+  enabled: z.boolean(),
+  browser: z.boolean(),
+  server: z.boolean(),
+});
+
+export const trackingConfigSchema = z.object({
+  enabled: z.boolean(),
+  consentRequired: z.boolean(),
+  dryRun: z.boolean(),
+  meta: z.object({
+    enabled: z.boolean(),
+    pixelId: z.string().trim().optional(),
+    apiVersion: z.string().trim().min(1),
+    testEventCode: z.string().trim().optional(),
+    testMode: z.boolean(),
+  }),
+  ga4: z.object({
+    enabled: z.boolean(),
+    measurementId: z.string().trim().optional(),
+  }),
+  gtm: z.object({
+    enabled: z.boolean(),
+    containerId: z.string().trim().optional(),
+  }),
+  events: z.object({
+    PageView: externalTrackingEventConfigSchema,
+    LeadStarted: externalTrackingEventConfigSchema,
+    LeadSubmitted: externalTrackingEventConfigSchema,
+    QuizStarted: externalTrackingEventConfigSchema,
+    QuizCompleted: externalTrackingEventConfigSchema,
+    QualifiedLead: externalTrackingEventConfigSchema,
+    ResultViewed: externalTrackingEventConfigSchema,
+    WhatsAppClick: externalTrackingEventConfigSchema,
+  }),
+});
+
 export const appConfigSchema = z.object({
   brand: brandConfigSchema,
   office: officeConfigSchema,
   theme: themeConfigSchema,
   seo: seoConfigSchema,
   legal: legalConfigSchema,
+  tracking: trackingConfigSchema,
 });

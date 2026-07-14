@@ -16,6 +16,7 @@ import { ResultViewedTracker } from "@/components/tracking/ResultViewedTracker";
 import { Button } from "@/components/ui/button";
 import { getAppConfig } from "@/services/configuration";
 import { getLatestQuizResultForLead } from "@/services/quiz/results";
+import { findExternalTrackingEventId } from "@/services/tracking";
 
 export const metadata: Metadata = {
   title: "Resultado",
@@ -81,10 +82,21 @@ export default async function ResultadoPage() {
   const content = getResultContent(result.classification);
   const { Icon } = content;
   const disclaimer = result.ethical_disclaimer ?? config.legal.disclaimer;
+  const qualifiedLeadExternalEventId = await findExternalTrackingEventId({
+    leadId,
+    sessionId: result.session_id,
+    eventName: "QualifiedLead",
+    eventPayloadContains: {
+      resultId: result.id,
+    },
+  });
 
   return (
     <PageContainer>
-      <ResultViewedTracker resultId={result.id} />
+      <ResultViewedTracker
+        qualifiedLeadExternalEventId={qualifiedLeadExternalEventId}
+        resultId={result.id}
+      />
       <section className="py-section">
         <ContentContainer>
           <div className="mx-auto max-w-4xl">

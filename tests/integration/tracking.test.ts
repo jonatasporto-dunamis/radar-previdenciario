@@ -134,4 +134,37 @@ describe("tracking service", () => {
       }),
     ).rejects.toBeInstanceOf(TrackingServiceError);
   });
+
+  it("finds a persisted external event id for browser/server deduplication", async () => {
+    const supabaseMock = mockSupabase();
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createSupabaseAdminClient: () => supabaseMock.client,
+    }));
+    const { findExternalTrackingEventId } = await import("@/services/tracking");
+    supabaseMock.maybeSingle.mockResolvedValueOnce({
+      data: {
+        event_payload: {
+          resultId: "result-1",
+          external_event_id:
+            "rp_QualifiedLead_11111111-1111-4111-8111-111111111111",
+        },
+      },
+      error: null,
+    });
+
+    await expect(
+      findExternalTrackingEventId({
+        leadId: "lead-1",
+        sessionId: "session-1",
+        eventName: "QualifiedLead",
+        eventPayloadContains: {
+          resultId: "result-1",
+        },
+      }),
+    ).resolves.toBe("rp_QualifiedLead_11111111-1111-4111-8111-111111111111");
+
+    expect(supabaseMock.contains).toHaveBeenCalledWith("event_payload", {
+      resultId: "result-1",
+    });
+  });
 });

@@ -262,6 +262,67 @@ Segurança:
 
 Quando `RESEND_API_KEY` ou `OfficeConfig.email` estiverem incompletos, o provider retorna falha controlada, atualiza `notification_logs` e preserva a página de resultado.
 
+## External Tracking Architecture
+
+O tracking externo foi criado como camada desacoplada de componentes e regras de negócio:
+
+```text
+Business Event
+    ↓
+Internal Tracking
+    ↓
+External Tracking Orchestrator
+    ├── Browser Event
+    │   ├── dataLayer
+    │   ├── Meta Pixel
+    │   └── GA4 fallback
+    └── Server Event
+        └── Meta Conversions API
+```
+
+Camadas:
+
+- `config/tracking/`: flags, providers e mapeamento declarativo de eventos.
+- `types/tracking/`: contratos de evento, provider, canal, consentimento e delivery.
+- `lib/tracking/`: API browser para consentimento, dataLayer, Pixel, GA4 e deliveries best effort.
+- `components/tracking/`: scripts, banner de consentimento, page view e bridge de eventos server-to-client.
+- `services/external-tracking/event-id/`: criação e reutilização de `event_id`.
+- `services/external-tracking/payload/`: allowlist e sanitização de payload externo.
+- `services/external-tracking/providers/`: Meta Pixel, Meta CAPI, GA4 e GTM.
+- `services/external-tracking/orchestrator/`: seleção de provider, consentimento, delivery log, dry-run e retry.
+- `services/external-tracking/persistence/`: auditoria em `external_tracking_deliveries`.
+
+O navegador usa `dataLayer` como contrato central:
+
+```ts
+window.dataLayer.push({
+  event: "rp_external_event",
+  rp_event_name: eventName,
+  rp_event_id: eventId,
+  rp_event_time: eventTime,
+  rp_source: "radar_previdenciario",
+});
+```
+
+Componentes não chamam `fbq`, `gtag` ou `dataLayer.push` diretamente. Eventos de formulário, quiz, resultado e WhatsApp passam pela camada `lib/tracking`.
+
+Privacidade:
+
+- nenhuma resposta do quiz é enviada externamente;
+- classificação, score e benefício provável ficam fora de Meta/GA4/GTM;
+- e-mail e telefone só entram no CAPI server-side, normalizados e SHA-256;
+- token CAPI é server-only em `META_CONVERSIONS_API_ACCESS_TOKEN`;
+- consentimento é armazenado apenas como `granted` ou `denied`;
+- Do Not Track é respeitado como recusa quando não há decisão explícita.
+
+Deduplicação:
+
+O mesmo `external_event_id` é persistido em `tracking_events.event_payload`, retornado para o browser quando necessário e usado pelo Meta Pixel como `eventID` e pela CAPI como `event_id`.
+
+Observabilidade:
+
+`external_tracking_deliveries` registra status por provider/canal, tentativa, hash do payload sanitizado, timestamps e erro sanitizado. Browser delivery é best effort. CAPI tem retry limitado para 429 e 5xx.
+
 ## Quality Gate
 
 A camada de qualidade usa Vitest para testes unitários e de integração, Testing Library para componentes React e Playwright para E2E multi-browser.

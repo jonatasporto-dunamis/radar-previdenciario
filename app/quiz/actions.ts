@@ -2,6 +2,10 @@
 
 import { cookies, headers } from "next/headers";
 import { getLegalConfig } from "@/services/configuration";
+import {
+  createExternalEventId,
+  dispatchExternalEvent,
+} from "@/services/external-tracking";
 import { getQuestionsForFlow } from "@/services/quiz/engine";
 import { getQuizNavigationState } from "@/services/quiz/navigation";
 import { calculateQuizProgress } from "@/services/quiz/progress";
@@ -44,6 +48,7 @@ export type SaveQuizAnswerActionResult =
       navigation: QuizNavigationState;
       completed: boolean;
       resultId?: string;
+      externalEventId?: string;
       redirectTo?: "/resultado";
     }
   | {
@@ -214,6 +219,8 @@ export async function saveQuizAnswerAction(input: {
 
     const shouldComplete = progress.isComplete && navigation.isLastQuestion;
     let resultId: string | undefined;
+    let quizCompletedExternalEventId: string | undefined;
+    let quizCompletedTracked = false;
 
     if (shouldComplete) {
       const legal = await getLegalConfig();
@@ -246,9 +253,10 @@ export async function saveQuizAnswerAction(input: {
       }
 
       await completeQuizSession(session.id);
+      quizCompletedExternalEventId = createExternalEventId("QuizCompleted");
 
       try {
-        await trackEventOnce({
+        quizCompletedTracked = await trackEventOnce({
           leadId,
           sessionId: session.id,
           eventName: "QuizCompleted",
@@ -260,6 +268,7 @@ export async function saveQuizAnswerAction(input: {
             score: computedResult.score,
             classification: computedResult.classification,
             potentialBenefit: computedResult.potentialBenefit,
+            external_event_id: quizCompletedExternalEventId,
           },
           eventPayloadContains: {
             resultId,
@@ -270,6 +279,26 @@ export async function saveQuizAnswerAction(input: {
         });
       } catch {
         console.error("Failed to track quiz completed event.");
+      }
+
+      if (quizCompletedTracked) {
+        void dispatchExternalEvent({
+          event: {
+            eventName: "QuizCompleted",
+            eventId: quizCompletedExternalEventId,
+            eventTime: Math.floor(Date.now() / 1000),
+            leadId,
+            sessionId: session.id,
+            resultId,
+            attribution,
+            metadata: {
+              source: "quiz",
+            },
+          },
+          server: true,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        }).catch(() => undefined);
       }
 
       await runLeadQualificationNotificationPipeline({
@@ -291,6 +320,9 @@ export async function saveQuizAnswerAction(input: {
       navigation,
       completed: shouldComplete,
       resultId,
+      externalEventId: quizCompletedTracked
+        ? quizCompletedExternalEventId
+        : undefined,
       redirectTo: shouldComplete ? "/resultado" : undefined,
     };
   } catch {

@@ -3,6 +3,10 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { buildThemeCss } from "@/config/theme";
 import { AttributionCapture } from "@/components/tracking/AttributionCapture";
+import { TrackingConsentBanner } from "@/components/tracking/TrackingConsentBanner";
+import { TrackingPageView } from "@/components/tracking/TrackingPageView";
+import { TrackingProvider } from "@/components/tracking/TrackingProvider";
+import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { FloatingWhatsApp } from "@/components/common/floating-whatsapp";
@@ -10,7 +14,9 @@ import {
   getBrandConfig,
   getSeoConfig,
   getThemeConfig,
+  getTrackingConfig,
 } from "@/services/configuration";
+import type { PublicTrackingConfig } from "@/lib/tracking";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -70,8 +76,37 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const theme = await getThemeConfig();
+  const [theme, tracking] = await Promise.all([
+    getThemeConfig(),
+    getTrackingConfig(),
+  ]);
   const themeCss = buildThemeCss(theme);
+  const publicTrackingConfig: PublicTrackingConfig = {
+    enabled: tracking.enabled,
+    consentRequired: tracking.consentRequired,
+    meta: {
+      enabled: tracking.meta.enabled,
+      pixelId: tracking.meta.pixelId,
+    },
+    ga4: {
+      enabled: tracking.ga4.enabled,
+      measurementId: tracking.ga4.measurementId,
+    },
+    gtm: {
+      enabled: tracking.gtm.enabled,
+      containerId: tracking.gtm.containerId,
+    },
+    events: {
+      PageView: tracking.events.PageView,
+      LeadStarted: tracking.events.LeadStarted,
+      LeadSubmitted: tracking.events.LeadSubmitted,
+      QuizStarted: tracking.events.QuizStarted,
+      QuizCompleted: tracking.events.QuizCompleted,
+      QualifiedLead: tracking.events.QualifiedLead,
+      ResultViewed: tracking.events.ResultViewed,
+      WhatsAppClick: tracking.events.WhatsAppClick,
+    },
+  };
 
   return (
     <html lang="pt-BR">
@@ -85,20 +120,25 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground min-h-svh font-sans antialiased`}
       >
-        <a className="skip-link" href="#conteudo">
-          Ir para o conteúdo principal
-        </a>
-        <Suspense fallback={null}>
-          <AttributionCapture />
-        </Suspense>
-        <div className="flex min-h-svh flex-col">
-          <Header />
-          <main id="conteudo" className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </div>
-        <FloatingWhatsApp />
+        <TrackingProvider config={publicTrackingConfig}>
+          <TrackingScripts />
+          <TrackingPageView />
+          <a className="skip-link" href="#conteudo">
+            Ir para o conteúdo principal
+          </a>
+          <Suspense fallback={null}>
+            <AttributionCapture />
+          </Suspense>
+          <div className="flex min-h-svh flex-col">
+            <Header />
+            <main id="conteudo" className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </div>
+          <FloatingWhatsApp />
+          <TrackingConsentBanner />
+        </TrackingProvider>
       </body>
     </html>
   );

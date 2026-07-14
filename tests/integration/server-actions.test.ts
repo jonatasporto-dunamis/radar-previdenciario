@@ -18,12 +18,18 @@ describe("server actions", () => {
       reused: false,
     });
     const trackEvent = vi.fn().mockResolvedValue(undefined);
+    const dispatchExternalEvent = vi.fn().mockResolvedValue(undefined);
     vi.doMock("next/headers", () => ({
       cookies: () => Promise.resolve(cookiesStore),
       headers: () => Promise.resolve(headersStore),
     }));
     vi.doMock("@/services/leads", () => ({ createLead }));
     vi.doMock("@/services/tracking", () => ({ trackEvent }));
+    vi.doMock("@/services/external-tracking", () => ({
+      createExternalEventId: () =>
+        "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
+      dispatchExternalEvent,
+    }));
     const { createLeadAction } = await import("@/app/cadastro/actions");
 
     const result = await createLeadAction({
@@ -37,11 +43,26 @@ describe("server actions", () => {
       },
     });
 
-    expect(result).toEqual({ success: true, leadId: "lead-1" });
+    expect(result).toEqual({
+      success: true,
+      leadId: "lead-1",
+      externalEventId: "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
+    });
     expect(trackEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         leadId: "lead-1",
         eventName: "LeadSubmitted",
+        eventPayload: expect.objectContaining({
+          external_event_id:
+            "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
+        }),
+      }),
+    );
+    expect(dispatchExternalEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          eventId: "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
+        }),
       }),
     );
     expect(cookiesStore.set).toHaveBeenCalledWith(
@@ -99,10 +120,15 @@ describe("server actions", () => {
     vi.doMock("@/services/quiz/session", () => ({
       getLeadAttribution,
     }));
+    vi.doMock("@/services/external-tracking", () => ({
+      createExternalEventId: () =>
+        "rp_ResultViewed_11111111-1111-4111-8111-111111111111",
+    }));
     const { trackResultViewedAction } = await import("@/app/resultado/actions");
 
     await expect(trackResultViewedAction("result-1")).resolves.toEqual({
       success: true,
+      externalEventId: "rp_ResultViewed_11111111-1111-4111-8111-111111111111",
     });
 
     expect(trackResultViewedOnce).toHaveBeenCalledWith(
@@ -111,6 +137,7 @@ describe("server actions", () => {
         sessionId: "session-1",
         resultId: "result-1",
         classification: "alto_potencial",
+        externalEventId: "rp_ResultViewed_11111111-1111-4111-8111-111111111111",
       }),
     );
     expect(cookiesStore.set).toHaveBeenCalledWith(

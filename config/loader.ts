@@ -4,6 +4,7 @@ import { defaultLegalConfig } from "@/config/legal/default";
 import { defaultOfficeConfig } from "@/config/office/default";
 import { defaultSeoConfig } from "@/config/seo/default";
 import { defaultThemeConfig } from "@/config/theme/default";
+import { defaultTrackingConfig } from "@/config/tracking/default";
 import type { AppConfig, ConfigurationContext } from "@/types/configuration";
 import {
   appConfigSchema,
@@ -12,6 +13,7 @@ import {
   officeConfigSchema,
   seoConfigSchema,
   themeConfigSchema,
+  trackingConfigSchema,
 } from "./schemas";
 
 function parseDomainConfig<T>(
@@ -43,6 +45,11 @@ export async function loadLocalConfig(
     theme: parseDomainConfig("theme", themeConfigSchema, defaultThemeConfig),
     seo: parseDomainConfig("seo", seoConfigSchema, defaultSeoConfig),
     legal: parseDomainConfig("legal", legalConfigSchema, defaultLegalConfig),
+    tracking: parseDomainConfig(
+      "tracking",
+      trackingConfigSchema,
+      defaultTrackingConfig,
+    ),
   };
 
   try {

@@ -7,7 +7,10 @@ import {
   persistQuizSessionCookieAction,
   saveQuizAnswerAction,
 } from "@/app/quiz/actions";
+import { ExternalEventBridge } from "@/components/tracking/ExternalEventBridge";
+import { useTrackingConfig } from "@/components/tracking/TrackingProvider";
 import { Button } from "@/components/ui/button";
+import { dispatchBrowserExternalEvent } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 import { getVisibleQuestions } from "@/services/quiz/engine/questionEngine";
 import { getQuizNavigationState } from "@/services/quiz/navigation/navigationEngine";
@@ -28,6 +31,7 @@ type QuizExperienceProps = {
   initialQuestionId: string;
   initialProgress: QuizProgress;
   disclaimer: string;
+  quizStartedExternalEventId?: string;
 };
 
 function isEmptyAnswer(value: QuestionAnswerValue): boolean {
@@ -72,8 +76,10 @@ export function QuizExperience({
   initialQuestionId,
   initialProgress,
   disclaimer,
+  quizStartedExternalEventId,
 }: QuizExperienceProps) {
   const router = useRouter();
+  const trackingConfig = useTrackingConfig();
   const [answers, setAnswers] = useState<QuizAnswerMap>(initialAnswers);
   const [values, setValues] = useState(getInitialValues(initialAnswers));
   const [savedFingerprints, setSavedFingerprints] = useState(
@@ -170,6 +176,20 @@ export function QuizExperience({
       setSaveState("saved");
 
       if (result.completed) {
+        if (result.externalEventId) {
+          dispatchBrowserExternalEvent({
+            config: trackingConfig,
+            eventName: "QuizCompleted",
+            eventId: result.externalEventId,
+            sessionId,
+            resultId: result.resultId,
+            metadata: {
+              source: "quiz",
+            },
+            scope: sessionId,
+          });
+        }
+
         router.replace(result.redirectTo ?? "/resultado");
         setCompleted(true);
         return;
@@ -227,6 +247,20 @@ export function QuizExperience({
 
   return (
     <div className="bg-card shadow-card mt-10 rounded-xl border p-6">
+      {quizStartedExternalEventId ? (
+        <ExternalEventBridge
+          events={[
+            {
+              eventName: "QuizStarted",
+              eventId: quizStartedExternalEventId,
+              sessionId,
+              metadata: {
+                source: "quiz",
+              },
+            },
+          ]}
+        />
+      ) : null}
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between gap-4 text-sm">
           <span className="text-muted-foreground">

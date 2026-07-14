@@ -4,3 +4,4 @@ export * from "./getOfficeConfig";
 export * from "./getThemeConfig";
 export * from "./getSeoConfig";
 export * from "./getLegalConfig";
+export * from "./getTrackingConfig";
