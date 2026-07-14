@@ -111,4 +111,42 @@ describe("notification retry", () => {
     });
     expect(failed).toHaveBeenCalledOnce();
   });
+
+  it("encerra erro temporario apos o limite maximo de tentativas", async () => {
+    const provider: NotificationProvider = {
+      id: "email",
+      validate: vi.fn(),
+      health: vi.fn(),
+      send: vi.fn().mockResolvedValue({
+        ok: false,
+        temporary: true,
+        error: "timeout",
+      }),
+    };
+    const retrying = vi.fn().mockResolvedValue(log);
+    const failed = vi.fn().mockResolvedValue(log);
+    const dispatcher = new NotificationDispatcher({
+      delay: vi.fn().mockResolvedValue(undefined),
+      markProcessing: vi.fn().mockResolvedValue(log),
+      markRetrying: retrying,
+      markFailed: failed,
+      markSent: vi.fn().mockResolvedValue(log),
+      track: vi.fn().mockResolvedValue(undefined),
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        log,
+        provider,
+        providerInput,
+      }),
+    ).resolves.toMatchObject({
+      status: "failed",
+      attempt: 3,
+      error: "timeout",
+    });
+    expect(provider.send).toHaveBeenCalledTimes(3);
+    expect(retrying).toHaveBeenCalledTimes(2);
+    expect(failed).toHaveBeenCalledOnce();
+  });
 });

@@ -113,10 +113,10 @@ describe("ResendProvider", () => {
     });
   });
 
-  it("marca erro 5xx como temporario para retry", async () => {
+  it("marca erro 500 como temporario para retry", async () => {
     const fetcher = vi.fn().mockResolvedValue(
-      new Response("service unavailable", {
-        status: 503,
+      new Response("internal server error", {
+        status: 500,
       }),
     );
     const provider = new ResendProvider({
@@ -129,6 +129,41 @@ describe("ResendProvider", () => {
     await expect(provider.send(providerInput)).resolves.toMatchObject({
       ok: false,
       temporary: true,
+    });
+  });
+
+  it("marca erro 429 como temporario para retry", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response("rate limited", {
+        status: 429,
+      }),
+    );
+    const provider = new ResendProvider({
+      dryRun: false,
+      apiKey: "resend-secret",
+      fetcher,
+      loadOfficeConfig: async () => officeConfig,
+    });
+
+    await expect(provider.send(providerInput)).resolves.toMatchObject({
+      ok: false,
+      temporary: true,
+    });
+  });
+
+  it("marca timeout do provider como erro temporario", async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error("timeout"));
+    const provider = new ResendProvider({
+      dryRun: false,
+      apiKey: "resend-secret",
+      fetcher,
+      loadOfficeConfig: async () => officeConfig,
+    });
+
+    await expect(provider.send(providerInput)).resolves.toMatchObject({
+      ok: false,
+      temporary: true,
+      error: "timeout",
     });
   });
 

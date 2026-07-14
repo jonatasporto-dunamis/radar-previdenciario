@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ const genericFormError =
 export function LeadRegistrationForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isHydrated, setIsHydrated] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -41,6 +42,10 @@ export function LeadRegistrationForm() {
   });
 
   const phoneValue = watch("phone");
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   function onSubmit(values: LeadFormInput) {
     setFormError(null);
@@ -76,6 +81,7 @@ export function LeadRegistrationForm() {
   return (
     <form
       className="bg-card shadow-card mt-10 rounded-xl border p-6"
+      method="post"
       noValidate
       onSubmit={handleSubmit(onSubmit)}
     >
@@ -212,7 +218,7 @@ export function LeadRegistrationForm() {
 
         <PrimaryButton
           className="w-full sm:w-fit"
-          disabled={isPending}
+          disabled={isPending || !isHydrated}
           size="lg"
         >
           {isPending ? (
