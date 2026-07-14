@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockCookies, mockHeaders } from "@/tests/helpers";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 
 describe("server actions", () => {
   beforeEach(() => {
@@ -25,6 +26,13 @@ describe("server actions", () => {
     }));
     vi.doMock("@/services/leads", () => ({ createLead }));
     vi.doMock("@/services/tracking", () => ({ trackEvent }));
+    vi.doMock("@/services/tenants", () => ({
+      getTenantContext: () =>
+        Promise.resolve({
+          tenantId: TEST_TENANT_ID,
+          slug: "resende-advogados",
+        }),
+    }));
     vi.doMock("@/services/external-tracking", () => ({
       createExternalEventId: () =>
         "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
@@ -51,6 +59,7 @@ describe("server actions", () => {
     expect(trackEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
         eventName: "LeadSubmitted",
         eventPayload: expect.objectContaining({
           external_event_id:
@@ -62,6 +71,7 @@ describe("server actions", () => {
       expect.objectContaining({
         event: expect.objectContaining({
           eventId: "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
+          tenantId: TEST_TENANT_ID,
         }),
       }),
     );
@@ -120,6 +130,13 @@ describe("server actions", () => {
     vi.doMock("@/services/quiz/session", () => ({
       getLeadAttribution,
     }));
+    vi.doMock("@/services/tenants", () => ({
+      getTenantContext: () =>
+        Promise.resolve({
+          tenantId: TEST_TENANT_ID,
+          slug: "resende-advogados",
+        }),
+    }));
     vi.doMock("@/services/external-tracking", () => ({
       createExternalEventId: () =>
         "rp_ResultViewed_11111111-1111-4111-8111-111111111111",
@@ -134,6 +151,7 @@ describe("server actions", () => {
     expect(trackResultViewedOnce).toHaveBeenCalledWith(
       expect.objectContaining({
         leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
         sessionId: "session-1",
         resultId: "result-1",
         classification: "alto_potencial",

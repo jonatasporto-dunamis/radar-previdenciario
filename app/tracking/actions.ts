@@ -4,6 +4,7 @@ import { createHash } from "crypto";
 import { getTrackingConfig } from "@/services/configuration";
 import { resolveTrackingConsent } from "@/services/external-tracking/consent";
 import { createDeliveryLog } from "@/services/external-tracking/persistence";
+import { getTenantContext } from "@/services/tenants";
 import type {
   ExternalTrackingEventName,
   ExternalTrackingProvider,
@@ -28,7 +29,8 @@ function hashPayload(value: string): string {
 export async function recordBrowserExternalDeliveryAction(
   input: RecordBrowserExternalDeliveryInput,
 ): Promise<{ success: true } | { success: false }> {
-  const config = await getTrackingConfig();
+  const tenantContext = await getTenantContext();
+  const config = await getTrackingConfig(tenantContext);
   const consent = await resolveTrackingConsent();
 
   if (
@@ -42,6 +44,7 @@ export async function recordBrowserExternalDeliveryAction(
   await Promise.all(
     input.providers.map((provider) =>
       createDeliveryLog({
+        tenant_id: tenantContext.tenantId,
         lead_id: input.leadId ?? null,
         session_id: input.sessionId ?? null,
         result_id: input.resultId ?? null,

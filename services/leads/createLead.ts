@@ -12,15 +12,20 @@ export class LeadServiceError extends Error {
   }
 }
 
+export type CreateLeadServiceInput = CreateLeadInput & {
+  tenantId: string;
+};
+
 export type CreateLeadServiceResult = {
   id: string;
   reused: boolean;
 };
 
-function toLeadInsert(input: CreateLeadInput) {
+function toLeadInsert(input: CreateLeadServiceInput) {
   const attribution: AttributionData = input.attribution ?? {};
 
   return {
+    tenant_id: input.tenantId,
     full_name: input.fullName,
     email: input.email,
     phone: input.phone,
@@ -45,7 +50,7 @@ function toLeadInsert(input: CreateLeadInput) {
 }
 
 export async function createLead(
-  input: CreateLeadInput,
+  input: CreateLeadServiceInput,
 ): Promise<CreateLeadServiceResult> {
   const supabase = createSupabaseAdminClient();
   const dedupeThreshold = new Date(
@@ -55,6 +60,7 @@ export async function createLead(
   const { data: existingLead, error: lookupError } = await supabase
     .from("leads")
     .select("id")
+    .eq("tenant_id", input.tenantId)
     .eq("phone", input.phone)
     .gte("created_at", dedupeThreshold)
     .order("created_at", { ascending: false })

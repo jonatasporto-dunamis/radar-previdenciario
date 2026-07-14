@@ -7,6 +7,7 @@ import type { ExternalTrackingEventName } from "./external-events";
 
 export type ExternalTrackingDelivery = {
   id: string;
+  tenant_id: string;
   tracking_event_id: string | null;
   lead_id: string | null;
   session_id: string | null;

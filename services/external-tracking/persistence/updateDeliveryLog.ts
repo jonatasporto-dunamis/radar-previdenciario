@@ -4,16 +4,18 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { externalTrackingDeliveryUpdateSchema } from "@/lib/validations/external-tracking";
 import type { ExternalTrackingDelivery } from "@/types/tracking";
 
-export async function updateDeliveryLog(
-  id: string,
-  input: z.input<typeof externalTrackingDeliveryUpdateSchema>,
-): Promise<ExternalTrackingDelivery | null> {
+export async function updateDeliveryLog(input: {
+  tenantId: string;
+  id: string;
+  values: z.input<typeof externalTrackingDeliveryUpdateSchema>;
+}): Promise<ExternalTrackingDelivery | null> {
   const supabase = createSupabaseAdminClient();
-  const payload = externalTrackingDeliveryUpdateSchema.parse(input);
+  const payload = externalTrackingDeliveryUpdateSchema.parse(input.values);
   const { data, error } = await supabase
     .from("external_tracking_deliveries")
     .update(payload)
-    .eq("id", id)
+    .eq("tenant_id", input.tenantId)
+    .eq("id", input.id)
     .select("*")
     .single();
 

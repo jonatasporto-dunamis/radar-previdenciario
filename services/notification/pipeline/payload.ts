@@ -137,6 +137,7 @@ export function buildLeadNotificationPayload({
 }
 
 export function computeNotificationPayloadHash(input: {
+  tenantId: string;
   provider: NotificationProvider;
   recipient: string;
   leadId: string;

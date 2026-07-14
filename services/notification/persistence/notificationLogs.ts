@@ -21,6 +21,7 @@ export class NotificationLogPersistenceError extends Error {
 }
 
 export async function findNotificationLogByPayloadHash(input: {
+  tenantId: string;
   provider: NotificationProvider;
   payloadHash: string;
 }): Promise<NotificationLogRow | null> {
@@ -28,6 +29,7 @@ export async function findNotificationLogByPayloadHash(input: {
   const { data, error } = await supabase
     .from("notification_logs")
     .select("*")
+    .eq("tenant_id", input.tenantId)
     .eq("provider", input.provider)
     .eq("payload_hash", input.payloadHash)
     .order("created_at", { ascending: false })
@@ -64,6 +66,7 @@ export async function createNotificationLog(
 }
 
 export async function updateNotificationLog(
+  tenantId: string,
   id: string,
   input: NotificationLogUpdateInput,
 ): Promise<NotificationLogRow> {
@@ -72,6 +75,7 @@ export async function updateNotificationLog(
   const { data, error } = await supabase
     .from("notification_logs")
     .update(payload)
+    .eq("tenant_id", tenantId)
     .eq("id", id)
     .select("*")
     .single();
@@ -86,10 +90,11 @@ export async function updateNotificationLog(
 }
 
 export async function markNotificationProcessing(input: {
+  tenantId: string;
   logId: string;
   attempt: number;
 }): Promise<NotificationLogRow> {
-  return updateNotificationLog(input.logId, {
+  return updateNotificationLog(input.tenantId, input.logId, {
     status: "processing",
     attempt: input.attempt,
     processing_started_at: new Date().toISOString(),
@@ -97,9 +102,10 @@ export async function markNotificationProcessing(input: {
 }
 
 export async function markNotificationSent(
+  tenantId: string,
   logId: string,
 ): Promise<NotificationLogRow> {
-  return updateNotificationLog(logId, {
+  return updateNotificationLog(tenantId, logId, {
     status: "sent",
     sent_at: new Date().toISOString(),
     failed_at: null,
@@ -109,13 +115,14 @@ export async function markNotificationSent(
 }
 
 export async function markNotificationRetrying(input: {
+  tenantId: string;
   logId: string;
   attempt: number;
   error: unknown;
 }): Promise<NotificationLogRow> {
   const message = sanitizeErrorMessage(input.error);
 
-  return updateNotificationLog(input.logId, {
+  return updateNotificationLog(input.tenantId, input.logId, {
     status: "retrying",
     attempt: input.attempt,
     failed_at: new Date().toISOString(),
@@ -125,13 +132,14 @@ export async function markNotificationRetrying(input: {
 }
 
 export async function markNotificationFailed(input: {
+  tenantId: string;
   logId: string;
   attempt: number;
   error: unknown;
 }): Promise<NotificationLogRow> {
   const message = sanitizeErrorMessage(input.error);
 
-  return updateNotificationLog(input.logId, {
+  return updateNotificationLog(input.tenantId, input.logId, {
     status: "failed",
     attempt: input.attempt,
     failed_at: new Date().toISOString(),
@@ -141,10 +149,11 @@ export async function markNotificationFailed(input: {
 }
 
 export async function markNotificationIgnored(input: {
+  tenantId: string;
   logId: string;
   reason: string;
 }): Promise<NotificationLogRow> {
-  return updateNotificationLog(input.logId, {
+  return updateNotificationLog(input.tenantId, input.logId, {
     status: "ignored",
     last_error: sanitizeErrorMessage(input.reason),
   });

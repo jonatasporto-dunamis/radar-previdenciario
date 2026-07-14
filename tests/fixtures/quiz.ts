@@ -9,6 +9,7 @@ import type {
   QuizAnswerMap,
   QuizStoredAnswer,
 } from "@/types/quiz";
+import { TEST_TENANT_ID } from "./tenant";
 
 const createdAt = "2026-07-12T12:00:00.000Z";
 
@@ -109,6 +110,7 @@ export function createQuizSessionFixture(
 ): QuizSession {
   return {
     id: "session-fixture-001",
+    tenant_id: TEST_TENANT_ID,
     lead_id: "lead-fixture-001",
     status: "started",
     started_at: createdAt,
@@ -124,6 +126,7 @@ export function createQuizAnswerRowFixture(
 ): QuizAnswer {
   return {
     id: "answer-fixture-001",
+    tenant_id: TEST_TENANT_ID,
     session_id: "session-fixture-001",
     lead_id: "lead-fixture-001",
     question_id: "interest",
@@ -141,6 +144,7 @@ export function createResultFixture(
 ): QuizResult {
   return {
     id: "result-fixture-001",
+    tenant_id: TEST_TENANT_ID,
     session_id: "session-fixture-001",
     lead_id: "lead-fixture-001",
     potential_benefit: "Aposentadoria",
@@ -159,6 +163,7 @@ export function createTrackingFixture(
 ): TrackingEvent {
   return {
     id: "tracking-fixture-001",
+    tenant_id: TEST_TENANT_ID,
     lead_id: "lead-fixture-001",
     session_id: "session-fixture-001",
     event_name: "ResultGenerated",

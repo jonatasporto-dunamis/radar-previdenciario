@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 
 const trackEventOnce = vi.hoisted(() => vi.fn());
 
@@ -17,6 +18,7 @@ describe("Result tracking helpers", () => {
       await import("@/services/quiz/results/resultTracking");
 
     await trackResultGeneratedOnce({
+      tenantId: TEST_TENANT_ID,
       leadId: "lead-1",
       sessionId: "session-1",
       resultId: "result-1",
@@ -36,6 +38,7 @@ describe("Result tracking helpers", () => {
     expect(trackEventOnce).toHaveBeenCalledWith(
       expect.objectContaining({
         leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
         sessionId: "session-1",
         eventName: "ResultGenerated",
         eventPayload: {
@@ -53,6 +56,7 @@ describe("Result tracking helpers", () => {
       await import("@/services/quiz/results/resultTracking");
 
     await trackResultViewedOnce({
+      tenantId: TEST_TENANT_ID,
       leadId: "lead-1",
       sessionId: "session-1",
       resultId: "result-1",

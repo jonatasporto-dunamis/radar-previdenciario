@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { buildThemeCss } from "@/config/theme";
 import { AttributionCapture } from "@/components/tracking/AttributionCapture";
@@ -16,6 +17,7 @@ import {
   getThemeConfig,
   getTrackingConfig,
 } from "@/services/configuration";
+import { getTenantContext } from "@/services/tenants";
 import type { PublicTrackingConfig } from "@/lib/tracking";
 import "./globals.css";
 
@@ -30,7 +32,14 @@ const geistMono = Geist_Mono({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [brand, seo] = await Promise.all([getBrandConfig(), getSeoConfig()]);
+  const requestHeaders = await headers();
+  const hostname =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const tenantContext = await getTenantContext({ hostname });
+  const [brand, seo] = await Promise.all([
+    getBrandConfig(tenantContext),
+    getSeoConfig(tenantContext),
+  ]);
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     brand.website ||
@@ -76,9 +85,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const hostname =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const tenantContext = await getTenantContext({ hostname });
   const [theme, tracking] = await Promise.all([
-    getThemeConfig(),
-    getTrackingConfig(),
+    getThemeConfig(tenantContext),
+    getTrackingConfig(tenantContext),
   ]);
   const themeCss = buildThemeCss(theme);
   const publicTrackingConfig: PublicTrackingConfig = {

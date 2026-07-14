@@ -50,6 +50,7 @@ O evento interno `LeadSubmitted` foi implementado para o cadastro inicial do lea
 
 Campos persistidos no evento:
 
+- `tenant_id`
 - `lead_id`
 - `event_name`
 - `event_payload`
@@ -214,6 +215,12 @@ Mapeamento externo:
 `Lead`, `PageView` e `Contact` são eventos padrão Meta. Os demais eventos Meta são customizados. `page_view` e `generate_lead` são eventos recomendados GA4; os demais são customizados.
 
 O catálogo completo e o runbook operacional ficam em `docs/external-tracking.md`.
+
+## Tracking por tenant
+
+`tracking_events` e `external_tracking_deliveries` possuem `tenant_id` obrigatório. Eventos internos, deliveries browser e deliveries server-side são filtrados por tenant para evitar colisões entre escritórios.
+
+`tenant_tracking_configs` controla flags e IDs públicos por tenant. Tokens como Meta CAPI são lidos por `tenant_secrets` ou, apenas para o tenant padrão no MVP, por fallback server-only de ambiente.
 
 ## Eventos de notificação
 

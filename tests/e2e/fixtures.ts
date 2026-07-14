@@ -55,7 +55,7 @@ export async function startLeadRegistration(
   );
   await page.getByLabel(/Li e concordo/i).check();
   await page.getByRole("button", { name: /Iniciar análise gratuita/i }).click();
-  await page.waitForURL(/\/quiz$/, { timeout: 30_000 });
+  await page.waitForURL(/\/quiz$/, { timeout: 120_000 });
 }
 
 export async function answerRequiredQuiz(

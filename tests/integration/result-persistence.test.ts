@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockSupabase } from "@/tests/mocks/supabase";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 
 describe("result persistence", () => {
   beforeEach(() => {
@@ -16,6 +17,7 @@ describe("result persistence", () => {
     supabaseMock.single.mockResolvedValueOnce({
       data: {
         id: "result-1",
+        tenant_id: TEST_TENANT_ID,
         session_id: "session-1",
         lead_id: "lead-1",
         potential_benefit: "Aposentadoria",
@@ -30,6 +32,7 @@ describe("result persistence", () => {
 
     await expect(
       persistQuizResult({
+        tenantId: TEST_TENANT_ID,
         leadId: "lead-1",
         sessionId: "session-1",
         result: {
@@ -49,6 +52,7 @@ describe("result persistence", () => {
     expect(supabaseMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         session_id: "session-1",
+        tenant_id: TEST_TENANT_ID,
         lead_id: "lead-1",
         score: 90,
       }),
@@ -68,10 +72,13 @@ describe("result persistence", () => {
       error: null,
     });
 
-    await expect(getLatestQuizResultForLead("lead-1")).resolves.toEqual({
+    await expect(
+      getLatestQuizResultForLead(TEST_TENANT_ID, "lead-1"),
+    ).resolves.toEqual({
       id: "result-1",
     });
 
+    expect(supabaseMock.eq).toHaveBeenCalledWith("tenant_id", TEST_TENANT_ID);
     expect(supabaseMock.eq).toHaveBeenCalledWith("lead_id", "lead-1");
     expect(supabaseMock.order).toHaveBeenCalledWith("created_at", {
       ascending: false,
@@ -90,12 +97,17 @@ describe("result persistence", () => {
     });
 
     await expect(
-      getQuizResultForLead({ leadId: "lead-1", resultId: "result-1" }),
+      getQuizResultForLead({
+        tenantId: TEST_TENANT_ID,
+        leadId: "lead-1",
+        resultId: "result-1",
+      }),
     ).resolves.toEqual({
       id: "result-1",
       lead_id: "lead-1",
     });
 
+    expect(supabaseMock.eq).toHaveBeenCalledWith("tenant_id", TEST_TENANT_ID);
     expect(supabaseMock.eq).toHaveBeenCalledWith("id", "result-1");
     expect(supabaseMock.eq).toHaveBeenCalledWith("lead_id", "lead-1");
   });
@@ -117,6 +129,7 @@ describe("result persistence", () => {
 
     await expect(
       persistQuizResult({
+        tenantId: TEST_TENANT_ID,
         leadId: "lead-1",
         sessionId: "session-1",
         result: {
@@ -135,8 +148,8 @@ describe("result persistence", () => {
       error: { message: "failure" },
     });
 
-    await expect(getLatestQuizResultForLead("lead-1")).rejects.toBeInstanceOf(
-      QuizResultPersistenceError,
-    );
+    await expect(
+      getLatestQuizResultForLead(TEST_TENANT_ID, "lead-1"),
+    ).rejects.toBeInstanceOf(QuizResultPersistenceError);
   });
 });

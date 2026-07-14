@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 
 type Row = Record<string, unknown>;
 type TableName =
+  | "tenants"
+  | "tenant_domains"
+  | "tenant_tracking_configs"
+  | "tenant_secrets"
   | "leads"
   | "quiz_sessions"
   | "quiz_answers"
@@ -11,8 +15,14 @@ type TableName =
   | "external_tracking_deliveries";
 
 const now = () => new Date().toISOString();
+const DEFAULT_TENANT_ID = "00000000-0000-4000-8000-000000000001";
+const DEFAULT_TIMESTAMP = "2026-07-14T00:00:00.000Z";
 
 const store: Record<TableName, Row[]> = {
+  tenants: [],
+  tenant_domains: [],
+  tenant_tracking_configs: [],
+  tenant_secrets: [],
   leads: [],
   quiz_sessions: [],
   quiz_answers: [],
@@ -21,6 +31,76 @@ const store: Record<TableName, Row[]> = {
   notification_logs: [],
   external_tracking_deliveries: [],
 };
+
+function createDefaultTenantRows(): void {
+  if (!store.tenants.length) {
+    store.tenants.push({
+      id: DEFAULT_TENANT_ID,
+      slug: "resende-advogados",
+      name: "Resende Advogados Associados",
+      legal_name: "Resende Advogados Associados",
+      status: "active",
+      is_default: true,
+      timezone: "America/Bahia",
+      locale: "pt-BR",
+      metadata: {},
+      created_at: DEFAULT_TIMESTAMP,
+      updated_at: DEFAULT_TIMESTAMP,
+    });
+  }
+
+  if (!store.tenant_domains.length) {
+    store.tenant_domains.push(
+      {
+        id: "00000000-0000-4000-8000-000000000101",
+        tenant_id: DEFAULT_TENANT_ID,
+        hostname: "radarprevidenciario.com.br",
+        is_primary: true,
+        status: "active",
+        metadata: {},
+        created_at: DEFAULT_TIMESTAMP,
+        updated_at: DEFAULT_TIMESTAMP,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000102",
+        tenant_id: DEFAULT_TENANT_ID,
+        hostname: "radar-previdenciario.vercel.app",
+        is_primary: false,
+        status: "active",
+        metadata: {},
+        created_at: DEFAULT_TIMESTAMP,
+        updated_at: DEFAULT_TIMESTAMP,
+      },
+    );
+  }
+
+  if (!store.tenant_tracking_configs.length) {
+    const enabled = process.env.NEXT_PUBLIC_TRACKING_ENABLED === "true";
+    const gtmContainerId = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID || null;
+    const ga4MeasurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || null;
+    const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || null;
+
+    store.tenant_tracking_configs.push({
+      id: "00000000-0000-4000-8000-000000000201",
+      tenant_id: DEFAULT_TENANT_ID,
+      enabled,
+      consent_required:
+        process.env.NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED !== "false",
+      external_tracking_dry_run: true,
+      meta_enabled: enabled && Boolean(metaPixelId),
+      meta_pixel_id: metaPixelId,
+      meta_api_version: process.env.META_CONVERSIONS_API_VERSION || "v25.0",
+      meta_test_mode: process.env.META_TRACKING_TEST_MODE === "true",
+      ga4_enabled: enabled && Boolean(ga4MeasurementId) && !gtmContainerId,
+      ga4_measurement_id: ga4MeasurementId,
+      gtm_enabled: enabled && Boolean(gtmContainerId),
+      gtm_container_id: gtmContainerId,
+      event_config: {},
+      created_at: DEFAULT_TIMESTAMP,
+      updated_at: DEFAULT_TIMESTAMP,
+    });
+  }
+}
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -33,6 +113,7 @@ function createRow(table: TableName, row: Row): Row {
   if (table === "quiz_sessions") {
     return {
       id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
       status: "started",
       started_at: timestamp,
       completed_at: null,
@@ -45,6 +126,7 @@ function createRow(table: TableName, row: Row): Row {
   if (table === "leads") {
     return {
       id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
       status: "new",
       created_at: timestamp,
       updated_at: timestamp,
@@ -55,6 +137,7 @@ function createRow(table: TableName, row: Row): Row {
   if (table === "notification_logs") {
     return {
       id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
       provider: "email",
       priority: "medium",
       status: "pending",
@@ -73,6 +156,7 @@ function createRow(table: TableName, row: Row): Row {
   if (table === "external_tracking_deliveries") {
     return {
       id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
       status: "pending",
       attempt: 0,
       test_event: false,
@@ -83,6 +167,19 @@ function createRow(table: TableName, row: Row): Row {
       last_error: null,
       created_at: timestamp,
       updated_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (
+    table === "quiz_answers" ||
+    table === "quiz_results" ||
+    table === "tracking_events"
+  ) {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      created_at: timestamp,
       ...row,
     };
   }
@@ -321,6 +418,8 @@ class QueryBuilder {
 }
 
 export function createSupabaseE2EAdminClient() {
+  createDefaultTenantRows();
+
   return {
     from(table: TableName) {
       return new QueryBuilder(table);

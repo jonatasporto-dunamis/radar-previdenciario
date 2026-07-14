@@ -1,11 +1,13 @@
 import type { AttributionData } from "@/types/attribution";
 import type { Lead } from "@/types/database";
+import { TEST_TENANT_ID } from "./tenant";
 
 const defaultCreatedAt = "2026-07-12T12:00:00.000Z";
 
 export function createLeadFixture(overrides: Partial<Lead> = {}): Lead {
   return {
     id: "lead-fixture-001",
+    tenant_id: TEST_TENANT_ID,
     full_name: "Maria Previdencia Silva",
     email: "maria.previdencia@example.com",
     phone: "5571987654321",

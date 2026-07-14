@@ -34,6 +34,7 @@ export type Database = {
           sent_at: string | null;
           session_id: string | null;
           status: string;
+          tenant_id: string;
           test_event: boolean;
           tracking_event_id: string | null;
           updated_at: string;
@@ -57,6 +58,7 @@ export type Database = {
           sent_at?: string | null;
           session_id?: string | null;
           status?: string;
+          tenant_id: string;
           test_event?: boolean;
           tracking_event_id?: string | null;
           updated_at?: string;
@@ -80,6 +82,7 @@ export type Database = {
           sent_at?: string | null;
           session_id?: string | null;
           status?: string;
+          tenant_id?: string;
           test_event?: boolean;
           tracking_event_id?: string | null;
           updated_at?: string;
@@ -104,6 +107,13 @@ export type Database = {
             columns: ["session_id"];
             isOneToOne: false;
             referencedRelation: "quiz_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "external_tracking_deliveries_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
             referencedColumns: ["id"];
           },
           {
@@ -133,6 +143,7 @@ export type Database = {
           referrer: string | null;
           site_source_name: string | null;
           status: string | null;
+          tenant_id: string;
           updated_at: string | null;
           user_agent: string | null;
           utm_campaign: string | null;
@@ -158,6 +169,7 @@ export type Database = {
           referrer?: string | null;
           site_source_name?: string | null;
           status?: string | null;
+          tenant_id: string;
           updated_at?: string | null;
           user_agent?: string | null;
           utm_campaign?: string | null;
@@ -183,6 +195,7 @@ export type Database = {
           referrer?: string | null;
           site_source_name?: string | null;
           status?: string | null;
+          tenant_id?: string;
           updated_at?: string | null;
           user_agent?: string | null;
           utm_campaign?: string | null;
@@ -191,7 +204,15 @@ export type Database = {
           utm_source?: string | null;
           utm_term?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "leads_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       notification_logs: {
         Row: {
@@ -212,6 +233,7 @@ export type Database = {
           result_id: string | null;
           sent_at: string | null;
           status: string;
+          tenant_id: string;
         };
         Insert: {
           attempt?: number;
@@ -231,6 +253,7 @@ export type Database = {
           result_id?: string | null;
           sent_at?: string | null;
           status?: string;
+          tenant_id: string;
         };
         Update: {
           attempt?: number;
@@ -250,6 +273,7 @@ export type Database = {
           result_id?: string | null;
           sent_at?: string | null;
           status?: string;
+          tenant_id?: string;
         };
         Relationships: [
           {
@@ -266,6 +290,13 @@ export type Database = {
             referencedRelation: "quiz_results";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "notification_logs_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
         ];
       };
       quiz_answers: {
@@ -279,6 +310,7 @@ export type Database = {
           question_id: string;
           question_label: string;
           session_id: string | null;
+          tenant_id: string;
         };
         Insert: {
           answer_label: string;
@@ -290,6 +322,7 @@ export type Database = {
           question_id: string;
           question_label: string;
           session_id?: string | null;
+          tenant_id: string;
         };
         Update: {
           answer_label?: string;
@@ -301,6 +334,7 @@ export type Database = {
           question_id?: string;
           question_label?: string;
           session_id?: string | null;
+          tenant_id?: string;
         };
         Relationships: [
           {
@@ -317,6 +351,13 @@ export type Database = {
             referencedRelation: "quiz_sessions";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "quiz_answers_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
         ];
       };
       quiz_results: {
@@ -330,6 +371,7 @@ export type Database = {
           score: number;
           session_id: string | null;
           summary: string | null;
+          tenant_id: string;
         };
         Insert: {
           classification: string;
@@ -341,6 +383,7 @@ export type Database = {
           score?: number;
           session_id?: string | null;
           summary?: string | null;
+          tenant_id: string;
         };
         Update: {
           classification?: string;
@@ -352,6 +395,7 @@ export type Database = {
           score?: number;
           session_id?: string | null;
           summary?: string | null;
+          tenant_id?: string;
         };
         Relationships: [
           {
@@ -368,6 +412,13 @@ export type Database = {
             referencedRelation: "quiz_sessions";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "quiz_results_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
         ];
       };
       quiz_sessions: {
@@ -378,6 +429,7 @@ export type Database = {
           lead_id: string | null;
           started_at: string | null;
           status: string | null;
+          tenant_id: string;
           updated_at: string | null;
         };
         Insert: {
@@ -387,6 +439,7 @@ export type Database = {
           lead_id?: string | null;
           started_at?: string | null;
           status?: string | null;
+          tenant_id: string;
           updated_at?: string | null;
         };
         Update: {
@@ -396,6 +449,7 @@ export type Database = {
           lead_id?: string | null;
           started_at?: string | null;
           status?: string | null;
+          tenant_id?: string;
           updated_at?: string | null;
         };
         Relationships: [
@@ -406,7 +460,200 @@ export type Database = {
             referencedRelation: "leads";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "quiz_sessions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
         ];
+      };
+      tenant_domains: {
+        Row: {
+          created_at: string;
+          hostname: string;
+          id: string;
+          is_primary: boolean;
+          metadata: Json;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          hostname: string;
+          id?: string;
+          is_primary?: boolean;
+          metadata?: Json;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          hostname?: string;
+          id?: string;
+          is_primary?: boolean;
+          metadata?: Json;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_domains_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_secrets: {
+        Row: {
+          created_at: string;
+          encrypted_value: string;
+          id: string;
+          secret_key: string;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          encrypted_value: string;
+          id?: string;
+          secret_key: string;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          encrypted_value?: string;
+          id?: string;
+          secret_key?: string;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_secrets_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_tracking_configs: {
+        Row: {
+          consent_required: boolean;
+          created_at: string;
+          enabled: boolean;
+          event_config: Json;
+          external_tracking_dry_run: boolean;
+          ga4_enabled: boolean;
+          ga4_measurement_id: string | null;
+          gtm_container_id: string | null;
+          gtm_enabled: boolean;
+          id: string;
+          meta_api_version: string;
+          meta_enabled: boolean;
+          meta_pixel_id: string | null;
+          meta_test_mode: boolean;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          consent_required?: boolean;
+          created_at?: string;
+          enabled?: boolean;
+          event_config?: Json;
+          external_tracking_dry_run?: boolean;
+          ga4_enabled?: boolean;
+          ga4_measurement_id?: string | null;
+          gtm_container_id?: string | null;
+          gtm_enabled?: boolean;
+          id?: string;
+          meta_api_version?: string;
+          meta_enabled?: boolean;
+          meta_pixel_id?: string | null;
+          meta_test_mode?: boolean;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          consent_required?: boolean;
+          created_at?: string;
+          enabled?: boolean;
+          event_config?: Json;
+          external_tracking_dry_run?: boolean;
+          ga4_enabled?: boolean;
+          ga4_measurement_id?: string | null;
+          gtm_container_id?: string | null;
+          gtm_enabled?: boolean;
+          id?: string;
+          meta_api_version?: string;
+          meta_enabled?: boolean;
+          meta_pixel_id?: string | null;
+          meta_test_mode?: boolean;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_tracking_configs_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: true;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenants: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          legal_name: string;
+          locale: string;
+          metadata: Json;
+          name: string;
+          slug: string;
+          status: string;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          legal_name: string;
+          locale?: string;
+          metadata?: Json;
+          name: string;
+          slug: string;
+          status?: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_default?: boolean;
+          legal_name?: string;
+          locale?: string;
+          metadata?: Json;
+          name?: string;
+          slug?: string;
+          status?: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       tracking_events: {
         Row: {
@@ -426,6 +673,7 @@ export type Database = {
           referrer: string | null;
           session_id: string | null;
           site_source_name: string | null;
+          tenant_id: string;
           user_agent: string | null;
           utm_campaign: string | null;
           utm_content: string | null;
@@ -450,6 +698,7 @@ export type Database = {
           referrer?: string | null;
           session_id?: string | null;
           site_source_name?: string | null;
+          tenant_id: string;
           user_agent?: string | null;
           utm_campaign?: string | null;
           utm_content?: string | null;
@@ -474,6 +723,7 @@ export type Database = {
           referrer?: string | null;
           session_id?: string | null;
           site_source_name?: string | null;
+          tenant_id?: string;
           user_agent?: string | null;
           utm_campaign?: string | null;
           utm_content?: string | null;
@@ -494,6 +744,13 @@ export type Database = {
             columns: ["session_id"];
             isOneToOne: false;
             referencedRelation: "quiz_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tracking_events_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
             referencedColumns: ["id"];
           },
         ];

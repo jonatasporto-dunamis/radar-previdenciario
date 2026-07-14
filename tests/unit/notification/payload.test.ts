@@ -4,6 +4,7 @@ import {
   buildLeadWhatsappUrl,
   computeNotificationPayloadHash,
 } from "@/services/notification/pipeline/payload";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 import type { LeadQualification } from "@/services/qualification";
 import type { Database } from "@/types/supabase";
 
@@ -12,6 +13,7 @@ type ResultRow = Database["public"]["Tables"]["quiz_results"]["Row"];
 
 const lead: LeadRow = {
   id: "22222222-2222-4222-8222-222222222222",
+  tenant_id: TEST_TENANT_ID,
   full_name: "Maria Silva",
   email: "maria@example.com",
   phone: "+55 (71) 98153-3737",
@@ -38,6 +40,7 @@ const lead: LeadRow = {
 
 const result: ResultRow = {
   id: "33333333-3333-4333-8333-333333333333",
+  tenant_id: TEST_TENANT_ID,
   session_id: "44444444-4444-4444-8444-444444444444",
   lead_id: lead.id,
   potential_benefit: "BPC/LOAS",
@@ -111,6 +114,7 @@ describe("notification payload", () => {
 
   it("gera payload_hash estavel para a mesma notificacao", () => {
     const first = computeNotificationPayloadHash({
+      tenantId: TEST_TENANT_ID,
       provider: "email",
       recipient: "office@example.com",
       leadId: lead.id,
@@ -118,6 +122,7 @@ describe("notification payload", () => {
       template: "lead-qualified",
     });
     const second = computeNotificationPayloadHash({
+      tenantId: TEST_TENANT_ID,
       template: "lead-qualified",
       resultId: result.id,
       leadId: lead.id,

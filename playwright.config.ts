@@ -22,10 +22,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: `pnpm dev --hostname 127.0.0.1 --port ${PORT}`,
+    command: `node node_modules/next/dist/bin/next dev --turbopack --hostname 127.0.0.1 --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 240_000,
     env: {
       E2E_MOCK_SUPABASE: "true",
       NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",

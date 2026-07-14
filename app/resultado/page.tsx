@@ -16,6 +16,7 @@ import { ResultViewedTracker } from "@/components/tracking/ResultViewedTracker";
 import { Button } from "@/components/ui/button";
 import { getAppConfig } from "@/services/configuration";
 import { getLatestQuizResultForLead } from "@/services/quiz/results";
+import { getTenantContext } from "@/services/tenants";
 import { findExternalTrackingEventId } from "@/services/tracking";
 
 export const metadata: Metadata = {
@@ -70,9 +71,10 @@ export default async function ResultadoPage() {
     redirect("/cadastro");
   }
 
+  const tenantContext = await getTenantContext();
   const [config, result] = await Promise.all([
-    getAppConfig(),
-    getLatestQuizResultForLead(leadId),
+    getAppConfig(tenantContext),
+    getLatestQuizResultForLead(tenantContext.tenantId, leadId),
   ]);
 
   if (!result) {
@@ -83,6 +85,7 @@ export default async function ResultadoPage() {
   const { Icon } = content;
   const disclaimer = result.ethical_disclaimer ?? config.legal.disclaimer;
   const qualifiedLeadExternalEventId = await findExternalTrackingEventId({
+    tenantId: tenantContext.tenantId,
     leadId,
     sessionId: result.session_id,
     eventName: "QualifiedLead",

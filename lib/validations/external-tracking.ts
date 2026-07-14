@@ -51,6 +51,7 @@ export const safeExternalMetadataSchema = z
   .strict();
 
 export const externalTrackingEventSchema = z.object({
+  tenantId: z.string().uuid().optional(),
   eventName: externalTrackingEventNameSchema,
   eventId: externalEventIdSchema,
   eventTime: z.number().int().positive(),
@@ -62,6 +63,7 @@ export const externalTrackingEventSchema = z.object({
 });
 
 export const externalTrackingDeliveryInsertSchema = z.object({
+  tenant_id: z.string().uuid(),
   tracking_event_id: z.string().uuid().nullable().optional(),
   lead_id: z.string().uuid().nullable().optional(),
   session_id: z.string().uuid().nullable().optional(),

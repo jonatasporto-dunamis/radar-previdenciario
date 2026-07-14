@@ -14,6 +14,7 @@ import { trackEvent } from "@/services/tracking";
 import type { Json } from "@/types/supabase";
 
 type TrackNotificationEventInput = {
+  tenantId: string;
   leadId: string | null;
   sessionId?: string | null;
   eventName: "NotificationSent" | "NotificationFailed";
@@ -82,6 +83,7 @@ export class NotificationDispatcher {
       attempt += 1
     ) {
       await this.dependencies.markProcessing({
+        tenantId: input.log.tenant_id,
         logId: input.log.id,
         attempt,
       });
@@ -89,8 +91,9 @@ export class NotificationDispatcher {
       const result = await input.provider.send(input.providerInput);
 
       if (result.ok) {
-        await this.dependencies.markSent(input.log.id);
+        await this.dependencies.markSent(input.log.tenant_id, input.log.id);
         await this.dependencies.track({
+          tenantId: input.log.tenant_id,
           leadId: input.log.lead_id,
           sessionId: input.sessionId,
           eventName: "NotificationSent",
@@ -109,6 +112,7 @@ export class NotificationDispatcher {
 
       if (shouldRetry) {
         await this.dependencies.markRetrying({
+          tenantId: input.log.tenant_id,
           logId: input.log.id,
           attempt,
           error: result.error,
@@ -118,11 +122,13 @@ export class NotificationDispatcher {
       }
 
       await this.dependencies.markFailed({
+        tenantId: input.log.tenant_id,
         logId: input.log.id,
         attempt,
         error: result.error,
       });
       await this.dependencies.track({
+        tenantId: input.log.tenant_id,
         leadId: input.log.lead_id,
         sessionId: input.sessionId,
         eventName: "NotificationFailed",

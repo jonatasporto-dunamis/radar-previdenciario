@@ -24,6 +24,8 @@ Quando GTM não estiver configurado, o app permite fallback direto:
 
 Meta CAPI continua server-side e independente do carregamento browser, desde que `NEXT_PUBLIC_META_PIXEL_ID`, `META_CONVERSIONS_API_ACCESS_TOKEN` e consentimento estejam válidos.
 
+Em modo multi-tenant, Pixel ID, GA4 Measurement ID, GTM Container ID e flags vêm preferencialmente de `tenant_tracking_configs`. O token Meta CAPI deve vir de `tenant_secrets`; o fallback por variável de ambiente existe apenas para o tenant padrão do MVP.
+
 ## Eventos externos
 
 - `PageView`
@@ -106,6 +108,8 @@ O sanitizador usa allowlist e rejeita chaves sensíveis como `email`, `phone`, `
 
 `external_tracking_deliveries` registra provider, canal, `event_id`, status, tentativa, hash do payload sanitizado, timestamps, modo de teste e erro sanitizado. A tabela é bloqueada por RLS para `anon` e `authenticated`.
 
+O índice de idempotência considera `tenant_id + event_id + provider + channel`, evitando colisão entre tenants.
+
 Status:
 
 ```text
@@ -133,6 +137,7 @@ NEXT_PUBLIC_GTM_CONTAINER_ID=
 NEXT_PUBLIC_TRACKING_ENABLED=
 NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
 EXTERNAL_TRACKING_DRY_RUN=
+TENANT_SECRETS_ENCRYPTION_KEY=
 ```
 
 Nunca exponha `META_CONVERSIONS_API_ACCESS_TOKEN` no cliente.

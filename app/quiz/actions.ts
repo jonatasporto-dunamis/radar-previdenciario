@@ -25,6 +25,7 @@ import {
 } from "@/services/quiz/session";
 import { trackEvent } from "@/services/tracking";
 import { trackEventOnce } from "@/services/tracking";
+import { getTenantContext } from "@/services/tenants";
 import type {
   QuestionAnswerValue,
   QuizAnswerMap,
@@ -124,7 +125,12 @@ export async function persistQuizSessionCookieAction(
     return { success: false };
   }
 
-  const session = await getQuizSessionForLead(leadId, sessionId);
+  const tenantContext = await getTenantContext();
+  const session = await getQuizSessionForLead(
+    tenantContext.tenantId,
+    leadId,
+    sessionId,
+  );
 
   if (!session) {
     return { success: false };
@@ -149,7 +155,12 @@ export async function saveQuizAnswerAction(input: {
     };
   }
 
-  const session = await getQuizSessionForLead(leadId, input.sessionId);
+  const tenantContext = await getTenantContext();
+  const session = await getQuizSessionForLead(
+    tenantContext.tenantId,
+    leadId,
+    input.sessionId,
+  );
 
   if (!session || session.status !== "started") {
     return {
@@ -183,22 +194,31 @@ export async function saveQuizAnswerAction(input: {
   try {
     const context = await getRequestContext();
     const answer = await saveQuizAnswer({
+      tenantId: tenantContext.tenantId,
       leadId,
       sessionId: session.id,
       question,
       value: validation.value,
     });
-    const answers = await loadQuizAnswers(session.id, questions);
+    const answers = await loadQuizAnswers(
+      tenantContext.tenantId,
+      session.id,
+      questions,
+    );
     const navigation = getQuizNavigationState(questions, answers, question.id);
     const progress = calculateQuizProgress(
       questions,
       answers,
       navigation.currentQuestionId,
     );
-    const attribution = await getLeadAttribution(leadId);
+    const attribution = await getLeadAttribution(
+      tenantContext.tenantId,
+      leadId,
+    );
 
     try {
       await trackEvent({
+        tenantId: tenantContext.tenantId,
         leadId,
         sessionId: session.id,
         eventName: "QuestionAnswered",
@@ -231,6 +251,7 @@ export async function saveQuizAnswerAction(input: {
         ethicalDisclaimer: legal.disclaimer,
       });
       const persistedResult = await persistQuizResult({
+        tenantId: tenantContext.tenantId,
         leadId,
         sessionId: session.id,
         result: computedResult,
@@ -240,6 +261,7 @@ export async function saveQuizAnswerAction(input: {
 
       try {
         await trackResultGeneratedOnce({
+          tenantId: tenantContext.tenantId,
           leadId,
           sessionId: session.id,
           resultId,
@@ -252,11 +274,12 @@ export async function saveQuizAnswerAction(input: {
         console.error("Failed to track result generated event.");
       }
 
-      await completeQuizSession(session.id);
+      await completeQuizSession(tenantContext.tenantId, session.id);
       quizCompletedExternalEventId = createExternalEventId("QuizCompleted");
 
       try {
         quizCompletedTracked = await trackEventOnce({
+          tenantId: tenantContext.tenantId,
           leadId,
           sessionId: session.id,
           eventName: "QuizCompleted",
@@ -287,6 +310,7 @@ export async function saveQuizAnswerAction(input: {
             eventName: "QuizCompleted",
             eventId: quizCompletedExternalEventId,
             eventTime: Math.floor(Date.now() / 1000),
+            tenantId: tenantContext.tenantId,
             leadId,
             sessionId: session.id,
             resultId,
@@ -302,6 +326,7 @@ export async function saveQuizAnswerAction(input: {
       }
 
       await runLeadQualificationNotificationPipeline({
+        tenantId: tenantContext.tenantId,
         leadId,
         sessionId: session.id,
         result: persistedResult,

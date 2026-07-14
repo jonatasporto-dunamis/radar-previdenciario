@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getTrackingConfig } from "@/services/configuration";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sanitizeErrorMessage } from "@/services/notification/security";
+import { getTenantContext, getTenantSecret } from "@/services/tenants";
 import { resolveTrackingConsent } from "../consent";
 import {
   createDeliveryLog,
@@ -51,7 +52,12 @@ function getFirstForwardedIp(value: string | null): string | null {
   return firstIp?.trim() || null;
 }
 
-async function getLead(leadId?: string): Promise<LeadRow | null> {
+async function getLead(input: {
+  tenantId: string;
+  leadId?: string;
+}): Promise<LeadRow | null> {
+  const { tenantId, leadId } = input;
+
   if (!leadId) {
     return null;
   }
@@ -60,6 +66,7 @@ async function getLead(leadId?: string): Promise<LeadRow | null> {
   const { data, error } = await supabase
     .from("leads")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("id", leadId)
     .maybeSingle();
 
@@ -106,7 +113,10 @@ export async function dispatchExternalEvent(
   input: DispatchExternalEventInput,
 ): Promise<DispatchExternalEventReport> {
   try {
-    const config = await getTrackingConfig();
+    const tenantContext = input.event.tenantId
+      ? await getTenantContext({ tenantId: input.event.tenantId })
+      : await getTenantContext();
+    const config = await getTrackingConfig(tenantContext);
     const eventConfig = config.events[input.event.eventName];
     const consent = await resolveTrackingConsent();
     const providers: DispatchExternalEventReport["providers"] = [];
@@ -133,6 +143,7 @@ export async function dispatchExternalEvent(
     }
 
     const existing = await findDeliveryByEvent({
+      tenantId: tenantContext.tenantId,
       eventId: input.event.eventId,
       provider: "meta_capi",
       channel: "server",
@@ -148,23 +159,34 @@ export async function dispatchExternalEvent(
     }
 
     const context = await readRequestContext(input);
-    const lead = await getLead(input.event.leadId);
+    const lead = await getLead({
+      tenantId: tenantContext.tenantId,
+      leadId: input.event.leadId,
+    });
+    const testEventCode =
+      config.meta.testMode && config.meta.testEventCode
+        ? config.meta.testEventCode
+        : config.meta.testMode
+          ? await getTenantSecret({
+              tenantId: tenantContext.tenantId,
+              secretKey: "meta_test_event_code",
+              allowDefaultEnvFallback: true,
+            })
+          : null;
     const payload = buildMetaConversionsPayload({
       event: input.event,
       lead,
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
       cookieHeader: context.cookieHeader,
-      testEventCode:
-        config.meta.testMode && config.meta.testEventCode
-          ? config.meta.testEventCode
-          : undefined,
+      testEventCode: testEventCode ?? undefined,
     });
     const payloadHash = hashExternalPayload(payload);
     const queuedAt = new Date().toISOString();
     const delivery =
       existing ??
       (await createDeliveryLog({
+        tenant_id: tenantContext.tenantId,
         tracking_event_id: input.trackingEventId ?? null,
         lead_id: input.event.leadId ?? null,
         session_id: input.event.sessionId ?? null,
@@ -190,9 +212,13 @@ export async function dispatchExternalEvent(
     }
 
     if (config.dryRun) {
-      await updateDeliveryLog(delivery.id, {
-        status: "ignored",
-        last_error: "External tracking dry-run enabled.",
+      await updateDeliveryLog({
+        tenantId: tenantContext.tenantId,
+        id: delivery.id,
+        values: {
+          status: "ignored",
+          last_error: "External tracking dry-run enabled.",
+        },
       });
 
       return {
@@ -203,12 +229,20 @@ export async function dispatchExternalEvent(
       };
     }
 
-    const accessToken = process.env.META_CONVERSIONS_API_ACCESS_TOKEN;
+    const accessToken = await getTenantSecret({
+      tenantId: tenantContext.tenantId,
+      secretKey: "meta_conversions_api_access_token",
+      allowDefaultEnvFallback: true,
+    });
 
     if (!accessToken) {
-      await updateDeliveryLog(delivery.id, {
-        status: "ignored",
-        last_error: "Meta CAPI token is not configured.",
+      await updateDeliveryLog({
+        tenantId: tenantContext.tenantId,
+        id: delivery.id,
+        values: {
+          status: "ignored",
+          last_error: "Meta CAPI token is not configured.",
+        },
       });
 
       return {
@@ -223,10 +257,14 @@ export async function dispatchExternalEvent(
 
     for (; attempt < 3; attempt += 1) {
       const nextAttempt = attempt + 1;
-      await updateDeliveryLog(delivery.id, {
-        status: "processing",
-        attempt: nextAttempt,
-        processing_started_at: new Date().toISOString(),
+      await updateDeliveryLog({
+        tenantId: tenantContext.tenantId,
+        id: delivery.id,
+        values: {
+          status: "processing",
+          attempt: nextAttempt,
+          processing_started_at: new Date().toISOString(),
+        },
       });
 
       const result = await sendMetaConversionsEvent({
@@ -237,12 +275,16 @@ export async function dispatchExternalEvent(
       });
 
       if (result.ok) {
-        await updateDeliveryLog(delivery.id, {
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          provider_event_id: result.providerEventId ?? null,
-          failed_at: null,
-          last_error: null,
+        await updateDeliveryLog({
+          tenantId: tenantContext.tenantId,
+          id: delivery.id,
+          values: {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+            provider_event_id: result.providerEventId ?? null,
+            failed_at: null,
+            last_error: null,
+          },
         });
         providers.push({ provider: "meta_capi", status: "sent" });
         return {
@@ -255,10 +297,14 @@ export async function dispatchExternalEvent(
 
       const finalAttempt = nextAttempt >= 3 || !result.temporary;
 
-      await updateDeliveryLog(delivery.id, {
-        status: finalAttempt ? "failed" : "retrying",
-        failed_at: new Date().toISOString(),
-        last_error: result.error,
+      await updateDeliveryLog({
+        tenantId: tenantContext.tenantId,
+        id: delivery.id,
+        values: {
+          status: finalAttempt ? "failed" : "retrying",
+          failed_at: new Date().toISOString(),
+          last_error: result.error,
+        },
       });
 
       if (finalAttempt) {

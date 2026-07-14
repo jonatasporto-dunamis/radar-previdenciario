@@ -73,11 +73,14 @@ NEXT_PUBLIC_GTM_CONTAINER_ID=
 NEXT_PUBLIC_TRACKING_ENABLED=
 NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
 EXTERNAL_TRACKING_DRY_RUN=
+TENANT_SECRETS_ENCRYPTION_KEY=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
 
 `META_CONVERSIONS_API_ACCESS_TOKEN` também é server-only e nunca deve receber prefixo `NEXT_PUBLIC_`. Pixel ID, GA4 Measurement ID e GTM Container ID podem ser públicos.
+
+`TENANT_SECRETS_ENCRYPTION_KEY` é server-only e deve decodificar para 32 bytes em base64url ou hex. Ela é usada para criptografar secrets por tenant persistidos em `tenant_secrets`.
 
 ## Supabase Setup
 
@@ -106,6 +109,25 @@ supabase gen types typescript --linked --schema public > types/supabase.ts
 ```
 
 Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS. Nunca commite `.env.local`.
+
+## Multi-Tenant Foundation
+
+O projeto já possui fundação multi-tenant para operar múltiplos escritórios no futuro sem reescrever fluxos principais.
+
+Tabelas criadas:
+
+- `tenants`
+- `tenant_domains`
+- `tenant_tracking_configs`
+- `tenant_secrets`
+
+As tabelas operacionais usam `tenant_id` obrigatório: `leads`, `quiz_sessions`, `quiz_answers`, `quiz_results`, `tracking_events`, `notification_logs` e `external_tracking_deliveries`.
+
+O tenant padrão inicial é `resende-advogados`. Em desenvolvimento, `localhost` usa fallback para o tenant padrão; em produção, hostname desconhecido deve falhar.
+
+Documentação completa:
+
+- `docs/multi-tenant.md`
 
 ## Cadastro de leads
 

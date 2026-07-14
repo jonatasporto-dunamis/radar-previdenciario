@@ -9,6 +9,7 @@ import {
   dispatchExternalEvent,
 } from "@/services/external-tracking";
 import { createLead } from "@/services/leads";
+import { getTenantContext } from "@/services/tenants";
 import { trackEvent } from "@/services/tracking";
 import { normalizeBrazilianPhone } from "@/utils/phone";
 
@@ -144,7 +145,14 @@ export async function createLeadAction(
   }
 
   try {
-    const lead = await createLead(normalizedPayload.data);
+    const tenantContext = await getTenantContext({
+      hostname:
+        requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+    });
+    const lead = await createLead({
+      ...normalizedPayload.data,
+      tenantId: tenantContext.tenantId,
+    });
     const externalEventId = lead.reused
       ? undefined
       : createExternalEventId("LeadSubmitted");
@@ -156,6 +164,7 @@ export async function createLeadAction(
     if (!lead.reused && externalEventId) {
       try {
         await trackEvent({
+          tenantId: tenantContext.tenantId,
           leadId: lead.id,
           eventName: "LeadSubmitted",
           eventPayload: {
@@ -177,6 +186,7 @@ export async function createLeadAction(
           eventId: externalEventId,
           eventTime,
           eventSourceUrl,
+          tenantId: tenantContext.tenantId,
           leadId: lead.id,
           attribution,
           metadata: {

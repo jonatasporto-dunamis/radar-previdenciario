@@ -9,6 +9,7 @@ export type ResultTrackingContext = {
 };
 
 export async function trackResultGeneratedOnce(input: {
+  tenantId: string;
   leadId: string;
   sessionId: string;
   resultId: string;
@@ -18,6 +19,7 @@ export async function trackResultGeneratedOnce(input: {
   context?: ResultTrackingContext;
 }): Promise<boolean> {
   return trackEventOnce({
+    tenantId: input.tenantId,
     leadId: input.leadId,
     sessionId: input.sessionId,
     eventName: "ResultGenerated",
@@ -34,6 +36,7 @@ export async function trackResultGeneratedOnce(input: {
 }
 
 export async function trackResultViewedOnce(input: {
+  tenantId: string;
   leadId: string;
   sessionId?: string | null;
   resultId: string;
@@ -44,6 +47,7 @@ export async function trackResultViewedOnce(input: {
   context?: ResultTrackingContext;
 }): Promise<boolean> {
   return trackEventOnce({
+    tenantId: input.tenantId,
     leadId: input.leadId,
     sessionId: input.sessionId ?? null,
     eventName: "ResultViewed",

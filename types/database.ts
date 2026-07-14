@@ -44,8 +44,69 @@ export type ExternalTrackingDeliveryStatus = NotificationStatus;
 
 export type JsonObject = Record<string, unknown>;
 
+export type TenantStatus = "active" | "inactive" | "suspended";
+
+export type TenantDomainStatus = "active" | "inactive";
+
+export type TenantSecretStatus = "active" | "inactive" | "rotated";
+
+export type Tenant = {
+  id: string;
+  slug: string;
+  name: string;
+  legal_name: string;
+  status: TenantStatus;
+  is_default: boolean;
+  timezone: string;
+  locale: string;
+  metadata: JsonObject;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TenantDomain = {
+  id: string;
+  tenant_id: string;
+  hostname: string;
+  is_primary: boolean;
+  status: TenantDomainStatus;
+  metadata: JsonObject;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TenantTrackingConfig = {
+  id: string;
+  tenant_id: string;
+  enabled: boolean;
+  consent_required: boolean;
+  external_tracking_dry_run: boolean;
+  meta_enabled: boolean;
+  meta_pixel_id: string | null;
+  meta_api_version: string;
+  meta_test_mode: boolean;
+  ga4_enabled: boolean;
+  ga4_measurement_id: string | null;
+  gtm_enabled: boolean;
+  gtm_container_id: string | null;
+  event_config: JsonObject;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TenantSecret = {
+  id: string;
+  tenant_id: string;
+  secret_key: string;
+  encrypted_value: string;
+  status: TenantSecretStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Lead = {
   id: string;
+  tenant_id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -72,6 +133,7 @@ export type Lead = {
 
 export type QuizSession = {
   id: string;
+  tenant_id: string;
   lead_id: string | null;
   status: QuizSessionStatus;
   started_at: string;
@@ -82,6 +144,7 @@ export type QuizSession = {
 
 export type QuizAnswer = {
   id: string;
+  tenant_id: string;
   session_id: string | null;
   lead_id: string | null;
   question_id: string;
@@ -94,6 +157,7 @@ export type QuizAnswer = {
 
 export type QuizResult = {
   id: string;
+  tenant_id: string;
   session_id: string | null;
   lead_id: string | null;
   potential_benefit: string | null;
@@ -106,6 +170,7 @@ export type QuizResult = {
 
 export type TrackingEvent = {
   id: string;
+  tenant_id: string;
   lead_id: string | null;
   session_id: string | null;
   event_name: TrackingEventName;
@@ -131,6 +196,7 @@ export type TrackingEvent = {
 
 export type NotificationLog = {
   id: string;
+  tenant_id: string;
   lead_id: string | null;
   result_id: string | null;
   notification_type: string;
@@ -151,6 +217,7 @@ export type NotificationLog = {
 
 export type ExternalTrackingDelivery = {
   id: string;
+  tenant_id: string;
   tracking_event_id: string | null;
   lead_id: string | null;
   session_id: string | null;

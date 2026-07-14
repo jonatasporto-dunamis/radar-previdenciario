@@ -33,6 +33,7 @@ export type SafeExternalMetadata = Record<
 >;
 
 export interface ExternalTrackingEvent {
+  tenantId?: string;
   eventName: ExternalTrackingEventName;
   eventId: string;
   eventTime: number;

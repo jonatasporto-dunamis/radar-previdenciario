@@ -12,6 +12,7 @@
 - Consentimento de mensuração.
 - Delivery logs em `external_tracking_deliveries`.
 - Dry-run e test mode para validação segura.
+- Fundação multi-tenant com tenants, domínios, tracking config, secrets e `tenant_id` operacional.
 
 ## Próximas fases do quiz
 
@@ -44,9 +45,7 @@
 
 ## Fase SaaS
 
-- Criar tabela `tenants`.
-- Criar configurações por escritório.
-- Resolver tenant por domínio ou slug.
-- Buscar configuração no Supabase.
+- Migrar brand, office, theme, SEO e legal para configuração remota por tenant quando houver painel.
 - Adicionar painel administrativo.
 - Adicionar cache seguro por tenant.
+- Implementar onboarding, billing e lifecycle real de tenant.

@@ -7,6 +7,7 @@ import {
 } from "@/services/quiz/results";
 import { createExternalEventId } from "@/services/external-tracking";
 import { getLeadAttribution } from "@/services/quiz/session";
+import { getTenantContext } from "@/services/tenants";
 
 const LEAD_SESSION_COOKIE = "rp_lead_session";
 const RESULT_VIEWED_COOKIE_PREFIX = "rp_result_viewed_";
@@ -42,7 +43,12 @@ export async function trackResultViewedAction(
     return { success: true };
   }
 
-  const result = await getQuizResultForLead({ leadId, resultId });
+  const tenantContext = await getTenantContext();
+  const result = await getQuizResultForLead({
+    tenantId: tenantContext.tenantId,
+    leadId,
+    resultId,
+  });
 
   if (!result) {
     return { success: false };
@@ -55,13 +61,14 @@ export async function trackResultViewedAction(
 
   try {
     tracked = await trackResultViewedOnce({
+      tenantId: tenantContext.tenantId,
       leadId,
       sessionId: result.session_id,
       resultId: result.id,
       classification: result.classification,
       potentialBenefit: result.potential_benefit,
       externalEventId,
-      attribution: await getLeadAttribution(leadId),
+      attribution: await getLeadAttribution(tenantContext.tenantId, leadId),
       context: {
         ipAddress:
           getFirstForwardedIp(requestHeaders.get("x-forwarded-for")) ??

@@ -12,6 +12,7 @@ export class TrackingServiceError extends Error {
 }
 
 export type TrackEventInput = {
+  tenantId: string;
   leadId?: string | null;
   sessionId?: string | null;
   eventName: TrackingEventName;
@@ -26,6 +27,7 @@ export type TrackEventOnceInput = TrackEventInput & {
 };
 
 export type FindExternalTrackingEventIdInput = {
+  tenantId: string;
   leadId?: string | null;
   sessionId?: string | null;
   eventName: TrackingEventName;
@@ -47,6 +49,7 @@ export async function trackEvent(input: TrackEventInput): Promise<void> {
   const attribution = input.attribution ?? {};
 
   const { error } = await supabase.from("tracking_events").insert({
+    tenant_id: input.tenantId,
     lead_id: input.leadId ?? null,
     session_id: input.sessionId ?? null,
     event_name: input.eventName,
@@ -81,6 +84,7 @@ export async function trackEventOnce(
   let query = supabase
     .from("tracking_events")
     .select("id")
+    .eq("tenant_id", input.tenantId)
     .eq("event_name", input.eventName)
     .limit(1);
 
@@ -118,6 +122,7 @@ export async function findExternalTrackingEventId(
   let query = supabase
     .from("tracking_events")
     .select("event_payload")
+    .eq("tenant_id", input.tenantId)
     .eq("event_name", input.eventName)
     .order("created_at", { ascending: false })
     .limit(1);

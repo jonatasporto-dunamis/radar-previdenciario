@@ -32,6 +32,7 @@ type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
 type QuizResultRow = Database["public"]["Tables"]["quiz_results"]["Row"];
 
 export type LeadNotificationPipelineInput = {
+  tenantId: string;
   leadId: string;
   sessionId: string;
   result: QuizResultRow;
@@ -54,12 +55,16 @@ type LeadNotificationPipelineDependencies = {
   queue: NotificationQueue;
 };
 
-async function getLeadForNotification(leadId: string): Promise<LeadRow | null> {
+async function getLeadForNotification(input: {
+  tenantId: string;
+  leadId: string;
+}): Promise<LeadRow | null> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("leads")
     .select("*")
-    .eq("id", leadId)
+    .eq("tenant_id", input.tenantId)
+    .eq("id", input.leadId)
     .maybeSingle();
 
   if (error) {
@@ -103,10 +108,12 @@ function sanitizeEventSourceUrl(value: string | null): string | undefined {
 }
 
 async function trackNotificationQueued(input: {
+  tenantId: string;
   log: NotificationLogRow;
   sessionId: string;
 }): Promise<void> {
   await trackEvent({
+    tenantId: input.tenantId,
     leadId: input.log.lead_id,
     sessionId: input.sessionId,
     eventName: "NotificationQueued",
@@ -120,12 +127,14 @@ async function trackNotificationQueued(input: {
 }
 
 async function trackNotificationIgnored(input: {
+  tenantId: string;
   leadId: string | null;
   sessionId: string;
   logId?: string;
   reason: string;
 }): Promise<void> {
   await trackEvent({
+    tenantId: input.tenantId,
     leadId: input.leadId,
     sessionId: input.sessionId,
     eventName: "NotificationIgnored",
@@ -137,6 +146,7 @@ async function trackNotificationIgnored(input: {
 }
 
 async function trackQualifiedLead(input: {
+  tenantId: string;
   lead: LeadRow;
   sessionId: string;
   resultId: string;
@@ -144,6 +154,7 @@ async function trackQualifiedLead(input: {
   const externalEventId = createExternalEventId("QualifiedLead");
   const attribution = leadAttributionToTracking(input.lead);
   const tracked = await trackEventOnce({
+    tenantId: input.tenantId,
     leadId: input.lead.id,
     sessionId: input.sessionId,
     eventName: "QualifiedLead",
@@ -170,6 +181,7 @@ async function trackQualifiedLead(input: {
       eventName: "QualifiedLead",
       eventId: externalEventId,
       eventTime: Math.floor(Date.now() / 1000),
+      tenantId: input.tenantId,
       eventSourceUrl: sanitizeEventSourceUrl(input.lead.landing_page),
       leadId: input.lead.id,
       sessionId: input.sessionId,
@@ -193,7 +205,10 @@ export async function runLeadQualificationNotificationPipeline(
   },
 ): Promise<LeadNotificationPipelineResult> {
   try {
-    const lead = await getLeadForNotification(input.leadId);
+    const lead = await getLeadForNotification({
+      tenantId: input.tenantId,
+      leadId: input.leadId,
+    });
 
     if (!lead) {
       return {
@@ -209,6 +224,7 @@ export async function runLeadQualificationNotificationPipeline(
       input.computedResult.classification,
     );
     const payloadHash = computeNotificationPayloadHash({
+      tenantId: input.tenantId,
       provider: "email",
       recipient,
       leadId: lead.id,
@@ -218,12 +234,14 @@ export async function runLeadQualificationNotificationPipeline(
 
     if (!qualification.shouldNotify) {
       const existing = await findNotificationLogByPayloadHash({
+        tenantId: input.tenantId,
         provider: "email",
         payloadHash,
       });
       const log =
         existing ??
         (await createNotificationLog({
+          tenant_id: input.tenantId,
           lead_id: lead.id,
           result_id: input.result.id,
           notification_type:
@@ -239,6 +257,7 @@ export async function runLeadQualificationNotificationPipeline(
         }));
 
       await trackNotificationIgnored({
+        tenantId: input.tenantId,
         leadId: lead.id,
         sessionId: input.sessionId,
         logId: log.id,
@@ -255,6 +274,7 @@ export async function runLeadQualificationNotificationPipeline(
     try {
       await trackQualifiedLead({
         lead,
+        tenantId: input.tenantId,
         sessionId: input.sessionId,
         resultId: input.result.id,
       });
@@ -274,6 +294,7 @@ export async function runLeadQualificationNotificationPipeline(
       payload,
     });
     const existing = await findNotificationLogByPayloadHash({
+      tenantId: input.tenantId,
       provider: "email",
       payloadHash,
     });
@@ -281,6 +302,7 @@ export async function runLeadQualificationNotificationPipeline(
 
     if (decision.action === "skip") {
       await trackNotificationIgnored({
+        tenantId: input.tenantId,
         leadId: lead.id,
         sessionId: input.sessionId,
         logId: decision.log.id,
@@ -298,6 +320,7 @@ export async function runLeadQualificationNotificationPipeline(
       decision.action === "dispatch_existing"
         ? decision.log
         : await createNotificationLog({
+            tenant_id: input.tenantId,
             lead_id: lead.id,
             result_id: input.result.id,
             notification_type:
@@ -313,6 +336,7 @@ export async function runLeadQualificationNotificationPipeline(
 
     if (decision.action === "create") {
       await trackNotificationQueued({
+        tenantId: input.tenantId,
         log,
         sessionId: input.sessionId,
       });

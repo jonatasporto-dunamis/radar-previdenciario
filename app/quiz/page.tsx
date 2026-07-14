@@ -9,6 +9,7 @@ import { QuizExperience } from "@/components/quiz/experience";
 import { getAppConfig } from "@/services/configuration";
 import { getLatestQuizResultForLead } from "@/services/quiz/results";
 import { getQuizSessionState } from "@/services/quiz/session";
+import { getTenantContext } from "@/services/tenants";
 
 export const metadata: Metadata = {
   title: "Quiz",
@@ -35,19 +36,30 @@ export default async function QuizPage() {
   }
 
   const requestHeaders = await headers();
-  const sessionState = await getQuizSessionState(leadId, {
-    ipAddress:
-      getFirstForwardedIp(requestHeaders.get("x-forwarded-for")) ??
-      requestHeaders.get("x-real-ip"),
-    userAgent: requestHeaders.get("user-agent")?.slice(0, 1000) ?? null,
+  const tenantContext = await getTenantContext({
+    hostname:
+      requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   });
+  const sessionState = await getQuizSessionState(
+    tenantContext.tenantId,
+    leadId,
+    {
+      ipAddress:
+        getFirstForwardedIp(requestHeaders.get("x-forwarded-for")) ??
+        requestHeaders.get("x-real-ip"),
+      userAgent: requestHeaders.get("user-agent")?.slice(0, 1000) ?? null,
+    },
+  );
 
   if (!sessionState) {
     redirect("/cadastro");
   }
 
   if (sessionState.session.status === "completed") {
-    const result = await getLatestQuizResultForLead(leadId);
+    const result = await getLatestQuizResultForLead(
+      tenantContext.tenantId,
+      leadId,
+    );
 
     if (!result) {
       redirect("/cadastro");
@@ -56,7 +68,7 @@ export default async function QuizPage() {
     redirect("/resultado");
   }
 
-  const { brand, legal } = await getAppConfig();
+  const { brand, legal } = await getAppConfig(tenantContext);
 
   return (
     <PageContainer>

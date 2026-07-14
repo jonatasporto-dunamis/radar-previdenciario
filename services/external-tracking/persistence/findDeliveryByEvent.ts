@@ -7,6 +7,7 @@ import type {
 } from "@/types/tracking";
 
 export async function findDeliveryByEvent(input: {
+  tenantId: string;
   eventId: string;
   provider: ExternalTrackingProvider;
   channel: ExternalTrackingChannel;
@@ -15,6 +16,7 @@ export async function findDeliveryByEvent(input: {
   const { data, error } = await supabase
     .from("external_tracking_deliveries")
     .select("*")
+    .eq("tenant_id", input.tenantId)
     .eq("event_id", input.eventId)
     .eq("provider", input.provider)
     .eq("channel", input.channel)

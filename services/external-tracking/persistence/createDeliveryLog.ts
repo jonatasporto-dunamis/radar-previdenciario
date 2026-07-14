@@ -12,7 +12,7 @@ export async function createDeliveryLog(
   const { data, error } = await supabase
     .from("external_tracking_deliveries")
     .upsert(payload, {
-      onConflict: "event_id,provider,channel",
+      onConflict: "tenant_id,event_id,provider,channel",
       ignoreDuplicates: false,
     })
     .select("*")

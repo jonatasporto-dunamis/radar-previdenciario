@@ -13,12 +13,14 @@ export class QuizResultPersistenceError extends Error {
 }
 
 export async function persistQuizResult(input: {
+  tenantId: string;
   leadId: string;
   sessionId: string;
   result: QuizResultComputation;
 }): Promise<QuizResultRow> {
   const supabase = createSupabaseAdminClient();
   const payload = {
+    tenant_id: input.tenantId,
     session_id: input.sessionId,
     lead_id: input.leadId,
     potential_benefit: input.result.potentialBenefit,
@@ -42,12 +44,14 @@ export async function persistQuizResult(input: {
 }
 
 export async function getLatestQuizResultForLead(
+  tenantId: string,
   leadId: string,
 ): Promise<QuizResultRow | null> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("quiz_results")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("lead_id", leadId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -61,6 +65,7 @@ export async function getLatestQuizResultForLead(
 }
 
 export async function getQuizResultForLead(input: {
+  tenantId: string;
   leadId: string;
   resultId: string;
 }): Promise<QuizResultRow | null> {
@@ -68,6 +73,7 @@ export async function getQuizResultForLead(input: {
   const { data, error } = await supabase
     .from("quiz_results")
     .select("*")
+    .eq("tenant_id", input.tenantId)
     .eq("id", input.resultId)
     .eq("lead_id", input.leadId)
     .maybeSingle();

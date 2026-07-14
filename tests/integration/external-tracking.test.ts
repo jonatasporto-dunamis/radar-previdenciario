@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 
 const getTrackingConfig = vi.hoisted(() => vi.fn());
 const resolveTrackingConsent = vi.hoisted(() => vi.fn());
@@ -6,6 +7,8 @@ const createDeliveryLog = vi.hoisted(() => vi.fn());
 const updateDeliveryLog = vi.hoisted(() => vi.fn());
 const findDeliveryByEvent = vi.hoisted(() => vi.fn());
 const sendMetaConversionsEvent = vi.hoisted(() => vi.fn());
+const getTenantContext = vi.hoisted(() => vi.fn());
+const getTenantSecret = vi.hoisted(() => vi.fn());
 const supabase = vi.hoisted(() => {
   const builder: {
     select: ReturnType<typeof vi.fn>;
@@ -50,6 +53,11 @@ vi.mock("@/services/external-tracking/providers/meta/server", async () => {
     sendMetaConversionsEvent,
   };
 });
+
+vi.mock("@/services/tenants", () => ({
+  getTenantContext,
+  getTenantSecret,
+}));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => ({
@@ -102,6 +110,7 @@ const trackingConfig = {
 
 const delivery = {
   id: "delivery-1",
+  tenant_id: TEST_TENANT_ID,
   event_id: "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
   provider: "meta_capi",
   channel: "server",
@@ -110,6 +119,7 @@ const delivery = {
 };
 
 const event = {
+  tenantId: TEST_TENANT_ID,
   eventName: "LeadSubmitted" as const,
   eventId: "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
   eventTime: 1_785_000_000,
@@ -129,6 +139,11 @@ describe("external tracking orchestrator", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.META_CONVERSIONS_API_ACCESS_TOKEN = "test-token";
+    getTenantContext.mockResolvedValue({
+      tenantId: TEST_TENANT_ID,
+      slug: "resende-advogados",
+    });
+    getTenantSecret.mockResolvedValue("test-token");
     getTrackingConfig.mockResolvedValue(trackingConfig);
     resolveTrackingConsent.mockResolvedValue("granted");
     findDeliveryByEvent.mockResolvedValue(null);
@@ -188,15 +203,19 @@ describe("external tracking orchestrator", () => {
     expect(createDeliveryLog).toHaveBeenCalledWith(
       expect.objectContaining({
         event_id: event.eventId,
+        tenant_id: TEST_TENANT_ID,
         provider: "meta_capi",
         channel: "server",
         status: "pending",
       }),
     );
     expect(updateDeliveryLog).toHaveBeenCalledWith(
-      "delivery-1",
       expect.objectContaining({
-        status: "ignored",
+        tenantId: TEST_TENANT_ID,
+        id: "delivery-1",
+        values: expect.objectContaining({
+          status: "ignored",
+        }),
       }),
     );
     expect(sendMetaConversionsEvent).not.toHaveBeenCalled();
@@ -262,17 +281,23 @@ describe("external tracking orchestrator", () => {
       }),
     );
     expect(updateDeliveryLog).toHaveBeenCalledWith(
-      "delivery-1",
       expect.objectContaining({
-        status: "retrying",
-        last_error: "rate_limited",
+        tenantId: TEST_TENANT_ID,
+        id: "delivery-1",
+        values: expect.objectContaining({
+          status: "retrying",
+          last_error: "rate_limited",
+        }),
       }),
     );
     expect(updateDeliveryLog).toHaveBeenCalledWith(
-      "delivery-1",
       expect.objectContaining({
-        status: "sent",
-        provider_event_id: "fbtrace-2",
+        tenantId: TEST_TENANT_ID,
+        id: "delivery-1",
+        values: expect.objectContaining({
+          status: "sent",
+          provider_event_id: "fbtrace-2",
+        }),
       }),
     );
   });

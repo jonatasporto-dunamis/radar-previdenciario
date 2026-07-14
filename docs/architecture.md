@@ -49,16 +49,37 @@ Responsabilidades:
 - `services/configuration/getSeoConfig.ts`: retorna apenas SEO.
 - `services/configuration/getLegalConfig.ts`: retorna apenas textos legais.
 
-No MVP, `loadAppConfig()` delega para `loadLocalConfig()`. O contrato já aceita `ConfigurationContext`, mas ainda não resolve tenant. A resolução futura poderá seguir a ordem:
+No MVP, `loadAppConfig()` ainda delega para `loadLocalConfig()` para brand, office, theme, SEO e legal. O contrato aceita `ConfigurationContext` com tenant resolvido, e `getTrackingConfig()` já consulta `tenant_tracking_configs` quando há `tenantId`.
+
+A resolução de tenant já segue a ordem:
 
 ```text
-hostname
+tenantId explícito
 → slug
-→ tenantId
-→ configuração padrão
+→ hostname
+→ fallback default em desenvolvimento/preview
 ```
 
-Quando a aplicação evoluir para SaaS, essa camada poderá buscar configurações no Supabase, adicionar cache seguro por tenant e manter os componentes visuais inalterados.
+Serviços principais:
+
+- `services/tenants/resolveTenant.ts`
+- `services/tenants/repository/`
+- `lib/tenants/`
+- `lib/security/tenant-secrets.ts`
+
+Quando a aplicação evoluir para SaaS completo, brand, office, theme, SEO e legal poderão migrar para Supabase por tenant, adicionar cache seguro por tenant e manter os componentes visuais inalterados.
+
+## Multi-Tenant Foundation
+
+A migration `20260714150000_create_multi_tenant_foundation.sql` criou `tenants`, `tenant_domains`, `tenant_tracking_configs` e `tenant_secrets`.
+
+Também adicionou `tenant_id` obrigatório às tabelas operacionais, com backfill para o tenant padrão `resende-advogados`.
+
+Todo serviço server-only que lê ou grava dados de operação recebe ou resolve `tenantId` e filtra por `tenant_id`. Isso evita que `lead_id`, `session_id`, `result_id`, `event_id` ou `payload_hash` sejam usados isoladamente entre tenants.
+
+Secrets por tenant são criptografados com AES-256-GCM no servidor e dependem de `TENANT_SECRETS_ENCRYPTION_KEY`. Tokens como Meta CAPI não devem ser gravados em `tenant_tracking_configs`.
+
+Referência operacional completa: `docs/multi-tenant.md`.
 
 ## Lead Registration Flow
 

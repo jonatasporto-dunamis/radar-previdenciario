@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockSupabase } from "@/tests/mocks/supabase";
+import { TEST_TENANT_ID } from "@/tests/fixtures";
 
 describe("tracking service", () => {
   beforeEach(() => {
@@ -16,6 +17,7 @@ describe("tracking service", () => {
     const { trackEvent } = await import("@/services/tracking");
 
     await trackEvent({
+      tenantId: TEST_TENANT_ID,
       leadId: "lead-1",
       sessionId: "session-1",
       eventName: "ResultGenerated",
@@ -61,6 +63,7 @@ describe("tracking service", () => {
     await expect(
       trackEventOnce({
         leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
         sessionId: "session-1",
         eventName: "ResultViewed",
         eventPayloadContains: { resultId: "result-1" },
@@ -88,6 +91,7 @@ describe("tracking service", () => {
     await expect(
       trackEventOnce({
         leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
         eventName: "ResultGenerated",
         eventPayload: { source: "rule_engine" },
       }),
@@ -111,6 +115,7 @@ describe("tracking service", () => {
 
     await expect(
       trackEvent({
+        tenantId: TEST_TENANT_ID,
         eventName: "ResultGenerated",
       }),
     ).rejects.toBeInstanceOf(TrackingServiceError);
@@ -130,6 +135,7 @@ describe("tracking service", () => {
 
     await expect(
       trackEventOnce({
+        tenantId: TEST_TENANT_ID,
         eventName: "ResultViewed",
       }),
     ).rejects.toBeInstanceOf(TrackingServiceError);
@@ -154,6 +160,7 @@ describe("tracking service", () => {
 
     await expect(
       findExternalTrackingEventId({
+        tenantId: TEST_TENANT_ID,
         leadId: "lead-1",
         sessionId: "session-1",
         eventName: "QualifiedLead",

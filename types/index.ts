@@ -13,6 +13,13 @@ export type {
   NotificationPriority,
   NotificationProvider,
   NotificationStatus,
+  Tenant as DatabaseTenant,
+  TenantDomain as DatabaseTenantDomain,
+  TenantDomainStatus as DatabaseTenantDomainStatus,
+  TenantSecret as DatabaseTenantSecret,
+  TenantSecretStatus as DatabaseTenantSecretStatus,
+  TenantStatus as DatabaseTenantStatus,
+  TenantTrackingConfig as DatabaseTenantTrackingConfig,
   QuizAnswer,
   QuizResult,
   QuizSession,
@@ -65,6 +72,20 @@ export type {
   ConfigurationContext,
   ConfigurationSource,
 } from "./configuration";
+
+export type {
+  Tenant,
+  TenantContext,
+  TenantDomain,
+  TenantDomainStatus,
+  TenantResolutionSource,
+  TenantResolveInput,
+  TenantSecret,
+  TenantSecretKey,
+  TenantSecretStatus,
+  TenantStatus,
+  TenantTrackingConfig,
+} from "./tenants";
 
 export type {
   ExternalTrackingChannel,

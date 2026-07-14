@@ -8,6 +8,22 @@ Nesta etapa, o banco já é usado pelo fluxo de cadastro do lead, pela infraestr
 
 ## Tabelas
 
+### tenants
+
+Cadastro dos escritórios/tenants. O tenant padrão inicial é `resende-advogados`, com `is_default = true`.
+
+### tenant_domains
+
+Mapeia hostname para tenant. `localhost` e hosts de desenvolvimento são resolvidos por fallback na aplicação e não precisam ser persistidos.
+
+### tenant_tracking_configs
+
+Armazena flags e IDs públicos de tracking por tenant. Não armazena tokens, service role ou secrets.
+
+### tenant_secrets
+
+Armazena secrets criptografados server-side com AES-256-GCM. A chave de criptografia vem de `TENANT_SECRETS_ENCRYPTION_KEY`.
+
 ### leads
 
 Armazena dados básicos do lead e campos de atribuição de campanha capturados no momento da entrada. A escrita acontece somente no servidor, pela Server Action de cadastro e pelo Supabase Admin Client.
@@ -116,7 +132,7 @@ Campos principais:
 
 Idempotência:
 
-O índice único `external_tracking_deliveries_event_provider_channel_unique` evita duplicar a mesma entrega para `event_id + provider + channel`.
+O índice único por tenant evita duplicar a mesma entrega para `tenant_id + event_id + provider + channel`.
 
 RLS:
 
@@ -128,6 +144,16 @@ A tabela não armazena payload bruto, respostas do quiz, classificação, score,
 
 ## Relacionamentos
 
+- `tenants` 1:N `tenant_domains`
+- `tenants` 1:1 `tenant_tracking_configs`
+- `tenants` 1:N `tenant_secrets`
+- `tenants` 1:N `leads`
+- `tenants` 1:N `quiz_sessions`
+- `tenants` 1:N `quiz_answers`
+- `tenants` 1:N `quiz_results`
+- `tenants` 1:N `tracking_events`
+- `tenants` 1:N `notification_logs`
+- `tenants` 1:N `external_tracking_deliveries`
 - `leads` 1:N `quiz_sessions`
 - `leads` 1:N `quiz_answers`
 - `leads` 1:N `quiz_results`
@@ -186,6 +212,7 @@ Antes de criar um lead, o serviço busca um registro com o mesmo telefone normal
 
 ```text
 phone = telefone_normalizado
+tenant_id = tenant resolvido
 created_at >= agora - 15 minutos
 ```
 
@@ -342,6 +369,7 @@ Migration aplicada:
 - `20260712090000_add_unique_constraint_quiz_results_session_id.sql`
 - `20260712120000_expand_notification_logs_for_pipeline.sql`
 - `20260714010000_create_external_tracking_deliveries.sql`
+- `20260714150000_create_multi_tenant_foundation.sql`
 
 Os types oficiais foram gerados com:
 

@@ -34,7 +34,7 @@ export type QuizRequestContext = {
 };
 
 export type QuizSessionState = {
-  lead: Pick<LeadRow, "id">;
+  lead: Pick<LeadRow, "id" | "tenant_id">;
   session: QuizSessionRow;
   flow: FlowDefinition;
   questions: QuestionDefinition[];
@@ -91,6 +91,7 @@ function buildAnswerMap(
 }
 
 async function trackQuizStarted(
+  tenantId: string,
   lead: LeadRow,
   session: QuizSessionRow,
   flow: FlowDefinition,
@@ -100,6 +101,7 @@ async function trackQuizStarted(
 
   try {
     await trackEvent({
+      tenantId,
       leadId: lead.id,
       sessionId: session.id,
       eventName: "QuizStarted",
@@ -122,6 +124,7 @@ async function trackQuizStarted(
 }
 
 export async function getQuizSessionState(
+  tenantId: string,
   leadId: string,
   context: QuizRequestContext = {},
 ): Promise<QuizSessionState | null> {
@@ -132,6 +135,7 @@ export async function getQuizSessionState(
   const { data: lead, error: leadError } = await supabase
     .from("leads")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("id", leadId)
     .maybeSingle();
 
@@ -146,6 +150,7 @@ export async function getQuizSessionState(
   const { data: existingSession, error: sessionLookupError } = await supabase
     .from("quiz_sessions")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("lead_id", leadId)
     .eq("status", "started")
     .order("created_at", { ascending: false })
@@ -165,6 +170,7 @@ export async function getQuizSessionState(
       .from("quiz_sessions")
       .insert({
         id: leadId,
+        tenant_id: tenantId,
         lead_id: leadId,
         status: "started",
       })
@@ -175,6 +181,7 @@ export async function getQuizSessionState(
       const { data: fallbackSession, error: fallbackError } = await supabase
         .from("quiz_sessions")
         .select("*")
+        .eq("tenant_id", tenantId)
         .eq("id", leadId)
         .maybeSingle();
 
@@ -191,6 +198,7 @@ export async function getQuizSessionState(
 
   if (createdSession) {
     quizStartedExternalEventId = await trackQuizStarted(
+      tenantId,
       lead,
       session,
       flow,
@@ -201,6 +209,7 @@ export async function getQuizSessionState(
   const { data: rows, error: answersError } = await supabase
     .from("quiz_answers")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("session_id", session.id)
     .order("created_at", { ascending: true });
 
@@ -218,7 +227,7 @@ export async function getQuizSessionState(
   );
 
   return {
-    lead: { id: lead.id },
+    lead: { id: lead.id, tenant_id: lead.tenant_id },
     session,
     flow,
     questions,
@@ -230,6 +239,7 @@ export async function getQuizSessionState(
 }
 
 export async function getQuizSessionForLead(
+  tenantId: string,
   leadId: string,
   sessionId: string,
 ): Promise<QuizSessionRow | null> {
@@ -237,6 +247,7 @@ export async function getQuizSessionForLead(
   const { data, error } = await supabase
     .from("quiz_sessions")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("id", sessionId)
     .eq("lead_id", leadId)
     .maybeSingle();
@@ -249,6 +260,7 @@ export async function getQuizSessionForLead(
 }
 
 export async function saveQuizAnswer(input: {
+  tenantId: string;
   leadId: string;
   sessionId: string;
   question: QuestionDefinition;
@@ -261,6 +273,7 @@ export async function saveQuizAnswer(input: {
   const { data: existingAnswer, error: lookupError } = await supabase
     .from("quiz_answers")
     .select("id")
+    .eq("tenant_id", input.tenantId)
     .eq("session_id", input.sessionId)
     .eq("question_id", input.question.id)
     .order("created_at", { ascending: false })
@@ -280,6 +293,7 @@ export async function saveQuizAnswer(input: {
         answer_label: serialized.answerLabel,
         benefit_context: benefitContext,
       })
+      .eq("tenant_id", input.tenantId)
       .eq("id", existingAnswer.id)
       .select("*")
       .single();
@@ -300,6 +314,7 @@ export async function saveQuizAnswer(input: {
   const { data, error } = await supabase
     .from("quiz_answers")
     .insert({
+      tenant_id: input.tenantId,
       session_id: input.sessionId,
       lead_id: input.leadId,
       question_id: input.question.id,
@@ -325,6 +340,7 @@ export async function saveQuizAnswer(input: {
 }
 
 export async function loadQuizAnswers(
+  tenantId: string,
   sessionId: string,
   questions: QuestionDefinition[],
 ): Promise<QuizAnswerMap> {
@@ -332,6 +348,7 @@ export async function loadQuizAnswers(
   const { data, error } = await supabase
     .from("quiz_answers")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
@@ -342,7 +359,10 @@ export async function loadQuizAnswers(
   return buildAnswerMap(questions, data ?? []);
 }
 
-export async function completeQuizSession(sessionId: string): Promise<void> {
+export async function completeQuizSession(
+  tenantId: string,
+  sessionId: string,
+): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("quiz_sessions")
@@ -350,6 +370,7 @@ export async function completeQuizSession(sessionId: string): Promise<void> {
       status: "completed",
       completed_at: new Date().toISOString(),
     })
+    .eq("tenant_id", tenantId)
     .eq("id", sessionId);
 
   if (error) {
@@ -358,12 +379,14 @@ export async function completeQuizSession(sessionId: string): Promise<void> {
 }
 
 export async function getLeadAttribution(
+  tenantId: string,
   leadId: string,
 ): Promise<AttributionData> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("leads")
     .select("*")
+    .eq("tenant_id", tenantId)
     .eq("id", leadId)
     .maybeSingle();
 

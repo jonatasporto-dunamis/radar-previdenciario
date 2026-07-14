@@ -46,6 +46,7 @@ const optionalTextSchema = z.string().trim().max(2000).nullable().optional();
 
 export const notificationLogInsertSchema = z
   .object({
+    tenant_id: z.string().uuid(),
     lead_id: optionalUuidSchema,
     result_id: optionalUuidSchema,
     notification_type: z.string().trim().min(1).max(100),
@@ -66,6 +67,7 @@ export const notificationLogInsertSchema = z
 
 export const notificationLogUpdateSchema = z
   .object({
+    tenant_id: z.string().uuid().optional(),
     lead_id: optionalUuidSchema,
     result_id: optionalUuidSchema,
     notification_type: z.string().trim().min(1).max(100).optional(),

@@ -6,7 +6,7 @@ import {
   notificationProviderSchema,
   notificationStatusSchema,
 } from "@/lib/validations/notification";
-import { createNotificationLogFixture } from "@/tests/fixtures";
+import { createNotificationLogFixture, TEST_TENANT_ID } from "@/tests/fixtures";
 
 const validHash =
   "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
@@ -58,6 +58,7 @@ describe("notification validation schemas", () => {
 
   it("accepts a valid insert and applies pipeline defaults", () => {
     const result = notificationLogInsertSchema.parse({
+      tenant_id: TEST_TENANT_ID,
       lead_id: "22222222-2222-4222-8222-222222222222",
       result_id: "33333333-3333-4333-8333-333333333333",
       notification_type: "lead_qualified",
@@ -108,6 +109,7 @@ describe("notification validation schemas", () => {
     } as Partial<ReturnType<typeof createNotificationLogFixture>>);
 
     const result = notificationLogInsertSchema.parse({
+      tenant_id: TEST_TENANT_ID,
       notification_type: legacy.notification_type,
       recipient: legacy.recipient,
       status: legacy.status,
