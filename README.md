@@ -287,7 +287,7 @@ tracking_events
 → external_tracking_deliveries
 ```
 
-O `dataLayer` é o contrato central do navegador. GA4 deve ser configurado preferencialmente via GTM; `gtag.js` direto é fallback quando não houver GTM configurado.
+O `dataLayer` é o contrato central do navegador. No MVP, quando GTM está configurado, GTM assume GA4 e Meta Pixel no browser; `gtag.js` e Meta Pixel diretos só são fallback quando não houver GTM configurado. Meta CAPI continua server-side.
 
 Mapeamentos principais:
 

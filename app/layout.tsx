@@ -85,7 +85,7 @@ export default async function RootLayout({
     enabled: tracking.enabled,
     consentRequired: tracking.consentRequired,
     meta: {
-      enabled: tracking.meta.enabled,
+      enabled: tracking.meta.enabled && !tracking.gtm.enabled,
       pixelId: tracking.meta.pixelId,
     },
     ga4: {

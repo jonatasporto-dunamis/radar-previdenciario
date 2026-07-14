@@ -13,6 +13,17 @@ Business Event
 
 O `dataLayer` é o contrato central no navegador. Componentes não chamam `fbq`, `gtag` ou `dataLayer.push` diretamente; eles usam `lib/tracking` e `components/tracking`.
 
+## Estratégia de providers no MVP
+
+Quando `NEXT_PUBLIC_GTM_CONTAINER_ID` estiver configurado, o browser envia eventos para o `dataLayer` e o GTM deve ser responsável por GA4 e Meta Pixel. Nesse modo, o app não carrega `gtag.js` direto nem Meta Pixel direto, evitando duplicação de eventos no navegador.
+
+Quando GTM não estiver configurado, o app permite fallback direto:
+
+- GA4 direto via `NEXT_PUBLIC_GA4_MEASUREMENT_ID`;
+- Meta Pixel direto via `NEXT_PUBLIC_META_PIXEL_ID`.
+
+Meta CAPI continua server-side e independente do carregamento browser, desde que `NEXT_PUBLIC_META_PIXEL_ID`, `META_CONVERSIONS_API_ACCESS_TOKEN` e consentimento estejam válidos.
+
 ## Eventos externos
 
 - `PageView`
@@ -151,3 +162,40 @@ GTM Preview:
 2. confirmar tags e consentimento;
 3. confirmar ausência de duplicidade;
 4. publicar container somente após autorização explícita.
+
+## Configuração manual do GTM
+
+O app não publica container automaticamente. No GTM, crie as variáveis do Data Layer:
+
+- `rp_event_name`
+- `rp_event_id`
+- `rp_event_time`
+- `rp_source`
+- `source`
+- `page_path`
+- `form_version`
+- `campaign_source`
+- `campaign_medium`
+- `campaign_name`
+- `location`
+- `qualified`
+
+Crie um trigger Custom Event para `rp_external_event`. As tags GA4 e Meta Pixel devem usar esse trigger e mapear o nome final a partir de `rp_event_name`, respeitando o catálogo deste documento.
+
+Não crie tags adicionais por clique/URL para os mesmos eventos do funil, porque isso duplicaria o tracking que já chega pelo `dataLayer`.
+
+## Rollback
+
+Rollback total de tracking externo:
+
+```env
+NEXT_PUBLIC_TRACKING_ENABLED=false
+```
+
+Rollback parcial mantendo eventos internos e auditoria sem chamadas externas:
+
+```env
+EXTERNAL_TRACKING_DRY_RUN=true
+```
+
+Após alterar variáveis públicas `NEXT_PUBLIC_*`, gere novo deploy para recompilar o cliente. Após alterar variáveis server-only, gere novo deploy quando quiser garantir consistência entre browser e servidor.
