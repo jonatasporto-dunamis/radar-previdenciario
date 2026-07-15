@@ -31,6 +31,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Início",
     description: seo.description,
+    alternates: {
+      canonical: "/",
+    },
   };
 }
 

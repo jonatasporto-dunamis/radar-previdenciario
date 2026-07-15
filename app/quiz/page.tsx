@@ -14,6 +14,9 @@ import { getTenantContext } from "@/services/tenants";
 export const metadata: Metadata = {
   title: "Quiz",
   description: "Layout preparado para o futuro questionário previdenciário.",
+  alternates: {
+    canonical: "/quiz",
+  },
 };
 
 function getFirstForwardedIp(value: string | null): string | null {

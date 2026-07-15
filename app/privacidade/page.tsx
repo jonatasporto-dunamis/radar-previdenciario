@@ -11,6 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: legal.privacyPolicyTitle,
     description: `Informações iniciais de privacidade de ${brand.name}.`,
+    alternates: {
+      canonical: "/privacidade",
+    },
   };
 }
 

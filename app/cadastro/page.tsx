@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "Cadastro",
   description:
     "Cadastro inicial para continuidade da análise previdenciária informativa.",
+  alternates: {
+    canonical: "/cadastro",
+  },
 };
 
 const readinessItems = [

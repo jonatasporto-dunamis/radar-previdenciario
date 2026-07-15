@@ -11,6 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: legal.termsTitle,
     description: `Termos iniciais de uso de ${brand.name}.`,
+    alternates: {
+      canonical: "/termos",
+    },
   };
 }
 

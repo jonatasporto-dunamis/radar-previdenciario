@@ -22,6 +22,9 @@ import { findExternalTrackingEventId } from "@/services/tracking";
 export const metadata: Metadata = {
   title: "Resultado",
   description: "Resultado informativo da triagem previdenciária preliminar.",
+  alternates: {
+    canonical: "/resultado",
+  },
 };
 
 const resultContent = {
