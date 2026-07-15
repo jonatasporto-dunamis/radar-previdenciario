@@ -35,6 +35,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const hostname =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const pathname = requestHeaders.get("x-radar-pathname");
+  const isOfficePanelPath =
+    pathname === "/painel" || Boolean(pathname?.startsWith("/painel/"));
   const tenantContext = await getTenantContext({ hostname });
   const [brand, seo] = await Promise.all([
     getBrandConfig(tenantContext),
@@ -73,10 +76,15 @@ export async function generateMetadata(): Promise<Metadata> {
       description: seo.description,
       images: [seo.twitterImage],
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: isOfficePanelPath
+      ? {
+          index: false,
+          follow: false,
+        }
+      : {
+          index: true,
+          follow: true,
+        },
   };
 }
 
@@ -88,6 +96,9 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const hostname =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const pathname = requestHeaders.get("x-radar-pathname");
+  const isOfficePanelPath =
+    pathname === "/painel" || Boolean(pathname?.startsWith("/painel/"));
   const tenantContext = await getTenantContext({ hostname });
   const [theme, tracking] = await Promise.all([
     getThemeConfig(tenantContext),
@@ -133,25 +144,34 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground min-h-svh font-sans antialiased`}
       >
-        <TrackingProvider config={publicTrackingConfig}>
-          <TrackingScripts />
-          <TrackingPageView />
-          <a className="skip-link" href="#conteudo">
-            Ir para o conteúdo principal
-          </a>
-          <Suspense fallback={null}>
-            <AttributionCapture />
-          </Suspense>
-          <div className="flex min-h-svh flex-col">
-            <Header />
-            <main id="conteudo" className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <FloatingWhatsApp />
-          <TrackingConsentBanner />
-        </TrackingProvider>
+        {isOfficePanelPath ? (
+          <>
+            <a className="skip-link" href="#conteudo">
+              Ir para o conteúdo principal
+            </a>
+            <main id="conteudo">{children}</main>
+          </>
+        ) : (
+          <TrackingProvider config={publicTrackingConfig}>
+            <TrackingScripts />
+            <TrackingPageView />
+            <a className="skip-link" href="#conteudo">
+              Ir para o conteúdo principal
+            </a>
+            <Suspense fallback={null}>
+              <AttributionCapture />
+            </Suspense>
+            <div className="flex min-h-svh flex-col">
+              <Header />
+              <main id="conteudo" className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <FloatingWhatsApp />
+            <TrackingConsentBanner />
+          </TrackingProvider>
+        )}
       </body>
     </html>
   );

@@ -44,6 +44,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `pnpm test`: executa testes unitários e de integração com Vitest.
 - `pnpm test:coverage`: executa Vitest com coverage gate.
 - `pnpm test:e2e`: executa testes E2E com Playwright.
+- `pnpm office:grant-access`: associa usuário existente do Supabase Auth a um tenant.
 - `pnpm format`: formata os arquivos.
 - `pnpm format:check`: valida formatação.
 
@@ -109,6 +110,45 @@ supabase gen types typescript --linked --schema public > types/supabase.ts
 ```
 
 Não use secret key ou service role em código público. A publishable key é pública, mas o acesso aos dados deve continuar protegido por RLS. Nunca commite `.env.local`.
+
+## Office Dashboard
+
+O painel interno fica em `/painel` e foi criado como área privada para gestão dos leads do escritório.
+
+Funcionalidades do MVP:
+
+- login por Supabase Auth;
+- autorização por `tenant_memberships`;
+- roles `admin`, `manager`, `agent` e `viewer`;
+- dashboard de métricas operacionais;
+- listagem de leads com busca, filtros e paginação;
+- detalhe do lead com identificação, respostas do quiz, resultado público, classificação interna, origem, notificações e timeline;
+- alteração de status comercial;
+- notas internas;
+- histórico e audit logs;
+- logout seguro.
+
+O painel não usa tracking público, não entra no sitemap, retorna `noindex`/`nofollow` e não deve ser cacheado publicamente.
+
+Bootstrap do primeiro usuário:
+
+```bash
+pnpm office:grant-access --email=user@example.com --tenant=resende-advogados --role=admin --yes
+```
+
+Esse comando exige usuário já criado no Supabase Auth, `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Ele não cria senha e não imprime secrets.
+
+Migration local do painel:
+
+```text
+supabase/migrations/20260715150000_create_office_dashboard.sql
+```
+
+Ela ainda não deve ser aplicada no Supabase remoto sem autorização explícita.
+
+Documentação completa:
+
+- `docs/office-dashboard.md`
 
 ## Multi-Tenant Foundation
 

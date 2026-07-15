@@ -49,10 +49,10 @@ export async function startLeadRegistration(
   await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue(
     lead.email,
   );
-  await page.getByLabel("Telefone", { exact: true }).fill(lead.phone);
-  await expect(page.getByLabel("Telefone", { exact: true })).toHaveValue(
-    /^\(\d{2}\) \d{5}-\d{4}$/,
-  );
+  const phoneInput = page.getByLabel("Telefone", { exact: true });
+  await phoneInput.click();
+  await phoneInput.pressSequentially(lead.phone);
+  await expect(phoneInput).toHaveValue(/^\(\d{2}\) \d{5}-\d{4}$/);
   await page.getByLabel(/Li e concordo/i).check();
   await page.getByRole("button", { name: /Iniciar análise gratuita/i }).click();
   await page.waitForURL(/\/quiz$/, { timeout: 120_000 });

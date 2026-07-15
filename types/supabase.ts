@@ -469,6 +469,190 @@ export type Database = {
           },
         ];
       };
+      tenant_memberships: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          is_default: boolean;
+          job_title: string | null;
+          last_access_at: string | null;
+          role: string;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          is_default?: boolean;
+          job_title?: string | null;
+          last_access_at?: string | null;
+          role?: string;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          is_default?: boolean;
+          job_title?: string | null;
+          last_access_at?: string | null;
+          role?: string;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_memberships_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lead_notes: {
+        Row: {
+          author_user_id: string;
+          body: string;
+          created_at: string;
+          id: string;
+          lead_id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          author_user_id: string;
+          body: string;
+          created_at?: string;
+          id?: string;
+          lead_id: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          author_user_id?: string;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          lead_id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_notes_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lead_status_history: {
+        Row: {
+          changed_by_user_id: string;
+          created_at: string;
+          from_status: string | null;
+          id: string;
+          lead_id: string;
+          reason: string | null;
+          tenant_id: string;
+          to_status: string;
+        };
+        Insert: {
+          changed_by_user_id: string;
+          created_at?: string;
+          from_status?: string | null;
+          id?: string;
+          lead_id: string;
+          reason?: string | null;
+          tenant_id: string;
+          to_status: string;
+        };
+        Update: {
+          changed_by_user_id?: string;
+          created_at?: string;
+          from_status?: string | null;
+          id?: string;
+          lead_id?: string;
+          reason?: string | null;
+          tenant_id?: string;
+          to_status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lead_status_history_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_status_history_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      office_audit_logs: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          metadata: Json;
+          tenant_id: string;
+        };
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          metadata?: Json;
+          tenant_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          metadata?: Json;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "office_audit_logs_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tenant_domains: {
         Row: {
           created_at: string;

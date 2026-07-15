@@ -13,6 +13,17 @@
 - Delivery logs em `external_tracking_deliveries`.
 - Dry-run e test mode para validação segura.
 - Fundação multi-tenant com tenants, domínios, tracking config, secrets e `tenant_id` operacional.
+- Painel interno MVP em branch isolada com Supabase Auth, memberships, roles, dashboard, leads, detalhes, notas, status, histórico e auditoria local.
+
+## Próxima ativação do painel
+
+- Revisar a migration `20260715150000_create_office_dashboard.sql`.
+- Aplicar a migration remota somente após aprovação.
+- Regenerar `types/supabase.ts` contra o schema aplicado.
+- Criar usuário inicial no Supabase Auth.
+- Associar usuário ao tenant `resende-advogados`.
+- Validar Preview protegido da Vercel com dados de teste.
+- Avaliar MFA para usuários do escritório.
 
 ## Próximas fases do quiz
 

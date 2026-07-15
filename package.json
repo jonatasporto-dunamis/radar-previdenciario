@@ -17,6 +17,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "coverage": "pnpm test:coverage",
+    "office:grant-access": "node scripts/grant-office-access.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -25,6 +26,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-slot": "^1.3.0",
     "@react-email/components": "^1.0.12",
+    "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.110.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
