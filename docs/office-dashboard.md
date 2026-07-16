@@ -160,7 +160,7 @@ A validação remota com dados sintéticos deve confirmar:
 - tenant inativo não concede acesso operacional;
 - histórico e auditoria permanecem append-only.
 
-Se qualquer ponto falhar, aplicar somente migration corretiva aprovada. A migration `20260716130000_harden_office_dashboard_rls.sql` usa funções `security definer` para checar membership ativa, tenant ativo e vínculo do lead ao tenant antes das policies de notas, histórico e auditoria.
+Se qualquer ponto falhar, aplicar somente migration corretiva aprovada. A migration `20260716130000_harden_office_dashboard_rls.sql` usa funções `security definer` para checar membership ativa, tenant ativo e vínculo do lead ao tenant antes das policies de notas, histórico e auditoria. A migration `20260716133000_restrict_office_dashboard_function_grants.sql` remove grants diretos residuais de `anon` e `service_role`, mantendo execução somente para `authenticated`.
 
 ## Busca de Leads
 

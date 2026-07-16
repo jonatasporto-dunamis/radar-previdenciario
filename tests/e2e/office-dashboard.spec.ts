@@ -68,7 +68,7 @@ test.describe("office dashboard", () => {
     );
   });
 
-  test("lists and filters leads", async ({ page }) => {
+  test("lists and filters leads", async ({ page, browserName }) => {
     await login(page);
     await page.goto("/painel/leads");
     await expect(
@@ -77,10 +77,40 @@ test.describe("office dashboard", () => {
     await expect(page.getByText("Maria Lead E2E")).toBeVisible();
 
     await page.getByLabel("Busca").fill("Maria");
+    const filterResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().includes("/painel/leads"),
+    );
     await page.getByRole("button", { name: "Filtrar" }).click();
+    await filterResponsePromise;
     await expect(page).not.toHaveURL(/search=/);
     await expect(page.getByLabel("Busca")).toHaveValue("Maria");
     await expect(page.getByText("Maria Lead E2E")).toBeVisible();
+    await expect
+      .poll(async () => {
+        const searchCookie = (await page.context().cookies(page.url())).find(
+          (cookie) => cookie.name === "rp_office_lead_search",
+        );
+
+        return searchCookie
+          ? {
+              httpOnly: searchCookie.httpOnly,
+              path: searchCookie.path,
+              sameSite: searchCookie.sameSite,
+              value: searchCookie.value,
+            }
+          : null;
+      })
+      .toEqual({
+        httpOnly: true,
+        path: "/painel",
+        sameSite:
+          browserName === "webkit"
+            ? expect.stringMatching(/^(Lax|None)$/)
+            : "Lax",
+        value: "Maria",
+      });
   });
 
   test("shows lead details, qualification, answers and timeline", async ({
