@@ -9,7 +9,7 @@ import type { NotificationProvider } from "@/services/notification/providers";
 
 const log = createNotificationLogFixture() as NotificationLogRow;
 const providerInput = {
-  subject: "Novo lead qualificado — Radar Previdenciário",
+  subject: "Novo contato para avaliação previdenciária",
   html: "<p>Lead</p>",
   text: "Lead",
   payloadHash: log.payload_hash ?? "",

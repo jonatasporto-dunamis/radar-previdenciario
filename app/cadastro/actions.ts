@@ -16,6 +16,7 @@ import { normalizeBrazilianPhone } from "@/utils/phone";
 const LEAD_SESSION_COOKIE = "rp_lead_session";
 const GENERIC_ERROR =
   "Não foi possível concluir seu cadastro agora. Revise os dados ou tente novamente.";
+const CONSENT_VERSION = "2026-07-15-mvp";
 
 export type CreateLeadActionResult =
   | {
@@ -81,6 +82,41 @@ function hasHoneypotValue(input: unknown): boolean {
   const website = (input as { website?: unknown }).website;
 
   return typeof website === "string" && website.trim().length > 0;
+}
+
+async function trackConsentEvent(input: {
+  tenantId: string;
+  leadId: string;
+  eventName:
+    | "TermsAcknowledged"
+    | "ContactConsentGranted"
+    | "MarketingConsentGranted"
+    | "MarketingConsentDenied";
+  consentType:
+    "terms_policy_acknowledgement" | "triage_contact" | "future_marketing";
+  status: "acknowledged" | "granted" | "denied";
+  userAgent: string | null;
+  ipAddress: string | null;
+}) {
+  try {
+    await trackEvent({
+      tenantId: input.tenantId,
+      leadId: input.leadId,
+      eventName: input.eventName,
+      eventPayload: {
+        source: "lead_registration",
+        consent_type: input.consentType,
+        consent_version: CONSENT_VERSION,
+        policy_version: CONSENT_VERSION,
+        status: input.status,
+        timestamp: new Date().toISOString(),
+      },
+      userAgent: input.userAgent,
+      ipAddress: input.ipAddress,
+    });
+  } catch {
+    console.error("Failed to track consent event.");
+  }
 }
 
 export async function createLeadAction(
@@ -199,6 +235,38 @@ export async function createLeadAction(
         userAgent,
       }).catch(() => undefined);
     }
+
+    await Promise.all([
+      trackConsentEvent({
+        tenantId: tenantContext.tenantId,
+        leadId: lead.id,
+        eventName: "TermsAcknowledged",
+        consentType: "terms_policy_acknowledgement",
+        status: "acknowledged",
+        userAgent,
+        ipAddress,
+      }),
+      trackConsentEvent({
+        tenantId: tenantContext.tenantId,
+        leadId: lead.id,
+        eventName: "ContactConsentGranted",
+        consentType: "triage_contact",
+        status: "granted",
+        userAgent,
+        ipAddress,
+      }),
+      trackConsentEvent({
+        tenantId: tenantContext.tenantId,
+        leadId: lead.id,
+        eventName: parsedForm.data.marketingConsent
+          ? "MarketingConsentGranted"
+          : "MarketingConsentDenied",
+        consentType: "future_marketing",
+        status: parsedForm.data.marketingConsent ? "granted" : "denied",
+        userAgent,
+        ipAddress,
+      }),
+    ]);
 
     const cookieStore = await cookies();
 

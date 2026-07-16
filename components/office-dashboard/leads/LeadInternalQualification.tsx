@@ -34,6 +34,21 @@ export function LeadInternalQualification({
           <dd>{result?.potentialBenefit ?? "Não identificado"}</dd>
         </div>
         <div>
+          <dt className="text-muted-foreground">Template utilizado</dt>
+          <dd>{result?.templateName ?? "Quiz legado"}</dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Tipo e versão</dt>
+          <dd>
+            {result?.templateType ?? "sem tipo"}{" "}
+            {result?.templateVersion ? `v${result.templateVersion}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Completude</dt>
+          <dd>{result?.dataCompleteness ?? "Não calculada"}</dd>
+        </div>
+        <div>
           <dt className="text-muted-foreground">Revisão humana</dt>
           <dd>{formatBoolean(lead.requiresHumanReview)}</dd>
         </div>
@@ -52,6 +67,18 @@ export function LeadInternalQualification({
           <ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5 text-sm">
             {lead.missingCriticalAnswers.map((item) => (
               <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {result?.matchedRules.length ? (
+        <div className="mt-4">
+          <p className="text-sm font-medium">Regras internas aplicadas</p>
+          <ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5 text-sm">
+            {result.matchedRules.map((rule, index) => (
+              <li key={`${index}-${String(rule.benefitSlug ?? "rule")}`}>
+                {String(rule.benefitSlug ?? rule.benefitTitle ?? "regra")}
+              </li>
             ))}
           </ul>
         </div>

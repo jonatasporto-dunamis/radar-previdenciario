@@ -14,11 +14,14 @@
 - Dry-run e test mode para validação segura.
 - Fundação multi-tenant com tenants, domínios, tracking config, secrets e `tenant_id` operacional.
 - Painel interno MVP em branch isolada com Supabase Auth, memberships, roles, dashboard, leads, detalhes, notas, status, histórico e auditoria local.
+- Fluxo de revisão preventiva desburocratizado em `docs/legal-review-guide.md`.
+- Templates modulares iniciais para quiz geral, salário-maternidade, fibromialgia, depressão e autismo.
+- Moderação inicial de conteúdo customizado e matriz de permissões para templates.
 
 ## Próxima ativação do painel
 
-- Revisar a migration `20260715150000_create_office_dashboard.sql`.
-- Aplicar a migration remota somente após aprovação.
+- Revisar as migrations `20260715120000_create_modular_quiz_templates.sql` e `20260715150000_create_office_dashboard.sql`.
+- Aplicar migrations remotas somente após aprovação.
 - Regenerar `types/supabase.ts` contra o schema aplicado.
 - Criar usuário inicial no Supabase Auth.
 - Associar usuário ao tenant `resende-advogados`.
@@ -27,9 +30,8 @@
 
 ## Próximas fases do quiz
 
-- Criar catálogo real de benefícios previdenciários.
-- Mapear perguntas por benefício e por escritório.
-- Definir estratégia de versionamento de fluxos em banco.
+- Aplicar a migration modular em ambiente controlado e popular templates no banco quando o painel administrativo estiver pronto.
+- Evoluir clone, edição básica e publicação de templates por tenant no painel.
 - Evoluir regras preliminares para Rule Engine jurídico definitivo.
 - Definir critérios jurídicos e documentais para classificação real.
 - Implementar limpeza de atribuição ao concluir o fluxo.
@@ -57,6 +59,6 @@
 ## Fase SaaS
 
 - Migrar brand, office, theme, SEO e legal para configuração remota por tenant quando houver painel.
-- Adicionar painel administrativo.
+- Evoluir painel administrativo para `/painel/quizzes`, criação, clone, edição básica e versionamento.
 - Adicionar cache seguro por tenant.
 - Implementar onboarding, billing e lifecycle real de tenant.

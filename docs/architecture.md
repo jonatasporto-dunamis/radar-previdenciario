@@ -115,13 +115,64 @@ Após criar ou reutilizar o lead, `services/tracking/trackEvent.ts` registra o e
 
 O `leadId` é preservado no cookie HTTP-only `rp_lead_session`, com `SameSite=Lax`, `Secure` em produção e duração de 2 horas. A rota `/quiz` verifica esse cookie no servidor e redireciona para `/cadastro` quando ausente. Nenhum dado pessoal é salvo em URL, cookie público ou `sessionStorage`.
 
+## Modular Quiz Templates
+
+O Radar Previdenciário agora trata o quiz como catálogo de templates
+versionáveis. A plataforma qualifica o lead; o advogado analisa o caso.
+
+Templates padrão:
+
+- `/quiz`: triagem previdenciária geral.
+- `/quiz/salario-maternidade`: salário-maternidade.
+- `/quiz/fibromialgia`: tema relacionado à fibromialgia.
+- `/quiz/depressao`: tema relacionado à depressão.
+- `/quiz/autismo`: tema relacionado ao autismo.
+
+Contratos principais:
+
+- `QuizTemplateType`: `general`, `maternity`, `fibromyalgia`, `depression`, `autism`, `custom`.
+- `QuizTemplateSource`: `platform` ou `tenant`.
+- `QuizTemplateStatus`: `draft`, `active`, `inactive`, `archived`.
+- `ownership`: `platform_managed` ou `tenant_managed`.
+
+Templates `platform_managed` são mantidos centralmente. Templates
+`tenant_managed` devem ser criados por clone, com registro de tenant, versão,
+autor, conteúdo anterior/novo e status. Escritórios não editam diretamente
+templates da plataforma.
+
+Os templates ficam inicialmente em `config/quiz/templates/` e são resolvidos no
+servidor por `services/quiz/templates`. A migration
+`20260715120000_create_modular_quiz_templates.sql` prepara persistência em:
+
+- `quiz_templates`;
+- `quiz_template_questions`;
+- `quiz_template_rules`;
+- `quiz_template_versions`.
+
+`quiz_sessions` passa a aceitar `quiz_template_id`, `quiz_template_version` e
+`template_type`. Sessões antigas sem template usam fallback para o template
+geral.
+
+Conteúdo customizado passa por moderação automática com níveis `allowed`,
+`warning` e `blocked`. Expressões como "benefício garantido", "causa ganha",
+"será aprovado" e "chance de êxito" são bloqueadas ou sinalizadas quando não
+aparecem em contexto neutro.
+
+Permissões preparadas para o painel:
+
+- `admin`: visualiza, clona, cria, edita template do tenant, publica, desativa e cria versão.
+- `manager`: visualiza, clona, cria e edita draft.
+- `agent`: visualiza templates ativos.
+- `viewer`: somente leitura.
+
 ## Question Engine
 
-A infraestrutura do quiz foi criada como um Question Engine configurável, sem arrays hardcoded dentro da tela e sem Rule Engine jurídico.
+A infraestrutura do quiz foi criada como um Question Engine configurável, sem arrays hardcoded dentro da tela e sem Rule Engine jurídico definitivo.
 
 Camadas principais:
 
-- `config/quiz/questions/`: definições versionadas de perguntas.
+- `config/quiz/templates/`: templates versionáveis com perguntas, regras e textos públicos.
+- `config/quiz/questions/`: definições legadas/versionadas de perguntas.
 - `config/quiz/flows/`: fluxos com ordem de passos.
 - `config/quiz/benefits/`: catálogo inicial de benefícios e contextos.
 - `types/quiz/`: contratos `QuestionDefinition`, `BenefitDefinition`, `FlowDefinition` e tipos auxiliares.
@@ -135,13 +186,15 @@ Camadas principais:
 Fluxo de execução:
 
 ```text
-/quiz
+/quiz ou /quiz/[templateSlug]
     ↓
 Cookie rp_lead_session
     ↓
 Load lead
     ↓
-Create or reuse idempotent quiz_session
+Resolve tenant and quiz template on the server
+    ↓
+Create or reuse quiz_session for lead + template
     ↓
 Load latest quiz_answers
     ↓
@@ -156,13 +209,13 @@ Server Action saveQuizAnswerAction
 quiz_answers + tracking_events
 ```
 
-O primeiro fluxo exemplo possui 8 perguntas e serve para validar arquitetura, persistência, navegação e resultado informativo preliminar. Ele não calcula direito previdenciário definitivo, não gera resultado jurídico vinculante e não usa IA.
+O template geral identifica o assunto previdenciário e pode direcionar campanhas para templates temáticos. Os templates de saúde organizam impactos funcionais relatados, sem diagnóstico médico, sem avaliação de incapacidade e sem conclusão automática de direito.
 
 Cada resposta é salva imediatamente em `quiz_answers`. Como a tabela atual não possui constraint única por pergunta/sessão, a camada de serviço aplica idempotência operacional: procura uma resposta existente para `session_id + question_id`, atualiza quando encontra e insere apenas na primeira resposta daquela pergunta. Isso evita duplicidade no fluxo atual sem alterar schema nesta etapa.
 
 `QuizStarted` é registrado quando uma sessão aberta é criada. `QuestionAnswered` é registrado a cada resposta salva. `ResultGenerated` é registrado após o Rule Engine, Result Engine e a persistência de `quiz_results`. `QuizCompleted` é registrado quando a última pergunta do fluxo é salva, todas as obrigatórias estão respondidas e a sessão é concluída. `ResultViewed` é registrado na primeira visualização da página de resultado.
 
-Para evitar duplicidade por requisições simultâneas na entrada do quiz, a sessão inicial do lead é criada de forma idempotente usando o UUID do lead como identificador da sessão no MVP. Se outra requisição criar a sessão primeiro, o serviço reutiliza a sessão existente.
+Para evitar duplicidade por requisições simultâneas na entrada do quiz, o template geral preserva compatibilidade com a sessão inicial do lead. Templates temáticos criam sessões independentes vinculadas ao template. Se uma sessão aberta já existir para o mesmo lead e template, o serviço reutiliza a sessão existente.
 
 ## Rule Engine e Result Engine
 
@@ -190,7 +243,12 @@ Responsabilidades:
 - `app/resultado/actions.ts` e `components/tracking/ResultViewedTracker.tsx`: disparam `ResultViewed` por Server Action após a página carregar, com cookie HTTP-only por resultado para evitar duplicidade em refresh.
 - `app/resultado/page.tsx`: lê o último resultado do lead pelo cookie HTTP-only e exibe a resposta informativa.
 
-As classificações atuais são `alto_potencial`, `medio_potencial` e `baixo_potencial`. Elas indicam apenas uma triagem preliminar. A camada não implementa Rule Engine jurídico definitivo, cálculo previdenciário, IA ou recomendação vinculante.
+As classificações atuais são `alto_potencial`, `medio_potencial` e `baixo_potencial`. Elas são internas e indicam prioridade operacional. A camada não implementa Rule Engine jurídico definitivo, cálculo previdenciário, IA ou recomendação vinculante.
+
+Resultados internos preservam `classification`, `score`, `priority`, `topic`,
+`dataCompleteness`, `missingCriticalAnswers`, `requiresHumanReview`,
+`matchedRules` e `templateType`. Resultados públicos exibem somente título,
+resumo, tema, próximo passo e disclaimer.
 
 Quando a última pergunta obrigatória é salva, `saveQuizAnswerAction` avalia as regras, persiste o resultado por `upsert`, registra `ResultGenerated`, marca a sessão como `completed`, registra `QuizCompleted` com deduplicação por sessão e retorna o destino `/resultado` para o Client Component.
 

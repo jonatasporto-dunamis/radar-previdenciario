@@ -20,7 +20,7 @@ export function LeadTable({ leads }: { leads: OfficeLeadListItem[] }) {
               Lead
             </th>
             <th className="px-4 py-3" scope="col">
-              Tema
+              Quiz
             </th>
             <th className="px-4 py-3" scope="col">
               Classificação
@@ -51,13 +51,23 @@ export function LeadTable({ leads }: { leads: OfficeLeadListItem[] }) {
                 <p className="text-muted-foreground">{lead.maskedEmail}</p>
               </td>
               <td className="px-4 py-4">
-                {lead.potentialBenefit ?? "Não identificado"}
+                <p>{lead.templateName ?? "Quiz legado"}</p>
+                <p className="text-muted-foreground">
+                  {lead.templateType ?? "sem tipo"}{" "}
+                  {lead.templateVersion ? `v${lead.templateVersion}` : ""}
+                </p>
+                <p className="text-muted-foreground">
+                  {lead.potentialBenefit ?? "Tema não identificado"}
+                </p>
               </td>
               <td className="px-4 py-4">
                 <LeadPriorityBadge classification={lead.classification} />
               </td>
               <td className="px-4 py-4">
-                {formatBoolean(lead.requiresHumanReview)}
+                <p>{formatBoolean(lead.requiresHumanReview)}</p>
+                <p className="text-muted-foreground">
+                  {lead.dataCompleteness ?? "sem completude"}
+                </p>
               </td>
               <td className="px-4 py-4">
                 <LeadStatusBadge status={lead.commercialStatus} />

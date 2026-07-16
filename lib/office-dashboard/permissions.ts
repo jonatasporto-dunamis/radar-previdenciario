@@ -39,6 +39,22 @@ export function canViewMetrics(role: OfficeRole): boolean {
   return ["admin", "manager", "agent", "viewer"].includes(role);
 }
 
+export function canViewQuizTemplates(role: OfficeRole): boolean {
+  return ["admin", "manager", "agent", "viewer"].includes(role);
+}
+
+export function canCreateQuizTemplate(role: OfficeRole): boolean {
+  return ["admin", "manager"].includes(role);
+}
+
+export function canEditQuizTemplate(role: OfficeRole): boolean {
+  return ["admin", "manager"].includes(role);
+}
+
+export function canPublishQuizTemplate(role: OfficeRole): boolean {
+  return role === "admin";
+}
+
 export function canViewAuditLogs(role: OfficeRole): boolean {
   return managerRoles.includes(role);
 }

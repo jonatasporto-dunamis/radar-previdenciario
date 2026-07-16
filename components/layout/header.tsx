@@ -44,7 +44,7 @@ export async function Header() {
 
         <PrimaryButton asChild className="shrink-0">
           <Link href="/cadastro">
-            Iniciar análise
+            Iniciar triagem
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         </PrimaryButton>

@@ -22,10 +22,10 @@ export async function OfficeInformation() {
         <MapPin aria-hidden="true" className="text-secondary mt-0.5 size-4" />
         <div>
           <p className="text-foreground font-medium">
-            {office.statesServed.join(", ")}
+            Unidades em {office.statesServed.join(", ")}
           </p>
           <p className="text-muted-foreground mt-1">
-            {office.citiesServed.join(", ")}
+            {office.units.join(", ")}
           </p>
         </div>
       </div>

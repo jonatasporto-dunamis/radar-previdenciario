@@ -9,10 +9,14 @@ import type {
   QuestionAnswerPrimitive,
   QuestionAnswerValue,
   QuizAnswerMap,
+  QuestionDefinition,
   RuleCandidate,
   RuleConditionDefinition,
   RuleEvaluation,
+  QuizTemplateType,
 } from "@/types/quiz";
+import { getAnswerState } from "@/utils/quiz-answer-state";
+import { getQuestionsForFlow } from "../engine/flowEngine";
 
 function normalizeNumber(value: QuestionAnswerValue): number | null {
   if (typeof value === "number") {
@@ -51,6 +55,10 @@ function conditionMatches(
   answerValue: QuestionAnswerValue,
   condition: RuleConditionDefinition,
 ): boolean {
+  if (getAnswerState(answerValue) !== "answered") {
+    return false;
+  }
+
   if (condition.operator === "exists") {
     return isMeaningfulValue(answerValue);
   }
@@ -98,12 +106,48 @@ function sortCandidates(a: RuleCandidate, b: RuleCandidate): number {
   return a.priority - b.priority;
 }
 
+function getMissingCriticalAnswers(
+  answers: QuizAnswerMap,
+  questions: QuestionDefinition[],
+): string[] {
+  return questions
+    .filter((question) => question.required)
+    .filter((question) => {
+      const answer = answers[question.id];
+
+      if (!answer) {
+        return true;
+      }
+
+      const state = getAnswerState(answer.answerValue);
+
+      return state === "unknown" || state === "withheld";
+    })
+    .map((question) => question.id);
+}
+
+function getAnswerCompleteness(missingCriticalAnswers: string[]) {
+  if (missingCriticalAnswers.length === 0) {
+    return "complete" as const;
+  }
+
+  if (missingCriticalAnswers.length <= 2) {
+    return "partial" as const;
+  }
+
+  return "insufficient" as const;
+}
+
 export function evaluateQuizRules(
   answers: QuizAnswerMap,
   rules: BenefitRuleDefinition[] = defaultBenefitRules,
   benefits: BenefitDefinition[] = defaultBenefits,
   rulesVersion = defaultBenefitRulesVersion,
+  questions: QuestionDefinition[] = getQuestionsForFlow(),
+  templateType?: QuizTemplateType,
 ): RuleEvaluation {
+  const missingCriticalAnswers = getMissingCriticalAnswers(answers, questions);
+  const answerCompleteness = getAnswerCompleteness(missingCriticalAnswers);
   const benefitsBySlug = new Map(
     benefits
       .filter((benefit) => benefit.active)
@@ -148,8 +192,12 @@ export function evaluateQuizRules(
 
   return {
     rulesVersion,
+    templateType,
     candidates,
     topCandidate,
     answeredQuestionCount: Object.keys(answers).length,
+    answerCompleteness,
+    missingCriticalAnswers,
+    requiresHumanReview: missingCriticalAnswers.length > 0,
   };
 }

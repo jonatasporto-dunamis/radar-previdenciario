@@ -21,6 +21,9 @@ function evaluation(topCandidate: RuleCandidate | null): RuleEvaluation {
     candidates: topCandidate ? [topCandidate] : [],
     topCandidate,
     answeredQuestionCount: 2,
+    answerCompleteness: "complete",
+    missingCriticalAnswers: [],
+    requiresHumanReview: false,
   };
 }
 

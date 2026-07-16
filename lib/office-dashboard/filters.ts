@@ -8,6 +8,10 @@ const classificationSchema = z.enum([
   "medio_potencial",
   "baixo_potencial",
 ]);
+const dataCompletenessSchema = z.enum(["complete", "partial", "insufficient"]);
+const booleanFilterSchema = z
+  .enum(["true", "false"])
+  .transform((value) => value === "true");
 
 export const leadListFilterSchema = z
   .object({
@@ -16,12 +20,15 @@ export const leadListFilterSchema = z
     search: z.string().trim().max(80).optional(),
     status: z.enum(leadCommercialStatuses).optional(),
     classification: classificationSchema.optional(),
+    templateId: z.string().trim().uuid().optional(),
+    templateType: z.string().trim().max(80).optional(),
+    dataCompleteness: dataCompletenessSchema.optional(),
     source: z.string().trim().max(80).optional(),
     utmSource: z.string().trim().max(80).optional(),
     utmCampaign: z.string().trim().max(120).optional(),
     dateFrom: z.string().trim().max(10).optional(),
     dateTo: z.string().trim().max(10).optional(),
-    requiresHumanReview: z.coerce.boolean().optional(),
+    requiresHumanReview: booleanFilterSchema.optional(),
   })
   .strict();
 
@@ -40,6 +47,9 @@ export function parseLeadListFilters(
     search: readParam(searchParams, "search"),
     status: readParam(searchParams, "status"),
     classification: readParam(searchParams, "classification"),
+    templateId: readParam(searchParams, "templateId"),
+    templateType: readParam(searchParams, "templateType"),
+    dataCompleteness: readParam(searchParams, "dataCompleteness"),
     source: readParam(searchParams, "source"),
     utmSource: readParam(searchParams, "utmSource"),
     utmCampaign: readParam(searchParams, "utmCampaign"),
@@ -56,6 +66,9 @@ export function parseLeadListFilters(
     search: data.search,
     status: data.status,
     classification: data.classification,
+    templateId: data.templateId,
+    templateType: data.templateType,
+    dataCompleteness: data.dataCompleteness,
     source: data.source,
     utmSource: data.utmSource,
     utmCampaign: data.utmCampaign,

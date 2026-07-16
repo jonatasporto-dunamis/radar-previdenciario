@@ -24,38 +24,50 @@ export const attributionSchema = z
   .strict()
   .default({});
 
-export const leadFormSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(3, "Informe seu nome completo.")
-    .max(150, "O nome deve ter no máximo 150 caracteres.")
-    .refine((value) => nameRegex.test(value), "Informe um nome válido.")
-    .refine(
-      (value) => value.replace(/\s+/g, " ").trim().split(" ").length >= 2,
-      "Informe nome e sobrenome.",
-    )
-    .refine((value) => !/^\d+$/.test(value), "Informe um nome válido."),
-  email: z
-    .string()
-    .trim()
-    .max(254, "O e-mail deve ter no máximo 254 caracteres.")
-    .email("Informe um e-mail válido."),
-  phone: z
-    .string()
-    .trim()
-    .min(1, "Informe seu telefone.")
-    .max(30, "O telefone deve ter no máximo 30 caracteres.")
-    .refine(isValidBrazilianPhone, "Informe um telefone com DDD válido."),
-  privacyConsent: z
-    .boolean()
-    .refine(
-      (value) => value,
-      "É necessário aceitar a Política de Privacidade.",
-    ),
-  website: z.string().max(100).optional(),
-  attribution: attributionSchema.optional(),
-});
+export const leadFormSchema = z
+  .object({
+    fullName: z
+      .string()
+      .trim()
+      .min(3, "Informe seu nome completo.")
+      .max(150, "O nome deve ter no máximo 150 caracteres.")
+      .refine((value) => nameRegex.test(value), "Informe um nome válido.")
+      .refine(
+        (value) => value.replace(/\s+/g, " ").trim().split(" ").length >= 2,
+        "Informe nome e sobrenome.",
+      )
+      .refine((value) => !/^\d+$/.test(value), "Informe um nome válido."),
+    email: z
+      .string()
+      .trim()
+      .max(254, "O e-mail deve ter no máximo 254 caracteres.")
+      .email("Informe um e-mail válido."),
+    phone: z
+      .string()
+      .trim()
+      .min(1, "Informe seu telefone.")
+      .max(30, "O telefone deve ter no máximo 30 caracteres.")
+      .refine(isValidBrazilianPhone, "Informe um telefone com DDD válido."),
+    triageConsent: z.boolean().optional(),
+    termsAcknowledgement: z.boolean().optional(),
+    contactConsent: z.boolean().optional(),
+    marketingConsent: z.boolean().optional(),
+    website: z.string().max(100).optional(),
+    attribution: attributionSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const hasLegacyConsent =
+      value.termsAcknowledgement === true && value.contactConsent === true;
+
+    if (!value.triageConsent && !hasLegacyConsent) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["triageConsent"],
+        message:
+          "É necessário autorizar o uso das informações fornecidas para realizar esta triagem e tratar desta solicitação.",
+      });
+    }
+  });
 
 export const createLeadSchema = z.object({
   fullName: z

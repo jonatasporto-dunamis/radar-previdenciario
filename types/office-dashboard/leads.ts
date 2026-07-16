@@ -22,6 +22,10 @@ export type OfficeLeadListItem = {
   maskedPhone: string;
   commercialStatus: LeadCommercialStatus;
   potentialBenefit: string | null;
+  templateName: string | null;
+  templateType: string | null;
+  templateVersion: number | null;
+  dataCompleteness: "complete" | "partial" | "insufficient" | null;
   classification: InternalClassification | null;
   score: number | null;
   requiresHumanReview: boolean;
@@ -57,9 +61,18 @@ export type OfficeQuizAnswer = {
 export type OfficeQuizResult = {
   id: string;
   sessionId: string | null;
+  templateId: string | null;
+  templateName: string | null;
+  templateType: string | null;
+  templateVersion: number | null;
+  topic: string | null;
   potentialBenefit: string | null;
   score: number;
   classification: InternalClassification;
+  dataCompleteness: "complete" | "partial" | "insufficient";
+  missingCriticalAnswers: string[];
+  requiresHumanReview: boolean;
+  matchedRules: Record<string, unknown>[];
   summary: string | null;
   ethicalDisclaimer: string | null;
   createdAt: string | null;

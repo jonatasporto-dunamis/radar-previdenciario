@@ -14,8 +14,14 @@ export async function FooterCompany() {
       <p className="text-muted-foreground mt-4 max-w-md text-sm leading-6">
         {brand.legalName}
       </p>
+      {office.legalProfessional ? (
+        <p className="text-muted-foreground mt-2 text-sm">
+          {office.legalProfessional.name} —{" "}
+          {office.legalProfessional.displayRegistration}
+        </p>
+      ) : null}
       <p className="text-muted-foreground mt-2 text-sm">
-        {office.responsibleLawyer} · {office.oab}
+        Atendimento com unidades em {office.units.join(", ")}.
       </p>
     </div>
   );

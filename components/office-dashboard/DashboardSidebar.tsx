@@ -1,9 +1,15 @@
 import Link from "next/link";
-import { LayoutDashboard, UserCircle, Users } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  UserCircle,
+  Users,
+} from "lucide-react";
 
 const links = [
   { href: "/painel", label: "Visão geral", icon: LayoutDashboard },
   { href: "/painel/leads", label: "Leads", icon: Users },
+  { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/painel/conta", label: "Minha conta", icon: UserCircle },
 ];
 

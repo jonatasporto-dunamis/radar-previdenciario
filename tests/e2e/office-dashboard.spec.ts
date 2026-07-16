@@ -78,7 +78,7 @@ test.describe("office dashboard", () => {
 
     await page.getByLabel("Busca").fill("Maria");
     await page.getByRole("button", { name: "Filtrar" }).click();
-    await expect(page).toHaveURL(/search=Maria/);
+    await expect(page.getByLabel("Busca")).toHaveValue("Maria");
     await expect(page.getByText("Maria Lead E2E")).toBeVisible();
   });
 
@@ -102,6 +102,35 @@ test.describe("office dashboard", () => {
       page.getByRole("heading", { name: "Notificações" }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
+  });
+
+  test("manages modular quiz templates", async ({ page }) => {
+    await login(page);
+    await page.goto("/painel/quizzes");
+
+    await expect(
+      page.getByRole("heading", { name: "Gestão básica de templates" }),
+    ).toBeVisible();
+    await expect(page.getByText("Triagem previdenciária geral")).toBeVisible();
+
+    await page.getByRole("button", { name: "Clonar" }).first().click();
+    await page.waitForURL(/\/painel\/quizzes\/[0-9a-f-]+/);
+    await expect(
+      page.getByRole("heading", { name: /rascunho/i }),
+    ).toBeVisible();
+
+    await page.getByRole("link", { name: "Editar draft" }).click();
+    await page.getByLabel("Nome").fill("Template E2E de triagem");
+    await page
+      .getByLabel("Descrição")
+      .fill("Template customizado de teste para o painel interno.");
+    await page.getByRole("button", { name: "Salvar draft" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Template E2E de triagem" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Publicar" }).click();
+    await expect(page.getByText("Ativo").first()).toBeVisible();
   });
 
   test("updates status and manages an internal note", async ({ page }) => {

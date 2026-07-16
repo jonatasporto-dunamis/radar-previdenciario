@@ -30,7 +30,7 @@ Armazena dados básicos do lead e campos de atribuição de campanha capturados 
 
 ### quiz_sessions
 
-Representa uma sessão de questionário associada a um lead, com início, conclusão e status. A página `/quiz` reutiliza a sessão aberta mais recente com `status = started` ou cria uma nova quando não existe sessão aberta.
+Representa uma sessão de questionário associada a um lead, com início, conclusão, status e, após a migration modular, vínculo opcional com template (`quiz_template_id`, `quiz_template_version`, `template_type`). A página `/quiz` reutiliza a sessão aberta mais recente do template solicitado ou cria uma nova quando não existe sessão aberta.
 
 ### quiz_answers
 
@@ -38,7 +38,23 @@ Armazena respostas individuais de uma sessão do quiz, vinculadas ao lead e à s
 
 ### quiz_results
 
-Armazena o resultado preliminar calculado para uma sessão, incluindo benefício em destaque, pontuação, classificação, síntese e aviso ético.
+Armazena o resultado preliminar calculado para uma sessão, incluindo benefício/tema em destaque, pontuação interna, classificação interna, completude, necessidade de revisão humana, regras combinadas, síntese e aviso ético.
+
+### quiz_templates
+
+Catálogo versionado de templates de quiz. Templates da plataforma usam `tenant_id = null`, `source = platform` e `ownership = platform_managed`. Templates customizados usam `tenant_id` obrigatório, `source = tenant` e `ownership = tenant_managed`.
+
+### quiz_template_questions
+
+Perguntas pertencentes a um template, com tipo, obrigatoriedade, sensibilidade, opções, condições e ordem de exibição.
+
+### quiz_template_rules
+
+Regras operacionais pertencentes a um template. Elas qualificam leads e não produzem parecer jurídico.
+
+### quiz_template_versions
+
+Snapshots planejados para versionamento de templates publicados sem sobrescrever histórico.
 
 ### tracking_events
 
@@ -174,6 +190,10 @@ A tabela não armazena payload bruto, respostas do quiz, classificação, score,
 - `tenants` 1:N `lead_notes`
 - `tenants` 1:N `lead_status_history`
 - `tenants` 1:N `office_audit_logs`
+- `tenants` 1:N `quiz_templates` customizados
+- `quiz_templates` 1:N `quiz_template_questions`
+- `quiz_templates` 1:N `quiz_template_rules`
+- `quiz_templates` 1:N `quiz_template_versions`
 - `leads` 1:N `quiz_sessions`
 - `leads` 1:N `quiz_answers`
 - `leads` 1:N `quiz_results`
@@ -248,17 +268,18 @@ Como Supabase JS não fornece transação simples entre chamadas independentes n
 
 ## Sessões do quiz
 
-Ao entrar em `/quiz`, a aplicação:
+Ao entrar em `/quiz` ou `/quiz/[templateSlug]`, a aplicação:
 
 - lê o cookie HTTP-only `rp_lead_session`;
 - valida a existência do lead;
-- busca sessão aberta em `quiz_sessions`;
+- resolve o tenant e o template no servidor;
+- busca sessão aberta em `quiz_sessions` para o lead e template;
 - cria uma sessão com `status = started` se necessário;
 - carrega respostas já salvas;
 - calcula a pergunta de retomada;
 - salva `rp_quiz_session` via Server Action para preservar o identificador da sessão.
 
-No MVP, a criação da sessão é idempotente por lead: a primeira `quiz_session` usa o UUID do lead como identificador da sessão. Isso evita duas sessões abertas quando o App Router dispara requisições próximas para `/quiz`.
+O template geral preserva compatibilidade com sessões antigas que não possuem `quiz_template_id`. Templates temáticos criam sessões próprias. Sessões sem template associado assumem fallback para o template geral legado.
 
 Quando a última pergunta é salva e todas as obrigatórias foram respondidas, a aplicação gera o resultado preliminar, persiste `quiz_results` e marca a sessão como `completed` com `completed_at`.
 
@@ -292,9 +313,17 @@ Campos persistidos em `quiz_results`:
 
 - `session_id`
 - `lead_id`
+- `quiz_template_id`
+- `quiz_template_version`
+- `template_type`
 - `potential_benefit`
+- `topic`
 - `score`
 - `classification`
+- `data_completeness`
+- `missing_critical_answers`
+- `requires_human_review`
+- `matched_rules`
 - `summary`
 - `ethical_disclaimer`
 
@@ -354,6 +383,7 @@ Para validar `notification_logs`, confirme:
 
 ## Próximos passos
 
+- Popular `quiz_template_questions` e `quiz_template_rules` por serviço administrativo quando o painel de templates estiver ativo.
 - Avaliar constraint ou upsert para respostas quando a regra de histórico estiver definida.
 - Criar limpeza de atribuição ao finalizar o resultado.
 - Avaliar rate limit persistente com Upstash Redis ou equivalente.
@@ -393,15 +423,18 @@ Migration aplicada:
 - `20260714010000_create_external_tracking_deliveries.sql`
 - `20260714150000_create_multi_tenant_foundation.sql`
 
-Migration local pendente de aplicação remota:
+Migrations locais pendentes de aplicação remota controlada:
 
+- `20260715120000_create_modular_quiz_templates.sql`
 - `20260715150000_create_office_dashboard.sql`
 
-Ela cria `tenant_memberships`, `lead_notes`, `lead_status_history`, `office_audit_logs`, RLS, policies restritivas e padronização segura de status comercial em `leads.status`.
+A migration modular cria `quiz_templates`, `quiz_template_questions`, `quiz_template_rules`, `quiz_template_versions` e vínculos opcionais em `quiz_sessions` e `quiz_results`.
 
-Não aplique essa migration no Supabase remoto sem aprovação explícita.
+A migration do painel cria `tenant_memberships`, `lead_notes`, `lead_status_history`, `office_audit_logs`, RLS, policies restritivas e padronização segura de status comercial em `leads.status`.
 
-Os types oficiais atuais foram gerados anteriormente com:
+Não aplique essas migrations no Supabase remoto sem aprovação explícita.
+
+Os types oficiais foram gerados com:
 
 ```bash
 supabase gen types typescript --linked --schema public > types/supabase.ts

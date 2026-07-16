@@ -48,6 +48,60 @@ export function LeadFilters({ filters }: { filters: LeadListFilters }) {
         </select>
       </div>
       <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="templateType">
+          Tipo de quiz
+        </label>
+        <select
+          className="bg-background w-full rounded-md border px-3 py-2 text-sm"
+          defaultValue={filters.templateType ?? ""}
+          id="templateType"
+          name="templateType"
+        >
+          <option value="">Todos</option>
+          <option value="general">Geral</option>
+          <option value="maternity">Salário-maternidade</option>
+          <option value="fibromyalgia">Fibromialgia</option>
+          <option value="depression">Depressão</option>
+          <option value="autism">Autismo</option>
+          <option value="custom">Customizado</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="dataCompleteness">
+          Completude
+        </label>
+        <select
+          className="bg-background w-full rounded-md border px-3 py-2 text-sm"
+          defaultValue={filters.dataCompleteness ?? ""}
+          id="dataCompleteness"
+          name="dataCompleteness"
+        >
+          <option value="">Todas</option>
+          <option value="complete">Completa</option>
+          <option value="partial">Parcial</option>
+          <option value="insufficient">Insuficiente</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="requiresHumanReview">
+          Revisão humana
+        </label>
+        <select
+          className="bg-background w-full rounded-md border px-3 py-2 text-sm"
+          defaultValue={
+            typeof filters.requiresHumanReview === "boolean"
+              ? String(filters.requiresHumanReview)
+              : ""
+          }
+          id="requiresHumanReview"
+          name="requiresHumanReview"
+        >
+          <option value="">Todas</option>
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+      </div>
+      <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="utmSource">
           UTM source
         </label>

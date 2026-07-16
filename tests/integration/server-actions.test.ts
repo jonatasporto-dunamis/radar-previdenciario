@@ -44,7 +44,9 @@ describe("server actions", () => {
       fullName: "Maria Previdencia",
       email: "maria@example.com",
       phone: "(71) 98153-3737",
-      privacyConsent: true,
+      termsAcknowledgement: true,
+      contactConsent: true,
+      marketingConsent: false,
       website: "",
       attribution: {
         utmSource: "meta",
@@ -65,6 +67,21 @@ describe("server actions", () => {
           external_event_id:
             "rp_LeadSubmitted_11111111-1111-4111-8111-111111111111",
         }),
+      }),
+    );
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "TermsAcknowledged",
+      }),
+    );
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "ContactConsentGranted",
+      }),
+    );
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "MarketingConsentDenied",
       }),
     );
     expect(dispatchExternalEvent).toHaveBeenCalledWith(
@@ -94,7 +111,9 @@ describe("server actions", () => {
       fullName: "Maria",
       email: "invalid",
       phone: "123",
-      privacyConsent: false,
+      termsAcknowledgement: false,
+      contactConsent: false,
+      marketingConsent: false,
       website: "",
     });
 

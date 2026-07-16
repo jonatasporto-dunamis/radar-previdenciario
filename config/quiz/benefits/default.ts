@@ -34,4 +34,59 @@ export const defaultBenefits: BenefitDefinition[] = [
     icon: "heart-handshake",
     color: "success",
   },
+  {
+    id: "benefit-maternity",
+    slug: "salario-maternidade",
+    title: "Salário-maternidade",
+    description:
+      "Agrupa perguntas preliminares sobre evento, categoria de segurada, contribuições e pedido no INSS.",
+    priority: 40,
+    active: true,
+    icon: "baby",
+    color: "primary",
+  },
+  {
+    id: "benefit-fibromyalgia",
+    slug: "fibromialgia",
+    title: "Tema relacionado à fibromialgia",
+    description:
+      "Organiza informações sobre impactos funcionais relatados, sem diagnóstico ou conclusão de incapacidade.",
+    priority: 50,
+    active: true,
+    icon: "activity",
+    color: "secondary",
+  },
+  {
+    id: "benefit-depression",
+    slug: "depressao",
+    title: "Tema relacionado à depressão",
+    description:
+      "Organiza informações sobre saúde mental e impactos funcionais informados, sem avaliar gravidade clínica.",
+    priority: 60,
+    active: true,
+    icon: "heart-pulse",
+    color: "warning",
+  },
+  {
+    id: "benefit-autism",
+    slug: "autismo",
+    title: "Tema relacionado ao autismo",
+    description:
+      "Organiza informações preliminares sobre BPC, dependentes e contexto familiar, sem solicitar dados completos de terceiros.",
+    priority: 70,
+    active: true,
+    icon: "users",
+    color: "success",
+  },
+  {
+    id: "benefit-death-pension",
+    slug: "pensao",
+    title: "Pensão ou benefício familiar",
+    description:
+      "Agrupa perguntas preliminares sobre pensão por morte ou benefício familiar para triagem geral.",
+    priority: 80,
+    active: true,
+    icon: "file-heart",
+    color: "neutral",
+  },
 ];

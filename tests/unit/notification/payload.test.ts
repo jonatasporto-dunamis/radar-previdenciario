@@ -43,11 +43,19 @@ const result: ResultRow = {
   tenant_id: TEST_TENANT_ID,
   session_id: "44444444-4444-4444-8444-444444444444",
   lead_id: lead.id,
+  quiz_template_id: "11111111-1111-4111-8111-111111111111",
+  quiz_template_version: 1,
+  template_type: "general",
   potential_benefit: "BPC/LOAS",
+  topic: "BPC/LOAS",
   score: 88,
   classification: "alto_potencial",
   summary: "Resumo preliminar.",
   ethical_disclaimer: "Aviso.",
+  data_completeness: "complete",
+  missing_critical_answers: [],
+  requires_human_review: false,
+  matched_rules: [],
   created_at: "2026-07-12T12:05:00.000Z",
 };
 
@@ -66,11 +74,15 @@ describe("notification payload", () => {
       result,
       computedResult: {
         potentialBenefit: "BPC/LOAS",
+        topic: "BPC/LOAS",
         score: 88,
         classification: "alto_potencial",
         summary: "Resumo preliminar.",
         ethicalDisclaimer: "Aviso.",
         candidates: [],
+        dataCompleteness: "complete",
+        missingCriticalAnswers: [],
+        requiresHumanReview: false,
       },
       answers: {
         age: {
@@ -108,8 +120,9 @@ describe("notification payload", () => {
     const url = buildLeadWhatsappUrl(lead);
 
     expect(url).toContain("https://wa.me/5571981533737");
-    expect(decodeURIComponent(url)).toContain("Maria Silva");
-    expect(decodeURIComponent(url)).toContain("+55 (71) 98153-3737");
+    expect(url).not.toContain("text=");
+    expect(decodeURIComponent(url)).not.toContain("Maria Silva");
+    expect(decodeURIComponent(url)).not.toContain("+55 (71) 98153-3737");
   });
 
   it("gera payload_hash estavel para a mesma notificacao", () => {

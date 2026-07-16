@@ -73,6 +73,10 @@ Payload:
   "source": "quiz",
   "flowSlug": "triagem-previdenciaria-inicial",
   "flowVersion": 1,
+  "templateId": "11111111-1111-4111-8111-111111111111",
+  "templateSlug": "geral",
+  "templateType": "general",
+  "templateVersion": 1,
   "external_event_id": "rp_QuizStarted_uuid"
 }
 ```
@@ -108,6 +112,9 @@ Payload:
   "score": 75,
   "classification": "alto_potencial",
   "potentialBenefit": "Aposentadoria",
+  "dataCompleteness": "complete",
+  "requiresHumanReview": false,
+  "templateType": "general",
   "external_event_id": "rp_QuizCompleted_uuid"
 }
 ```
@@ -136,6 +143,8 @@ Payload:
 ```
 
 O evento é deduplicado em aplicação por `event_name`, `lead_id` e `session_id`.
+
+Os metadados de template são internos e servem para análise operacional por campanha. Eles não devem ser enviados para Meta, GA4, Pixel ou GTM quando revelarem assunto sensível.
 
 ### ResultViewed
 

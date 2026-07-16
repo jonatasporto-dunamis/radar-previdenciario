@@ -3,7 +3,7 @@ import { ResendProvider } from "@/services/notification/providers";
 import type { OfficeConfig } from "@/types/brand";
 
 const providerInput = {
-  subject: "Novo lead qualificado — Radar Previdenciário",
+  subject: "Novo contato para avaliação previdenciária",
   html: "<p>Lead</p>",
   text: "Lead",
   payloadHash:
@@ -16,12 +16,36 @@ const providerInput = {
 const officeConfig: OfficeConfig = {
   responsibleLawyer: "Responsavel",
   oab: "OAB/UF 000000",
+  legalProfessional: {
+    name: "Responsavel",
+    registration: "000000",
+    sectional: "UF",
+    displayRegistration: "OAB/UF 000000",
+  },
+  legalIdentity: {
+    officeName: "Escritorio Teste",
+    responsibleProfessionalName: "Responsavel",
+    professionalRegistration: "OAB/UF 000000",
+  },
   specialties: ["Direito Previdenciario"],
   citiesServed: ["Cidade"],
   statesServed: ["UF"],
   serviceMode: "Remoto",
   workingHours: "9h as 18h",
   whatsappDefaultMessage: "Mensagem",
+  units: ["Cidade/UF"],
+  privacy: {},
+  dataRetention: {
+    incompleteSessionDays: 30,
+    completedTriageDays: 180,
+    activeLeadDays: 365,
+    trackingDays: 180,
+    internalTrackingDays: 180,
+    securityLogDays: 180,
+    notificationLogDays: 180,
+    externalDeliveryDays: 180,
+    auditLogDays: 365,
+  },
   email: {
     fromName: "Radar Previdenciario",
     fromAddress: "no-reply@example.com",

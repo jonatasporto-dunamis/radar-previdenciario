@@ -28,6 +28,7 @@ type ResultRow = Database["public"]["Tables"]["quiz_results"]["Row"];
 type AnswerRow = Database["public"]["Tables"]["quiz_answers"]["Row"];
 type NotificationRow = Database["public"]["Tables"]["notification_logs"]["Row"];
 type TrackingRow = Database["public"]["Tables"]["tracking_events"]["Row"];
+type TemplateRow = Database["public"]["Tables"]["quiz_templates"]["Row"];
 type StatusHistoryRow =
   Database["public"]["Tables"]["lead_status_history"]["Row"];
 type NoteRow = Database["public"]["Tables"]["lead_notes"]["Row"];
@@ -60,13 +61,54 @@ function mapAttribution(row: LeadRow): OfficeLeadAttribution {
   };
 }
 
-function mapResult(row: ResultRow): OfficeQuizResult {
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function toRecordArray(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is Record<string, unknown> =>
+          !!item && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
+}
+
+function toDataCompleteness(
+  value: string | null,
+): OfficeQuizResult["dataCompleteness"] {
+  if (value === "complete" || value === "partial" || value === "insufficient") {
+    return value;
+  }
+
+  return "insufficient";
+}
+
+function mapResult(
+  row: ResultRow,
+  templatesById: Map<string, TemplateRow>,
+): OfficeQuizResult {
+  const template = row.quiz_template_id
+    ? templatesById.get(row.quiz_template_id)
+    : null;
+
   return {
     id: row.id,
     sessionId: row.session_id,
+    templateId: row.quiz_template_id,
+    templateName: template?.name ?? null,
+    templateType: row.template_type,
+    templateVersion: row.quiz_template_version,
+    topic: row.topic,
     potentialBenefit: row.potential_benefit,
     score: row.score,
     classification: toClassification(row.classification) ?? "baixo_potencial",
+    dataCompleteness: toDataCompleteness(row.data_completeness),
+    missingCriticalAnswers: toStringArray(row.missing_critical_answers),
+    requiresHumanReview: row.requires_human_review,
+    matchedRules: toRecordArray(row.matched_rules),
     summary: row.summary,
     ethicalDisclaimer: row.ethical_disclaimer,
     createdAt: row.created_at,
@@ -124,6 +166,21 @@ function matchesFilters(input: {
     return false;
   }
 
+  if (filters.templateId && result?.templateId !== filters.templateId) {
+    return false;
+  }
+
+  if (filters.templateType && result?.templateType !== filters.templateType) {
+    return false;
+  }
+
+  if (
+    filters.dataCompleteness &&
+    result?.dataCompleteness !== filters.dataCompleteness
+  ) {
+    return false;
+  }
+
   if (filters.utmSource && lead.utm_source !== filters.utmSource) {
     return false;
   }
@@ -172,6 +229,7 @@ function matchesFilters(input: {
 
 async function getLatestResultsByLead(
   tenantId: string,
+  templatesById: Map<string, TemplateRow>,
 ): Promise<Map<string, OfficeQuizResult>> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
@@ -186,11 +244,22 @@ async function getLatestResultsByLead(
 
   return (data ?? []).reduce<Map<string, OfficeQuizResult>>((acc, row) => {
     if (row.lead_id && !acc.has(row.lead_id)) {
-      acc.set(row.lead_id, mapResult(row));
+      acc.set(row.lead_id, mapResult(row, templatesById));
     }
 
     return acc;
   }, new Map());
+}
+
+async function getTemplatesById(): Promise<Map<string, TemplateRow>> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.from("quiz_templates").select("*");
+
+  if (error) {
+    throw new Error("Unable to load office quiz templates.");
+  }
+
+  return new Map((data ?? []).map((template) => [template.id, template]));
 }
 
 async function getAnswersByLead(
@@ -239,9 +308,10 @@ export async function listOfficeLeadsForTenant(input: {
   tenantId: string;
   filters: LeadListFilters;
 }): Promise<OfficeLeadListResult> {
+  const templatesById = await getTemplatesById();
   const [leads, resultsByLead, answersByLead] = await Promise.all([
     listOfficeLeadRows(input.tenantId),
-    getLatestResultsByLead(input.tenantId),
+    getLatestResultsByLead(input.tenantId, templatesById),
     getAnswersByLead(input.tenantId),
   ]);
 
@@ -270,6 +340,10 @@ export async function listOfficeLeadsForTenant(input: {
         maskedPhone: maskPhone(lead.phone),
         commercialStatus: normalizeLeadCommercialStatus(lead.status),
         potentialBenefit: result?.potentialBenefit ?? null,
+        templateName: result?.templateName ?? null,
+        templateType: result?.templateType ?? null,
+        templateVersion: result?.templateVersion ?? null,
+        dataCompleteness: result?.dataCompleteness ?? null,
         classification: result?.classification ?? null,
         score: result?.score ?? null,
         requiresHumanReview: requiresHumanReview({ result, answers }),
@@ -344,6 +418,7 @@ async function getLatestLeadResult(input: {
   leadId: string;
 }): Promise<OfficeQuizResult | null> {
   const supabase = createSupabaseAdminClient();
+  const templatesById = await getTemplatesById();
   const { data, error } = await supabase
     .from("quiz_results")
     .select("*")
@@ -356,7 +431,7 @@ async function getLatestLeadResult(input: {
     throw new Error("Unable to load office lead result.");
   }
 
-  return data?.[0] ? mapResult(data[0]) : null;
+  return data?.[0] ? mapResult(data[0], templatesById) : null;
 }
 
 async function listLeadNotifications(input: {

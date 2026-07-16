@@ -5,3 +5,4 @@ export * from "./renderer";
 export * from "./results";
 export * from "./rules";
 export * from "./session";
+export * from "./templates";

@@ -6,7 +6,7 @@ export const notificationConfig = {
     email: {
       enabled: true,
       notificationType: "lead_qualified",
-      subject: "Novo lead qualificado — Radar Previdenciário",
+      subject: "Novo contato para avaliação previdenciária",
     },
   },
   retry: {

@@ -5,3 +5,4 @@ export * from "./history";
 export * from "./leads";
 export * from "./memberships";
 export * from "./notes";
+export * from "./quizzes";

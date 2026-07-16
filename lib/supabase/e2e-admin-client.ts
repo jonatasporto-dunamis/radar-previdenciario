@@ -7,6 +7,10 @@ type TableName =
   | "tenant_tracking_configs"
   | "tenant_secrets"
   | "tenant_memberships"
+  | "quiz_templates"
+  | "quiz_template_questions"
+  | "quiz_template_rules"
+  | "quiz_template_versions"
   | "leads"
   | "lead_notes"
   | "lead_status_history"
@@ -27,6 +31,8 @@ const DEFAULT_LEAD_ID = "00000000-0000-4000-8000-000000001001";
 const SECOND_LEAD_ID = "00000000-0000-4000-8000-000000002001";
 const DEFAULT_SESSION_ID = "00000000-0000-4000-8000-000000001101";
 const DEFAULT_RESULT_ID = "00000000-0000-4000-8000-000000001201";
+const GENERAL_TEMPLATE_ID = "11111111-1111-4111-8111-111111111111";
+const MATERNITY_TEMPLATE_ID = "22222222-2222-4222-8222-222222222222";
 const E2E_ADMIN_USER_ID = "00000000-0000-4000-8000-000000000901";
 const E2E_MANAGER_USER_ID = "00000000-0000-4000-8000-000000000902";
 const E2E_AGENT_USER_ID = "00000000-0000-4000-8000-000000000903";
@@ -41,6 +47,10 @@ const store: Record<TableName, Row[]> = {
   tenant_tracking_configs: [],
   tenant_secrets: [],
   tenant_memberships: [],
+  quiz_templates: [],
+  quiz_template_questions: [],
+  quiz_template_rules: [],
+  quiz_template_versions: [],
   leads: [],
   lead_notes: [],
   lead_status_history: [],
@@ -222,6 +232,111 @@ function createDefaultTenantRows(): void {
     );
   }
 
+  if (!store.quiz_templates.length) {
+    store.quiz_templates.push(
+      createRow("quiz_templates", {
+        id: GENERAL_TEMPLATE_ID,
+        tenant_id: null,
+        slug: "geral",
+        name: "Triagem previdenciária geral",
+        description: "Template geral de triagem informativa.",
+        category: "previdenciario",
+        audience: "leads",
+        source: "platform",
+        ownership: "platform_managed",
+        status: "active",
+        template_type: "general",
+        version: 1,
+        is_default: true,
+        metadata: {},
+        created_by_user_id: null,
+        updated_at: DEFAULT_TIMESTAMP,
+      }),
+      createRow("quiz_templates", {
+        id: MATERNITY_TEMPLATE_ID,
+        tenant_id: null,
+        slug: "salario-maternidade",
+        name: "Triagem de salário-maternidade",
+        description: "Template temático de salário-maternidade.",
+        category: "previdenciario",
+        audience: "leads",
+        source: "platform",
+        ownership: "platform_managed",
+        status: "active",
+        template_type: "maternity",
+        version: 1,
+        is_default: false,
+        metadata: {},
+        created_by_user_id: null,
+        updated_at: DEFAULT_TIMESTAMP,
+      }),
+    );
+  }
+
+  if (!store.quiz_template_questions.length) {
+    store.quiz_template_questions.push(
+      createRow("quiz_template_questions", {
+        quiz_template_id: GENERAL_TEMPLATE_ID,
+        question_key: "benefit-interest",
+        title: "Qual benefício deseja analisar?",
+        question_type: "radio",
+        description: null,
+        is_required: true,
+        is_sensitive: false,
+        allows_unknown: true,
+        allows_withheld: true,
+        display_order: 1,
+        options: [{ value: "aposentadoria", label: "Aposentadoria" }],
+        conditions: {},
+        metadata: {},
+        updated_at: DEFAULT_TIMESTAMP,
+      }),
+      createRow("quiz_template_questions", {
+        quiz_template_id: MATERNITY_TEMPLATE_ID,
+        question_key: "maternity-related-situation",
+        title: "Qual situação deseja analisar?",
+        question_type: "radio",
+        description: null,
+        is_required: true,
+        is_sensitive: false,
+        allows_unknown: true,
+        allows_withheld: true,
+        display_order: 1,
+        options: [{ value: "birth", label: "Nascimento" }],
+        conditions: {},
+        metadata: {},
+        updated_at: DEFAULT_TIMESTAMP,
+      }),
+    );
+  }
+
+  if (!store.quiz_template_rules.length) {
+    store.quiz_template_rules.push(
+      createRow("quiz_template_rules", {
+        quiz_template_id: GENERAL_TEMPLATE_ID,
+        rule_key: "general-topic",
+        rule_type: "topic",
+        status: "active",
+        priority: 1,
+        conditions: [],
+        effects: {},
+        updated_at: DEFAULT_TIMESTAMP,
+      }),
+    );
+  }
+
+  if (!store.quiz_template_versions.length) {
+    store.quiz_template_versions.push(
+      createRow("quiz_template_versions", {
+        quiz_template_id: GENERAL_TEMPLATE_ID,
+        version: 1,
+        status: "active",
+        snapshot: { questions: 1, rules: 1 },
+        created_by_user_id: null,
+      }),
+    );
+  }
+
   if (!store.leads.length) {
     store.leads.push(
       createRow("leads", {
@@ -262,6 +377,9 @@ function createDefaultTenantRows(): void {
         id: DEFAULT_SESSION_ID,
         tenant_id: DEFAULT_TENANT_ID,
         lead_id: DEFAULT_LEAD_ID,
+        quiz_template_id: GENERAL_TEMPLATE_ID,
+        quiz_template_version: 1,
+        template_type: "general",
         status: "completed",
         completed_at: DEFAULT_TIMESTAMP,
       }),
@@ -300,9 +418,17 @@ function createDefaultTenantRows(): void {
         tenant_id: DEFAULT_TENANT_ID,
         lead_id: DEFAULT_LEAD_ID,
         session_id: DEFAULT_SESSION_ID,
+        quiz_template_id: GENERAL_TEMPLATE_ID,
+        quiz_template_version: 1,
+        template_type: "general",
+        topic: "Aposentadoria",
         potential_benefit: "Aposentadoria",
         score: 82,
         classification: "alto_potencial",
+        data_completeness: "complete",
+        missing_critical_answers: [],
+        requires_human_review: false,
+        matched_rules: [{ benefitSlug: "retirement" }],
         summary:
           "Foram identificados indícios que recomendam análise previdenciária individual.",
         ethical_disclaimer:
