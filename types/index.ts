@@ -1,5 +1,14 @@
 export type AppRoute =
-  "/" | "/cadastro" | "/quiz" | "/resultado" | "/privacidade" | "/termos";
+  | "/"
+  | "/cadastro"
+  | "/quiz"
+  | "/quiz/salario-maternidade"
+  | "/quiz/fibromialgia"
+  | "/quiz/depressao"
+  | "/quiz/autismo"
+  | "/resultado"
+  | "/privacidade"
+  | "/termos";
 
 export type {
   JsonObject,
@@ -20,6 +29,13 @@ export type {
   TenantSecretStatus as DatabaseTenantSecretStatus,
   TenantStatus as DatabaseTenantStatus,
   TenantTrackingConfig as DatabaseTenantTrackingConfig,
+  QuizTemplate as DatabaseQuizTemplate,
+  QuizTemplateOwnership as DatabaseQuizTemplateOwnership,
+  QuizTemplateQuestion as DatabaseQuizTemplateQuestion,
+  QuizTemplateRule as DatabaseQuizTemplateRule,
+  QuizTemplateSource as DatabaseQuizTemplateSource,
+  QuizTemplateStatus as DatabaseQuizTemplateStatus,
+  QuizTemplateType as DatabaseQuizTemplateType,
   QuizAnswer,
   QuizResult,
   QuizSession,
@@ -31,8 +47,12 @@ export type {
 
 export type {
   BrandConfig,
+  DataRetentionConfig,
+  LegalProfessionalConfig,
+  TenantLegalIdentity,
   LegalConfig,
   OfficeConfig,
+  PrivacyContactConfig,
   SeoConfig,
   SocialUrl,
   ThemeColorScale,
@@ -43,7 +63,10 @@ export type { AttributionData } from "./attribution";
 
 export type {
   BenefitDefinition,
+  AnswerCompleteness,
+  AnswerState,
   FlowDefinition,
+  InternalQualification,
   QuestionAnswerPrimitive,
   QuestionAnswerValue,
   QuestionDefinition,
@@ -57,9 +80,21 @@ export type {
   QuizAnswerMap,
   QuizNavigationState,
   QuizProgress,
+  PublicResult,
+  ModerationLevel,
+  ModerationResult,
   QuizResultClassification,
   QuizResultComputation,
   QuizStoredAnswer,
+  QuizTemplateDefinition,
+  QuizTemplateOwnership,
+  QuizTemplatePermissionAction,
+  QuizTemplatePermissionRole,
+  QuizTemplatePreventiveText,
+  QuizTemplatePublicResult,
+  QuizTemplateSource,
+  QuizTemplateStatus,
+  QuizTemplateType,
   RuleCandidate,
   RuleConditionDefinition,
   RuleConditionOperator,

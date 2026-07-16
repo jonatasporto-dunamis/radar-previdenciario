@@ -299,6 +299,224 @@ export type Database = {
           },
         ];
       };
+      quiz_template_questions: {
+        Row: {
+          allows_unknown: boolean;
+          allows_withheld: boolean;
+          conditions: Json;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          is_required: boolean;
+          is_sensitive: boolean;
+          metadata: Json;
+          options: Json;
+          question_key: string;
+          question_type: string;
+          quiz_template_id: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          allows_unknown?: boolean;
+          allows_withheld?: boolean;
+          conditions?: Json;
+          created_at?: string;
+          description?: string | null;
+          display_order: number;
+          id?: string;
+          is_required?: boolean;
+          is_sensitive?: boolean;
+          metadata?: Json;
+          options?: Json;
+          question_key: string;
+          question_type: string;
+          quiz_template_id: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          allows_unknown?: boolean;
+          allows_withheld?: boolean;
+          conditions?: Json;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          is_required?: boolean;
+          is_sensitive?: boolean;
+          metadata?: Json;
+          options?: Json;
+          question_key?: string;
+          question_type?: string;
+          quiz_template_id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_template_questions_quiz_template_id_fkey";
+            columns: ["quiz_template_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_template_rules: {
+        Row: {
+          conditions: Json;
+          created_at: string;
+          effects: Json;
+          id: string;
+          priority: number;
+          quiz_template_id: string;
+          rule_key: string;
+          rule_type: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          conditions?: Json;
+          created_at?: string;
+          effects?: Json;
+          id?: string;
+          priority?: number;
+          quiz_template_id: string;
+          rule_key: string;
+          rule_type?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          conditions?: Json;
+          created_at?: string;
+          effects?: Json;
+          id?: string;
+          priority?: number;
+          quiz_template_id?: string;
+          rule_key?: string;
+          rule_type?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_template_rules_quiz_template_id_fkey";
+            columns: ["quiz_template_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_template_versions: {
+        Row: {
+          created_at: string;
+          created_by_user_id: string | null;
+          id: string;
+          quiz_template_id: string;
+          snapshot: Json;
+          status: string;
+          version: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by_user_id?: string | null;
+          id?: string;
+          quiz_template_id: string;
+          snapshot: Json;
+          status?: string;
+          version: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by_user_id?: string | null;
+          id?: string;
+          quiz_template_id?: string;
+          snapshot?: Json;
+          status?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_template_versions_quiz_template_id_fkey";
+            columns: ["quiz_template_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_templates: {
+        Row: {
+          audience: string | null;
+          category: string;
+          created_at: string;
+          created_by_user_id: string | null;
+          description: string;
+          id: string;
+          is_default: boolean;
+          metadata: Json;
+          name: string;
+          ownership: string;
+          slug: string;
+          source: string;
+          status: string;
+          template_type: string;
+          tenant_id: string | null;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          audience?: string | null;
+          category?: string;
+          created_at?: string;
+          created_by_user_id?: string | null;
+          description: string;
+          id?: string;
+          is_default?: boolean;
+          metadata?: Json;
+          name: string;
+          ownership?: string;
+          slug: string;
+          source: string;
+          status?: string;
+          template_type: string;
+          tenant_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          audience?: string | null;
+          category?: string;
+          created_at?: string;
+          created_by_user_id?: string | null;
+          description?: string;
+          id?: string;
+          is_default?: boolean;
+          metadata?: Json;
+          name?: string;
+          ownership?: string;
+          slug?: string;
+          source?: string;
+          status?: string;
+          template_type?: string;
+          tenant_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_templates_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       quiz_answers: {
         Row: {
           answer_label: string;
@@ -364,38 +582,62 @@ export type Database = {
         Row: {
           classification: string;
           created_at: string | null;
+          data_completeness: string;
           ethical_disclaimer: string | null;
           id: string;
           lead_id: string | null;
+          matched_rules: Json;
+          missing_critical_answers: Json;
           potential_benefit: string | null;
+          quiz_template_id: string | null;
+          quiz_template_version: number | null;
+          requires_human_review: boolean;
           score: number;
           session_id: string | null;
           summary: string | null;
+          template_type: string | null;
           tenant_id: string;
+          topic: string | null;
         };
         Insert: {
           classification: string;
           created_at?: string | null;
+          data_completeness?: string;
           ethical_disclaimer?: string | null;
           id?: string;
           lead_id?: string | null;
+          matched_rules?: Json;
+          missing_critical_answers?: Json;
           potential_benefit?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          requires_human_review?: boolean;
           score?: number;
           session_id?: string | null;
           summary?: string | null;
+          template_type?: string | null;
           tenant_id: string;
+          topic?: string | null;
         };
         Update: {
           classification?: string;
           created_at?: string | null;
+          data_completeness?: string;
           ethical_disclaimer?: string | null;
           id?: string;
           lead_id?: string | null;
+          matched_rules?: Json;
+          missing_critical_answers?: Json;
           potential_benefit?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          requires_human_review?: boolean;
           score?: number;
           session_id?: string | null;
           summary?: string | null;
+          template_type?: string | null;
           tenant_id?: string;
+          topic?: string | null;
         };
         Relationships: [
           {
@@ -427,8 +669,11 @@ export type Database = {
           created_at: string | null;
           id: string;
           lead_id: string | null;
+          quiz_template_id: string | null;
+          quiz_template_version: number | null;
           started_at: string | null;
           status: string | null;
+          template_type: string | null;
           tenant_id: string;
           updated_at: string | null;
         };
@@ -437,8 +682,11 @@ export type Database = {
           created_at?: string | null;
           id?: string;
           lead_id?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
           started_at?: string | null;
           status?: string | null;
+          template_type?: string | null;
           tenant_id: string;
           updated_at?: string | null;
         };
@@ -447,8 +695,11 @@ export type Database = {
           created_at?: string | null;
           id?: string;
           lead_id?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
           started_at?: string | null;
           status?: string | null;
+          template_type?: string | null;
           tenant_id?: string;
           updated_at?: string | null;
         };

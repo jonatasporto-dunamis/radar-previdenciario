@@ -6,16 +6,21 @@ import type { AttributionData } from "@/types/attribution";
 import type {
   FlowDefinition,
   QuestionDefinition,
+  QuizTemplateDefinition,
   QuizAnswerMap,
   QuizProgress,
   QuizStoredAnswer,
 } from "@/types/quiz";
 import type { Database } from "@/types/supabase";
-import { getDefaultQuizFlow, getQuestionsForFlow } from "../engine/flowEngine";
+import {
+  getFlowForTemplate,
+  getQuestionsForTemplate,
+} from "../engine/flowEngine";
 import { getVisibleQuestions } from "../engine/questionEngine";
 import { getResumeQuestionId } from "../navigation/navigationEngine";
 import { calculateQuizProgress } from "../progress/progressEngine";
 import { createStoredAnswer, serializeQuestionAnswer } from "../renderer";
+import { getDefaultQuizTemplate, getQuizTemplateById } from "../templates";
 
 type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
 type QuizSessionRow = Database["public"]["Tables"]["quiz_sessions"]["Row"];
@@ -37,6 +42,7 @@ export type QuizSessionState = {
   lead: Pick<LeadRow, "id" | "tenant_id">;
   session: QuizSessionRow;
   flow: FlowDefinition;
+  template: QuizTemplateDefinition;
   questions: QuestionDefinition[];
   answers: QuizAnswerMap;
   currentQuestionId: string;
@@ -95,6 +101,7 @@ async function trackQuizStarted(
   lead: LeadRow,
   session: QuizSessionRow,
   flow: FlowDefinition,
+  template: QuizTemplateDefinition,
   context: QuizRequestContext,
 ): Promise<string | undefined> {
   const externalEventId = createExternalEventId("QuizStarted");
@@ -109,6 +116,10 @@ async function trackQuizStarted(
         source: "quiz",
         flowSlug: flow.slug,
         flowVersion: flow.version,
+        templateId: template.id,
+        templateSlug: template.slug,
+        templateType: template.type,
+        templateVersion: template.version,
         external_event_id: externalEventId,
       },
       attribution: leadAttributionToTracking(lead),
@@ -127,10 +138,10 @@ export async function getQuizSessionState(
   tenantId: string,
   leadId: string,
   context: QuizRequestContext = {},
+  template: QuizTemplateDefinition = getDefaultQuizTemplate(),
 ): Promise<QuizSessionState | null> {
   const supabase = createSupabaseAdminClient();
-  const flow = getDefaultQuizFlow();
-  const questions = getQuestionsForFlow(flow);
+  const flow = getFlowForTemplate(template);
 
   const { data: lead, error: leadError } = await supabase
     .from("leads")
@@ -147,33 +158,42 @@ export async function getQuizSessionState(
     return null;
   }
 
-  const { data: existingSession, error: sessionLookupError } = await supabase
+  const { data: existingSessions, error: sessionLookupError } = await supabase
     .from("quiz_sessions")
     .select("*")
     .eq("tenant_id", tenantId)
     .eq("lead_id", leadId)
     .eq("status", "started")
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(10);
 
   if (sessionLookupError) {
     throw new QuizSessionServiceError("Failed to load quiz session.");
   }
 
+  const existingSession =
+    existingSessions?.find((item) => item.quiz_template_id === template.id) ??
+    (template.isDefault
+      ? existingSessions?.find((item) => !item.quiz_template_id)
+      : undefined) ??
+    null;
   let session = existingSession;
   let createdSession = false;
   let quizStartedExternalEventId: string | undefined;
 
   if (!session) {
+    const sessionPayload = {
+      ...(template.isDefault ? { id: leadId } : {}),
+      tenant_id: tenantId,
+      lead_id: leadId,
+      status: "started",
+      quiz_template_id: template.id,
+      quiz_template_version: template.version,
+      template_type: template.type,
+    };
     const { data: newSession, error: createSessionError } = await supabase
       .from("quiz_sessions")
-      .insert({
-        id: leadId,
-        tenant_id: tenantId,
-        lead_id: leadId,
-        status: "started",
-      })
+      .insert(sessionPayload)
       .select("*")
       .single();
 
@@ -202,9 +222,15 @@ export async function getQuizSessionState(
       lead,
       session,
       flow,
+      template,
       context,
     );
   }
+
+  const sessionTemplate =
+    getQuizTemplateById(session.quiz_template_id) ?? template;
+  const sessionQuestions = getQuestionsForTemplate(sessionTemplate);
+  const sessionFlow = getFlowForTemplate(sessionTemplate);
 
   const { data: rows, error: answersError } = await supabase
     .from("quiz_answers")
@@ -217,8 +243,8 @@ export async function getQuizSessionState(
     throw new QuizSessionServiceError("Failed to load quiz answers.");
   }
 
-  const answers = buildAnswerMap(questions, rows ?? []);
-  const visibleQuestions = getVisibleQuestions(questions, answers);
+  const answers = buildAnswerMap(sessionQuestions, rows ?? []);
+  const visibleQuestions = getVisibleQuestions(sessionQuestions, answers);
   const currentQuestionId = getResumeQuestionId(visibleQuestions, answers);
   const progress = calculateQuizProgress(
     visibleQuestions,
@@ -229,8 +255,9 @@ export async function getQuizSessionState(
   return {
     lead: { id: lead.id, tenant_id: lead.tenant_id },
     session,
-    flow,
-    questions,
+    flow: sessionFlow,
+    template: sessionTemplate,
+    questions: sessionQuestions,
     answers,
     currentQuestionId,
     progress,

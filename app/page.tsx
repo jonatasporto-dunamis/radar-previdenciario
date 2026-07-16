@@ -52,9 +52,9 @@ const benefits = [
   },
   {
     icon: <MessageCircle aria-hidden="true" className="size-5" />,
-    title: "Contato qualificado",
+    title: "Contato responsável",
     description:
-      "A jornada foi estruturada para apoiar uma conversa posterior com o escritório responsável.",
+      "A jornada organiza as informações para apoiar uma conversa posterior com o escritório responsável.",
   },
 ];
 
@@ -74,7 +74,7 @@ const steps = [
     icon: <BadgeCheck aria-hidden="true" className="size-6" />,
     title: "Resultado informativo",
     description:
-      "A apresentação final separa indícios por níveis visuais de potencial.",
+      "A apresentação final indica apenas níveis internos de triagem, sem confirmar direito ou resultado.",
   },
 ];
 
@@ -96,8 +96,8 @@ export default async function Home({ searchParams }: HomeProps) {
     <PageContainer>
       <Hero
         primaryHref={cadastroHref}
-        subtitle="Uma experiência digital configurável para escritórios previdenciários capturarem leads com clareza, confiança e responsabilidade."
-        title="Análise previdenciária informativa em uma jornada simples e segura."
+        subtitle="Uma experiência digital configurável para organizar informações previdenciárias iniciais com clareza, confiança e responsabilidade."
+        title="Triagem previdenciária informativa em uma jornada simples e segura."
       />
 
       <section className="py-section">
@@ -120,7 +120,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <ContentContainer>
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <SectionTitle
-              description="O cadastro inicial já preserva a atribuição de campanha e prepara a continuidade para o questionário informativo."
+              description="O cadastro inicial preserva a atribuição de campanha e prepara a continuidade para o questionário informativo."
               eyebrow="Como funciona"
               title="Da entrada ao resultado com previsibilidade visual"
             />
@@ -149,7 +149,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 </p>
                 <p className="text-muted-foreground mt-3 max-w-3xl leading-7">
                   As informações institucionais exibidas nesta aplicação são
-                  consumidas por arquivos em `config/`, permitindo adaptar a
+                  consumidas por arquivos de configuração, permitindo adaptar a
                   experiência para outros escritórios sem reescrever
                   componentes.
                 </p>
@@ -160,9 +160,9 @@ export default async function Home({ searchParams }: HomeProps) {
       </section>
 
       <CTASection
-        description="Informe seus dados para continuar a jornada. O quiz ainda é um layout placeholder nesta etapa."
+        description="Informe seus dados para continuar a jornada de triagem. O resultado final é informativo e depende de avaliação individual posterior."
         href={cadastroHref}
-        title="Comece pela estrutura visual da análise"
+        title="Comece pela triagem previdenciária informativa"
       />
     </PageContainer>
   );

@@ -3,6 +3,11 @@ import type {
   QuestionDefinition,
   QuizStoredAnswer,
 } from "@/types/quiz";
+import {
+  getAnswerStateLabel,
+  isAllowedAnswerState,
+  isNonAnsweredState,
+} from "@/utils/quiz-answer-state";
 
 export type SerializedQuestionAnswer = {
   answerValue: string;
@@ -32,6 +37,13 @@ export function serializeQuestionAnswer(
   question: QuestionDefinition,
   value: QuestionAnswerValue,
 ): SerializedQuestionAnswer {
+  if (!Array.isArray(value) && isAllowedAnswerState(question, value)) {
+    return {
+      answerValue: value,
+      answerLabel: getAnswerStateLabel(value),
+    };
+  }
+
   if (question.type === "checkbox") {
     const selectedValues = Array.isArray(value) ? value : [];
 
@@ -85,6 +97,10 @@ export function deserializeQuestionAnswer(
   question: QuestionDefinition,
   answerValue: string,
 ): QuestionAnswerValue {
+  if (isAllowedAnswerState(question, answerValue)) {
+    return answerValue;
+  }
+
   if (question.type === "checkbox") {
     try {
       const parsed: unknown = JSON.parse(answerValue);
@@ -98,6 +114,10 @@ export function deserializeQuestionAnswer(
   }
 
   if (question.type === "boolean") {
+    if (isNonAnsweredState(answerValue)) {
+      return answerValue;
+    }
+
     return answerValue === "true";
   }
 

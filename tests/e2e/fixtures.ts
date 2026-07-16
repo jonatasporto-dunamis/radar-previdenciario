@@ -53,8 +53,10 @@ export async function startLeadRegistration(
   await expect(page.getByLabel("Telefone", { exact: true })).toHaveValue(
     /^\(\d{2}\) \d{5}-\d{4}$/,
   );
-  await page.getByLabel(/Li e concordo/i).check();
-  await page.getByRole("button", { name: /Iniciar análise gratuita/i }).click();
+  await page.getByLabel(/Li a Política de Privacidade/i).check();
+  await page
+    .getByRole("button", { name: /Iniciar triagem informativa/i })
+    .click();
   await page.waitForURL(/\/quiz$/, { timeout: 120_000 });
 }
 
@@ -64,21 +66,13 @@ export async function answerRequiredQuiz(
   await page.getByText("Aposentadoria", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#birth-date").fill("1970-01-01");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.getByRole("button", { name: /^Sim$/ }).click();
+  await page.getByText("Ainda não fiz pedido", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page
-    .getByText("Empregado com carteira assinada", { exact: true })
-    .click();
+  await page.getByText("Sim", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#contribution-years").fill("20");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#last-income").fill("2500");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.getByRole("button", { name: /^Não$/ }).click();
+  await page.getByText("Sim", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
 }

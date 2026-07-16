@@ -12,7 +12,7 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: /Análise previdenciária informativa/i,
+      name: "Triagem previdenciária informativa em uma jornada simples e segura.",
     }),
   ).toBeVisible();
   await expect(
@@ -20,7 +20,7 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
   ).toHaveAttribute("href", /https:\/\/wa\.me\/5571981533737/);
 
   await expect(
-    page.getByRole("link", { name: /Iniciar análise gratuita/i }).first(),
+    page.getByRole("link", { name: /Iniciar triagem informativa/i }).first(),
   ).toHaveAttribute("href", "/cadastro");
 
   await startLeadRegistration(page, lead);
@@ -29,21 +29,32 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
 
   await page.waitForURL(/\/resultado$/, { timeout: 30_000 });
   await expect(
-    page.getByRole("heading", { name: /Alto potencial/i }),
+    page.getByRole("heading", {
+      name: /informações foram organizadas/i,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByText(/caráter exclusivamente informativo/i),
+    page.getByText(/organiza informações para uma triagem inicial/i),
   ).toBeVisible();
+  await expect(page.getByText(/^Score$/)).toHaveCount(0);
+  await expect(page.getByText(/Alto potencial/i)).toHaveCount(0);
+  await expect(page.getByText(/Médio potencial/i)).toHaveCount(0);
+  await expect(page.getByText(/Baixo potencial/i)).toHaveCount(0);
+  await expect(page.getByText(/Tema identificado para análise/i)).toBeVisible();
 });
 
 test("Cadastro inválido mostra mensagens de validação", async ({ page }) => {
   await page.goto("/cadastro");
-  await page.getByRole("button", { name: /Iniciar análise gratuita/i }).click();
+  await page
+    .getByRole("button", { name: /Iniciar triagem informativa/i })
+    .click();
 
   await expect(page.getByText(/Informe seu nome completo/i)).toBeVisible();
   await expect(page.getByText(/Informe um e-mail válido/i)).toBeVisible();
   await expect(page.getByText(/Informe seu telefone/i)).toBeVisible();
-  await expect(page.getByText(/É necessário aceitar/i)).toBeVisible();
+  await expect(
+    page.getByText(/É necessário autorizar o uso das informações/i),
+  ).toBeVisible();
 });
 
 test("Retomada mantém o usuário na pergunta anterior não finalizada", async ({
@@ -57,7 +68,7 @@ test("Retomada mantém o usuário na pergunta anterior não finalizada", async (
   await answerRequiredQuiz(page);
   await expect(
     page.getByRole("heading", {
-      name: /Há alguma informação adicional/i,
+      name: /Há documentos ou informações/i,
     }),
   ).toBeVisible();
 
@@ -65,7 +76,7 @@ test("Retomada mantém o usuário na pergunta anterior não finalizada", async (
 
   await expect(
     page.getByRole("heading", {
-      name: /Há alguma informação adicional/i,
+      name: /Há documentos ou informações/i,
     }),
   ).toBeVisible();
 });
@@ -85,7 +96,9 @@ test("Refresh no resultado não perde a classificação", async ({
   await page.reload();
 
   await expect(
-    page.getByRole("heading", { name: /Alto potencial/i }),
+    page.getByRole("heading", {
+      name: /informações foram organizadas/i,
+    }),
   ).toBeVisible();
 });
 
@@ -125,6 +138,6 @@ test("Mobile possui labels, foco e navegação por teclado básicos", async ({
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("E-mail")).toBeFocused();
   await expect(
-    page.getByRole("button", { name: /Iniciar análise gratuita/i }),
+    page.getByRole("button", { name: /Iniciar triagem informativa/i }),
   ).toBeVisible();
 });

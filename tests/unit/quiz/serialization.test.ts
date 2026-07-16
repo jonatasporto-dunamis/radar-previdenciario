@@ -82,4 +82,22 @@ describe("Question answer serialization", () => {
       benefitContext: "aposentadoria",
     });
   });
+
+  it("serializes and deserializes explicit non-answer states", () => {
+    const question = {
+      ...questionFixtures[0],
+      answerStateOptions: ["unknown", "withheld"] as ["unknown", "withheld"],
+    };
+
+    expect(serializeQuestionAnswer(question, "unknown")).toEqual({
+      answerValue: "unknown",
+      answerLabel: "Não sei informar",
+    });
+    expect(serializeQuestionAnswer(question, "withheld")).toEqual({
+      answerValue: "withheld",
+      answerLabel: "Prefiro não informar",
+    });
+    expect(deserializeQuestionAnswer(question, "unknown")).toBe("unknown");
+    expect(deserializeQuestionAnswer(question, "withheld")).toBe("withheld");
+  });
 });

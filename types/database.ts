@@ -19,7 +19,16 @@ export type TrackingEventName =
   | "NotificationSent"
   | "NotificationFailed"
   | "NotificationIgnored"
-  | "WhatsAppClick";
+  | "WhatsAppClick"
+  | "TermsAcknowledged"
+  | "ContactConsentGranted"
+  | "SensitiveDataConsentGranted"
+  | "SensitiveDataConsentDenied"
+  | "MarketingConsentGranted"
+  | "MarketingConsentDenied"
+  | "TrackingConsentGranted"
+  | "TrackingConsentDenied"
+  | "ConsentRevoked";
 
 export type NotificationProvider =
   "email" | "whatsapp" | "slack" | "discord" | "crm" | "webhook";
@@ -49,6 +58,15 @@ export type TenantStatus = "active" | "inactive" | "suspended";
 export type TenantDomainStatus = "active" | "inactive";
 
 export type TenantSecretStatus = "active" | "inactive" | "rotated";
+
+export type QuizTemplateType =
+  "general" | "maternity" | "fibromyalgia" | "depression" | "autism" | "custom";
+
+export type QuizTemplateSource = "platform" | "tenant";
+
+export type QuizTemplateStatus = "draft" | "active" | "inactive" | "archived";
+
+export type QuizTemplateOwnership = "platform_managed" | "tenant_managed";
 
 export type Tenant = {
   id: string;
@@ -135,6 +153,9 @@ export type QuizSession = {
   id: string;
   tenant_id: string;
   lead_id: string | null;
+  quiz_template_id: string | null;
+  quiz_template_version: number | null;
+  template_type: QuizTemplateType | null;
   status: QuizSessionStatus;
   started_at: string;
   completed_at: string | null;
@@ -160,12 +181,72 @@ export type QuizResult = {
   tenant_id: string;
   session_id: string | null;
   lead_id: string | null;
+  quiz_template_id: string | null;
+  quiz_template_version: number | null;
+  template_type: QuizTemplateType | null;
   potential_benefit: string | null;
+  topic: string | null;
   score: number;
   classification: ResultClassification;
   summary: string | null;
   ethical_disclaimer: string | null;
+  data_completeness: "complete" | "partial" | "insufficient";
+  missing_critical_answers: JsonObject[] | string[];
+  requires_human_review: boolean;
+  matched_rules: JsonObject[];
   created_at: string;
+};
+
+export type QuizTemplate = {
+  id: string;
+  tenant_id: string | null;
+  slug: string;
+  name: string;
+  description: string;
+  template_type: QuizTemplateType;
+  source: QuizTemplateSource;
+  status: QuizTemplateStatus;
+  version: number;
+  is_default: boolean;
+  category: string;
+  audience: string | null;
+  ownership: QuizTemplateOwnership;
+  created_by_user_id: string | null;
+  metadata: JsonObject;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuizTemplateQuestion = {
+  id: string;
+  quiz_template_id: string;
+  question_key: string;
+  title: string;
+  description: string | null;
+  question_type: string;
+  is_required: boolean;
+  is_sensitive: boolean;
+  allows_unknown: boolean;
+  allows_withheld: boolean;
+  display_order: number;
+  options: JsonObject[];
+  conditions: JsonObject[];
+  metadata: JsonObject;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuizTemplateRule = {
+  id: string;
+  quiz_template_id: string;
+  rule_key: string;
+  rule_type: string;
+  conditions: JsonObject[];
+  effects: JsonObject;
+  priority: number;
+  status: QuizTemplateStatus;
+  created_at: string;
+  updated_at: string;
 };
 
 export type TrackingEvent = {
