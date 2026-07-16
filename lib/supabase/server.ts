@@ -1,8 +1,10 @@
 import "server-only";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 
-export function createSupabaseServerClient() {
+function getSupabasePublicConfig() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabasePublishableKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
@@ -14,10 +16,38 @@ export function createSupabaseServerClient() {
     );
   }
 
+  return { supabaseUrl, supabasePublishableKey };
+}
+
+export function createSupabaseServerClient() {
+  const { supabaseUrl, supabasePublishableKey } = getSupabasePublicConfig();
+
   return createClient<Database>(supabaseUrl, supabasePublishableKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+    },
+  });
+}
+
+export async function createSupabaseAuthServerClient() {
+  const { supabaseUrl, supabasePublishableKey } = getSupabasePublicConfig();
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Server Components cannot set cookies. Middleware and Server Actions can.
+        }
+      },
     },
   });
 }

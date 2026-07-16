@@ -297,3 +297,18 @@ Payload:
 Nenhum desses eventos dispara Meta, GA4, Pixel, CAPI, CRM ou WhatsApp automático.
 
 Os payloads desses eventos devem conter apenas identificadores operacionais, provider, prioridade, tentativa e motivo sanitizado. Não registre e-mail completo, telefone completo, payload do template ou chaves de provider.
+
+## Eventos do painel interno
+
+O painel interno registra apenas auditoria operacional em `office_audit_logs`, não tracking externo.
+
+Ações iniciais:
+
+- `office_login`
+- `office_logout`
+- `lead_status_changed`
+- `lead_note_created`
+- `lead_note_updated`
+- `lead_note_deleted`
+
+Esses eventos não devem ser enviados para Meta, GA4, GTM, CAPI ou provedores de e-mail. A metadata precisa ser sanitizada e não pode conter corpo completo de notas, respostas do quiz, IP completo, user-agent completo, cookies, tokens, e-mail completo, telefone completo ou payloads técnicos sensíveis.

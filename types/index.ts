@@ -46,6 +46,29 @@ export type {
 } from "./database";
 
 export type {
+  LeadCommercialStatus,
+  LeadNote,
+  LeadPriority,
+  LeadListFilters,
+  InternalClassification,
+  OfficeAuditAction,
+  OfficeAuditLog,
+  OfficeAuthActionState,
+  OfficeLeadAttribution,
+  OfficeLeadDetail,
+  OfficeLeadListItem,
+  OfficeLeadListResult,
+  OfficeMembership,
+  OfficeMembershipStatus,
+  OfficeNotificationLog,
+  OfficeQuizAnswer,
+  OfficeQuizResult,
+  OfficeRole,
+  OfficeTimelineItem,
+  OfficeUserContext,
+} from "./office-dashboard";
+
+export type {
   BrandConfig,
   DataRetentionConfig,
   LegalProfessionalConfig,

@@ -422,3 +422,23 @@ O E2E usa `E2E_MOCK_SUPABASE=true` para ativar `lib/supabase/e2e-admin-client.ts
 O coverage gate cobre módulos de validação, atribuição, telefone, engines do quiz, Rule Engine, Result Engine, persistência e tracking. Os thresholds globais são 90% para statements e lines, 85% para functions e 80% para branches.
 
 O CI executa instalação, lint, typecheck, build, Vitest, coverage, instalação dos browsers Playwright e E2E em pushes para `main` e pull requests.
+
+## Office Dashboard
+
+O painel interno do escritório foi implementado em worktree separado a partir de `origin/main`, sem misturar a branch de revisão jurídica `review/legal-content-mvp`.
+
+Camadas principais:
+
+- `app/painel/`: rotas privadas, auth, dashboard, leads, conta e estados de acesso.
+- `components/office-dashboard/`: shell, navegação, métricas, leads, notas, status e formulários de auth.
+- `services/office-dashboard/`: autenticação, memberships, dashboard, leads, notas, histórico, auditoria e repositories.
+- `lib/office-dashboard/`: permissões, status, paginação, filtros, formatação e qualificação operacional.
+- `types/office-dashboard/`: contratos de contexto, roles, leads, notas, filtros e auditoria.
+
+O contrato de segurança central é `requireOfficeUser()`: ele obtém o usuário autenticado, resolve uma membership ativa, valida tenant ativo e retorna o `OfficeUserContext`. Server Actions e páginas protegidas repetem essa validação. Middleware apenas atualiza sessão e redireciona usuários sem sessão.
+
+O root layout detecta `/painel` via header interno do middleware e remove tracking público, header público, footer público e WhatsApp flutuante. O painel é privado, dinâmico, `noindex`, `nofollow` e sem cache público.
+
+Classificação, score e tema exibidos no painel são indicadores operacionais de triagem. Eles não alteram o Rule Engine público e não representam parecer jurídico.
+
+Documentação operacional completa: `docs/office-dashboard.md`.

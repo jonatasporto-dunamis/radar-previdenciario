@@ -68,6 +68,22 @@ Registra notificações associadas a leads e resultados. A tabela suporta o pipe
 
 Registra auditoria de entrega para Meta Pixel, Meta Conversions API, GA4 e GTM. A tabela existe porque `tracking_events` não modela provider, canal, tentativa, status de entrega, payload hash, modo de teste ou retry.
 
+### tenant_memberships
+
+Associa usuários existentes do Supabase Auth a tenants. Define `role`, `status`, nome de exibição, cargo, membership padrão e último acesso.
+
+### lead_notes
+
+Notas internas privadas do escritório, sempre vinculadas a `tenant_id` e `lead_id`. O corpo é texto simples, não HTML, e não aparece na aplicação pública.
+
+### lead_status_history
+
+Histórico append-only de alterações de status comercial do lead.
+
+### office_audit_logs
+
+Auditoria mínima do painel para login, logout, alteração de status e operações de notas. Metadata é sanitizada e não deve conter payloads brutos ou dados sensíveis.
+
 ## Notification Logs
 
 Estado anterior da tabela:
@@ -170,6 +186,10 @@ A tabela não armazena payload bruto, respostas do quiz, classificação, score,
 - `tenants` 1:N `tracking_events`
 - `tenants` 1:N `notification_logs`
 - `tenants` 1:N `external_tracking_deliveries`
+- `tenants` 1:N `tenant_memberships`
+- `tenants` 1:N `lead_notes`
+- `tenants` 1:N `lead_status_history`
+- `tenants` 1:N `office_audit_logs`
 - `tenants` 1:N `quiz_templates` customizados
 - `quiz_templates` 1:N `quiz_template_questions`
 - `quiz_templates` 1:N `quiz_template_rules`
@@ -184,6 +204,8 @@ A tabela não armazena payload bruto, respostas do quiz, classificação, score,
 - `leads` 1:N `notification_logs`
 - `quiz_results` 1:N `notification_logs`
 - `tracking_events` 1:N `external_tracking_deliveries`
+- `leads` 1:N `lead_notes`
+- `leads` 1:N `lead_status_history`
 
 ## Campos de tracking
 
@@ -401,9 +423,16 @@ Migration aplicada:
 - `20260714010000_create_external_tracking_deliveries.sql`
 - `20260714150000_create_multi_tenant_foundation.sql`
 
-Migration local criada e pendente de aplicação remota controlada:
+Migrations locais pendentes de aplicação remota controlada:
 
 - `20260715120000_create_modular_quiz_templates.sql`
+- `20260715150000_create_office_dashboard.sql`
+
+A migration modular cria `quiz_templates`, `quiz_template_questions`, `quiz_template_rules`, `quiz_template_versions` e vínculos opcionais em `quiz_sessions` e `quiz_results`.
+
+A migration do painel cria `tenant_memberships`, `lead_notes`, `lead_status_history`, `office_audit_logs`, RLS, policies restritivas e padronização segura de status comercial em `leads.status`.
+
+Não aplique essas migrations no Supabase remoto sem aprovação explícita.
 
 Os types oficiais foram gerados com:
 
@@ -414,6 +443,16 @@ supabase gen types typescript --linked --schema public > types/supabase.ts
 Arquivo gerado:
 
 - `types/supabase.ts`
+
+Para a migration do painel, `types/supabase.ts` foi atualizado localmente nesta branch para permitir validação TypeScript antes da aplicação remota. Isso não confirma que as tabelas do painel já existem no Supabase remoto.
+
+Após aplicar `20260715150000_create_office_dashboard.sql` em ambiente aprovado, regenere os types oficiais com o comando acima.
+
+## Teste local de migrations
+
+Em 2026-07-15, a Supabase CLI e o Docker estavam disponíveis, mas este repositório não possuía `supabase/config.toml`. Por isso, a migration do painel foi auditada estaticamente e não foi aplicada em banco local nem remoto nesta etapa.
+
+Antes de aplicar em ambiente remoto, inicialize ou use um ambiente local aprovado, aplique todas as migrations desde zero e valide RLS, constraints e rollback operacional.
 
 Nunca commite `.env.local`, arquivos de estado local da CLI em `supabase/.temp/`, secret keys ou service role keys.
 
