@@ -30,15 +30,23 @@ export async function renderLeadNotificationEmail(input: {
     .join("\n");
 
   const text = [
-    "Novo lead qualificado — Radar Previdenciario",
+    "Novo contato para analise previdenciaria — Radar Previdenciario",
     "",
     `Nome: ${input.payload.lead.fullName}`,
     `Telefone: ${input.payload.lead.phone}`,
     `Email: ${input.payload.lead.email}`,
-    `Beneficio provavel: ${input.payload.result.benefit}`,
-    `Classificacao: ${input.payload.result.classification}`,
-    `Score interno: ${input.payload.result.score}`,
+    `Tema para analise: ${input.payload.result.benefit}`,
+    `Classificacao interna: ${input.payload.result.classification}`,
+    `Indicador operacional interno: ${input.payload.result.score}`,
+    `Completude das informacoes: ${input.payload.result.dataCompleteness}`,
+    `Requer revisao humana: ${input.payload.result.requiresHumanReview ? "sim" : "nao"}`,
+    `Informacoes criticas ausentes: ${
+      input.payload.result.missingCriticalAnswers.length > 0
+        ? input.payload.result.missingCriticalAnswers.join(", ")
+        : "-"
+    }`,
     `Resumo: ${input.payload.result.summary}`,
+    "Observacao: classificacao e indicador sao criterios internos de priorizacao; nao representam parecer juridico, probabilidade de exito ou decisao de orgao competente.",
     "",
     "Perguntas e respostas:",
     answers,

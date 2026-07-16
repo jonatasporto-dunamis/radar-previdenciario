@@ -11,7 +11,7 @@ import { getAppConfig } from "@/services/configuration";
 export const metadata: Metadata = {
   title: "Cadastro",
   description:
-    "Cadastro inicial para continuidade da análise previdenciária informativa.",
+    "Cadastro inicial para continuidade da triagem previdenciária informativa.",
   alternates: {
     canonical: "/cadastro",
   },
@@ -26,7 +26,7 @@ const readinessItems = [
   {
     icon: <ShieldCheck aria-hidden="true" className="size-5" />,
     title: "Consentimento",
-    description: "Espaço visual para aviso de privacidade e termos.",
+    description: "Registro de ciência sobre privacidade, termos e contato.",
   },
   {
     icon: <CheckCircle2 aria-hidden="true" className="size-5" />,
@@ -35,8 +35,29 @@ const readinessItems = [
   },
 ];
 
-export default async function CadastroPage() {
+type CadastroPageProps = {
+  searchParams?: Promise<{
+    next?: string;
+  }>;
+};
+
+function normalizeNextPath(value: string | undefined): string {
+  if (!value?.startsWith("/quiz")) {
+    return "/quiz";
+  }
+
+  if (value.includes("//") || value.includes("\\") || value.includes("..")) {
+    return "/quiz";
+  }
+
+  return value;
+}
+
+export default async function CadastroPage({
+  searchParams,
+}: CadastroPageProps) {
   const { brand, legal } = await getAppConfig();
+  const nextPath = normalizeNextPath((await searchParams)?.next);
 
   return (
     <PageContainer>
@@ -45,9 +66,9 @@ export default async function CadastroPage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
             <div>
               <SectionTitle
-                description="Informe seus dados para iniciar a análise informativa. O identificador do lead é preservado com cookie seguro, sem aparecer na URL."
+                description="Informe seus dados para iniciar a triagem informativa. O identificador do atendimento é preservado com cookie seguro, sem aparecer na URL."
                 eyebrow={brand.poweredBy}
-                title="Cadastro inicial para continuar a análise"
+                title="Cadastro inicial para continuar a triagem"
               />
 
               <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -56,11 +77,15 @@ export default async function CadastroPage() {
                 ))}
               </div>
 
-              <LeadRegistrationForm />
+              <LeadRegistrationForm
+                nextPath={nextPath}
+                officeName={brand.name}
+              />
 
               <p className="text-muted-foreground mt-5 text-sm leading-6">
-                Seus dados serão utilizados para dar continuidade à análise e
-                permitir que o escritório entre em contato com você.
+                Seus dados serão utilizados para dar continuidade à triagem,
+                registrar sua autorização de contato e permitir que o escritório
+                responsável avalie se há necessidade de conversa individual.
               </p>
               <p className="text-muted-foreground mt-3 text-sm leading-6">
                 {legal.disclaimer}

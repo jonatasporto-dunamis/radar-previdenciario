@@ -17,7 +17,13 @@ import { formatBrazilianPhone } from "@/utils/phone";
 const genericFormError =
   "Não foi possível concluir seu cadastro agora. Revise os dados ou tente novamente.";
 
-export function LeadRegistrationForm() {
+export function LeadRegistrationForm({
+  officeName,
+  nextPath = "/quiz",
+}: {
+  officeName: string;
+  nextPath?: string;
+}) {
   const router = useRouter();
   const trackingConfig = useTrackingConfig();
   const [isPending, startTransition] = useTransition();
@@ -38,7 +44,8 @@ export function LeadRegistrationForm() {
       fullName: "",
       email: "",
       phone: "",
-      privacyConsent: false,
+      triageConsent: false,
+      marketingConsent: false,
       website: "",
       attribution: {},
     },
@@ -75,7 +82,7 @@ export function LeadRegistrationForm() {
           });
         }
 
-        router.push("/quiz");
+        router.push(nextPath);
         return;
       }
 
@@ -215,33 +222,55 @@ export function LeadRegistrationForm() {
           />
         </div>
 
-        <div className="border-border bg-muted/45 rounded-md border p-4">
+        <div className="border-border bg-muted/45 grid gap-4 rounded-md border p-4">
           <label className="flex items-start gap-3 text-sm leading-6">
             <input
               aria-describedby={
-                errors.privacyConsent ? "privacyConsent-error" : undefined
+                errors.triageConsent ? "triageConsent-error" : undefined
               }
-              aria-invalid={Boolean(errors.privacyConsent)}
+              aria-invalid={Boolean(errors.triageConsent)}
               className="border-input text-primary focus-visible:ring-ring mt-1 size-4 rounded outline-none focus-visible:ring-2"
               type="checkbox"
-              {...register("privacyConsent")}
+              {...register("triageConsent")}
             />
             <span className="text-muted-foreground">
-              Li e concordo com a{" "}
+              Li a{" "}
               <Link
                 className="text-foreground underline underline-offset-4"
                 href="/privacidade"
               >
                 Política de Privacidade
               </Link>{" "}
-              e autorizo o contato do escritório para continuidade da análise.
+              e autorizo o uso das informações fornecidas para realizar esta
+              triagem e tratar desta solicitação. Consulte também os{" "}
+              <Link
+                className="text-foreground underline underline-offset-4"
+                href="/termos"
+              >
+                Termos de Uso
+              </Link>
+              .
             </span>
           </label>
-          {errors.privacyConsent?.message ? (
-            <p className="text-danger mt-2 text-sm" id="privacyConsent-error">
-              {errors.privacyConsent.message}
+          {errors.triageConsent?.message ? (
+            <p className="text-danger text-sm" id="triageConsent-error">
+              {errors.triageConsent.message}
             </p>
           ) : null}
+
+          <label className="flex items-start gap-3 text-sm leading-6">
+            <input
+              className="border-input text-primary focus-visible:ring-ring mt-1 size-4 rounded outline-none focus-visible:ring-2"
+              type="checkbox"
+              {...register("marketingConsent")}
+            />
+            <span className="text-muted-foreground">
+              Desejo receber conteúdos informativos e comunicações futuras da
+              equipe responsável. Esta opção é facultativa e não impede a
+              triagem.
+              <span className="sr-only"> Escritório: {officeName}.</span>
+            </span>
+          </label>
         </div>
 
         {formError ? (
@@ -262,7 +291,7 @@ export function LeadRegistrationForm() {
             </>
           ) : (
             <>
-              Iniciar análise gratuita
+              Iniciar triagem informativa
               <ArrowRight aria-hidden="true" className="size-4" />
             </>
           )}

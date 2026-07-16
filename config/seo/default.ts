@@ -3,7 +3,7 @@ import type { SeoConfig } from "@/types/brand";
 export const defaultSeoConfig: SeoConfig = {
   title: "Radar Previdenciário",
   description:
-    "Análise previdenciária informativa para identificar possíveis indícios de direito a benefícios.",
+    "Triagem inicial para organizar informações e identificar situações que podem merecer avaliação previdenciária individualizada.",
   keywords: [
     "direito previdenciário",
     "benefícios previdenciários",

@@ -20,6 +20,9 @@ export type LeadNotificationPayload = {
     classification: string;
     score: number;
     summary: string;
+    dataCompleteness: string;
+    requiresHumanReview: boolean;
+    missingCriticalAnswers: string[];
   };
   answers: Array<{
     questionId: string;
@@ -72,19 +75,10 @@ function normalizePhoneForWhatsapp(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
-export function buildLeadWhatsappUrl(
-  lead: Pick<LeadRow, "full_name" | "phone">,
-) {
+export function buildLeadWhatsappUrl(lead: Pick<LeadRow, "phone">) {
   const phone = normalizePhoneForWhatsapp(lead.phone);
-  const message = [
-    "Olá!",
-    "",
-    "Estou entrando em contato referente ao lead:",
-    lead.full_name,
-    lead.phone,
-  ].join("\n");
 
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${phone}`;
 }
 
 export function buildLeadNotificationPayload({
@@ -111,6 +105,9 @@ export function buildLeadNotificationPayload({
       classification: computedResult.classification,
       score: computedResult.score,
       summary: computedResult.summary,
+      dataCompleteness: computedResult.dataCompleteness,
+      requiresHumanReview: computedResult.requiresHumanReview,
+      missingCriticalAnswers: computedResult.missingCriticalAnswers,
     },
     answers: Object.values(answers).map((answer) => ({
       questionId: answer.questionId,

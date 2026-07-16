@@ -15,7 +15,7 @@ export async function CTASection({
   title,
   description,
   href = "/cadastro",
-  label = "Iniciar análise gratuita",
+  label = "Iniciar triagem informativa",
 }: CTASectionProps) {
   const legal = await getLegalConfig();
 

@@ -10,7 +10,9 @@ describe("zod schemas and quiz validation", () => {
       fullName: "Maria Previdencia",
       email: "maria@example.com",
       phone: "(71) 98153-3737",
-      privacyConsent: true,
+      termsAcknowledgement: true,
+      contactConsent: true,
+      marketingConsent: false,
       website: "",
       attribution: {},
     });
@@ -18,7 +20,9 @@ describe("zod schemas and quiz validation", () => {
       fullName: "Maria Previdencia",
       email: "maria@example.com",
       phone: "(71) 98153-3737",
-      privacyConsent: false,
+      termsAcknowledgement: false,
+      contactConsent: false,
+      marketingConsent: false,
       website: "",
       attribution: {},
     });

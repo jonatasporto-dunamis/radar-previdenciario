@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { recordTrackingConsentAction } from "@/app/tracking/actions";
 import { useTrackingConfig } from "./TrackingProvider";
 import { readTrackingConsent, writeTrackingConsent } from "@/lib/tracking";
 import type {
@@ -23,6 +24,7 @@ export function TrackingConsentBanner() {
 
   function decide(decision: TrackingConsentDecision) {
     writeTrackingConsent(decision);
+    void recordTrackingConsentAction(decision);
     setConsent(decision);
     setIsOpen(false);
   }
@@ -50,8 +52,8 @@ export function TrackingConsentBanner() {
       </h2>
       <p className="text-muted-foreground mt-2 text-sm leading-6">
         Podemos usar cookies e eventos genéricos para medir campanhas e melhorar
-        a experiência. Respostas do quiz e dados sensíveis não são enviados para
-        Meta, Google Analytics ou GTM.
+        a experiência, mediante sua escolha. Respostas do quiz e dados sensíveis
+        não são enviados para Meta, Google Analytics ou GTM.
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <button

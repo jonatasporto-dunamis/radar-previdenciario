@@ -19,6 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TermosPage() {
   const { brand, legal, office } = await getAppConfig();
+  const professionalDisplay = office.legalProfessional
+    ? `${office.legalProfessional.name} — ${office.legalProfessional.displayRegistration}`
+    : null;
+  const supportContact =
+    office.privacy.contactEmail ??
+    office.privacy.contactChannel ??
+    brand.email ??
+    null;
+  const supportContactHref =
+    supportContact && supportContact.includes("@")
+      ? `mailto:${supportContact}`
+      : null;
 
   return (
     <PageContainer>
@@ -27,33 +39,70 @@ export default async function TermosPage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
             <article className="bg-card shadow-card rounded-xl border p-8">
               <SectionTitle
-                description="Documento base para orientar o uso futuro da aplicação. O texto jurídico final deve ser revisado antes de produção."
+                description="Documento base para orientar o uso da aplicação e separar triagem operacional de avaliação jurídica profissional."
                 eyebrow={brand.poweredBy}
                 title={legal.termsTitle}
               />
 
               <div className="text-muted-foreground mt-8 grid gap-6 leading-7">
                 <p>
-                  A aplicação é uma experiência informativa configurável para
-                  escritórios previdenciários.
+                  A aplicação oferece uma triagem previdenciária automatizada de
+                  caráter informativo para organizar dados iniciais e facilitar
+                  contato posterior com o escritório responsável.
                 </p>
                 <p>
-                  Escritório configurado: {brand.legalName}. Responsável:{" "}
-                  {office.responsibleLawyer} ({office.oab}).
+                  Escritório configurado: {brand.legalName}
+                  {professionalDisplay
+                    ? `. Responsável: ${professionalDisplay}`
+                    : ""}
+                  . Atendimento com unidades em {office.units.join(", ")}.
                 </p>
                 <p>
-                  As informações apresentadas não constituem parecer jurídico,
-                  contratação automática ou promessa de resultado.
+                  As informações apresentadas não constituem consulta, parecer
+                  jurídico, contratação automática, promessa de resultado ou
+                  confirmação de direito a benefício.
+                </p>
+                <p>
+                  O uso da triagem não cria relação advogado-cliente por si só.
+                  A contratação, se houver, dependerá de contato posterior,
+                  análise individual, documentos e aceite específico.
+                </p>
+                <p>
+                  O usuário deve informar dados verdadeiros e evitar inserir
+                  documentos, laudos, diagnósticos detalhados ou dados de
+                  terceiros no questionário. A avaliação de benefícios
+                  previdenciários depende de informações e documentos que não
+                  são conferidos automaticamente por esta ferramenta.
+                </p>
+                <p>
+                  Respostas desconhecidas, omitidas ou incompletas podem limitar
+                  o resultado informativo e indicar necessidade de revisão
+                  humana. A ferramenta pode ficar indisponível temporariamente
+                  por manutenção, falhas técnicas ou motivos de segurança.
+                </p>
+                <p>
+                  A marca, os textos, a estrutura visual e os componentes do
+                  Radar Previdenciário são protegidos pelas regras aplicáveis de
+                  propriedade intelectual, sem prejuízo dos direitos do titular
+                  sobre seus dados pessoais.
                 </p>
                 <p>{legal.disclaimer}</p>
                 <p>
-                  Suporte:{" "}
-                  <a
-                    className="text-foreground underline"
-                    href={`mailto:${brand.supportEmail}`}
-                  >
-                    {brand.supportEmail}
-                  </a>
+                  Suporte e privacidade:{" "}
+                  {supportContactHref ? (
+                    <a
+                      className="text-foreground underline"
+                      href={supportContactHref}
+                    >
+                      {supportContact}
+                    </a>
+                  ) : supportContact ? (
+                    <span className="text-foreground">{supportContact}</span>
+                  ) : (
+                    <span className="text-foreground">
+                      canal pendente de confirmação pelo escritório responsável
+                    </span>
+                  )}
                   .
                 </p>
               </div>
