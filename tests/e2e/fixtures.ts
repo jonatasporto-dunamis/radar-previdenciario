@@ -41,9 +41,11 @@ export async function startLeadRegistration(
   await page.goto(
     `/cadastro?utm_source=e2e&utm_medium=quality_gate&utm_campaign=playwright&utm_content=${lead.email}`,
   );
+  await expect(
+    page.getByRole("button", { name: /Iniciar triagem informativa/i }),
+  ).toBeEnabled({ timeout: 30_000 });
   const fullNameInput = page.getByLabel("Nome completo", { exact: true });
-  await fullNameInput.click();
-  await fullNameInput.pressSequentially(lead.fullName);
+  await fullNameInput.fill(lead.fullName);
   await expect(fullNameInput).toHaveValue(lead.fullName);
   await page.getByLabel("E-mail", { exact: true }).fill(lead.email);
   await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue(

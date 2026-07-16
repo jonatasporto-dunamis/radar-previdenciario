@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
   public: {
     Tables: {
       external_tracking_deliveries: {
@@ -299,6 +294,223 @@ export type Database = {
           },
         ];
       };
+      quiz_answers: {
+        Row: {
+          answer_label: string;
+          answer_value: string;
+          benefit_context: string | null;
+          created_at: string | null;
+          id: string;
+          lead_id: string | null;
+          question_id: string;
+          question_label: string;
+          session_id: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          answer_label: string;
+          answer_value: string;
+          benefit_context?: string | null;
+          created_at?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          question_id: string;
+          question_label: string;
+          session_id?: string | null;
+          tenant_id: string;
+        };
+        Update: {
+          answer_label?: string;
+          answer_value?: string;
+          benefit_context?: string | null;
+          created_at?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          question_id?: string;
+          question_label?: string;
+          session_id?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_answers_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_answers_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_results: {
+        Row: {
+          classification: string;
+          created_at: string | null;
+          data_completeness: string;
+          ethical_disclaimer: string | null;
+          id: string;
+          lead_id: string | null;
+          matched_rules: Json;
+          missing_critical_answers: Json;
+          potential_benefit: string | null;
+          quiz_template_id: string | null;
+          quiz_template_version: number | null;
+          requires_human_review: boolean;
+          score: number;
+          session_id: string | null;
+          summary: string | null;
+          template_type: string | null;
+          tenant_id: string;
+          topic: string | null;
+        };
+        Insert: {
+          classification: string;
+          created_at?: string | null;
+          data_completeness?: string;
+          ethical_disclaimer?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          matched_rules?: Json;
+          missing_critical_answers?: Json;
+          potential_benefit?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          requires_human_review?: boolean;
+          score?: number;
+          session_id?: string | null;
+          summary?: string | null;
+          template_type?: string | null;
+          tenant_id: string;
+          topic?: string | null;
+        };
+        Update: {
+          classification?: string;
+          created_at?: string | null;
+          data_completeness?: string;
+          ethical_disclaimer?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          matched_rules?: Json;
+          missing_critical_answers?: Json;
+          potential_benefit?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          requires_human_review?: boolean;
+          score?: number;
+          session_id?: string | null;
+          summary?: string | null;
+          template_type?: string | null;
+          tenant_id?: string;
+          topic?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_results_quiz_template_id_fkey";
+            columns: ["quiz_template_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_results_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: true;
+            referencedRelation: "quiz_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_results_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_sessions: {
+        Row: {
+          completed_at: string | null;
+          created_at: string | null;
+          id: string;
+          lead_id: string | null;
+          quiz_template_id: string | null;
+          quiz_template_version: number | null;
+          started_at: string | null;
+          status: string | null;
+          template_type: string | null;
+          tenant_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          started_at?: string | null;
+          status?: string | null;
+          template_type?: string | null;
+          tenant_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          quiz_template_id?: string | null;
+          quiz_template_version?: number | null;
+          started_at?: string | null;
+          status?: string | null;
+          template_type?: string | null;
+          tenant_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_sessions_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_sessions_quiz_template_id_fkey";
+            columns: ["quiz_template_id"];
+            isOneToOne: false;
+            referencedRelation: "quiz_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_sessions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       quiz_template_questions: {
         Row: {
           allows_unknown: boolean;
@@ -510,209 +722,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quiz_templates_tenant_id_fkey";
-            columns: ["tenant_id"];
-            isOneToOne: false;
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quiz_answers: {
-        Row: {
-          answer_label: string;
-          answer_value: string;
-          benefit_context: string | null;
-          created_at: string | null;
-          id: string;
-          lead_id: string | null;
-          question_id: string;
-          question_label: string;
-          session_id: string | null;
-          tenant_id: string;
-        };
-        Insert: {
-          answer_label: string;
-          answer_value: string;
-          benefit_context?: string | null;
-          created_at?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          question_id: string;
-          question_label: string;
-          session_id?: string | null;
-          tenant_id: string;
-        };
-        Update: {
-          answer_label?: string;
-          answer_value?: string;
-          benefit_context?: string | null;
-          created_at?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          question_id?: string;
-          question_label?: string;
-          session_id?: string | null;
-          tenant_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "quiz_answers_lead_id_fkey";
-            columns: ["lead_id"];
-            isOneToOne: false;
-            referencedRelation: "leads";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_answers_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: false;
-            referencedRelation: "quiz_sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_answers_tenant_id_fkey";
-            columns: ["tenant_id"];
-            isOneToOne: false;
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quiz_results: {
-        Row: {
-          classification: string;
-          created_at: string | null;
-          data_completeness: string;
-          ethical_disclaimer: string | null;
-          id: string;
-          lead_id: string | null;
-          matched_rules: Json;
-          missing_critical_answers: Json;
-          potential_benefit: string | null;
-          quiz_template_id: string | null;
-          quiz_template_version: number | null;
-          requires_human_review: boolean;
-          score: number;
-          session_id: string | null;
-          summary: string | null;
-          template_type: string | null;
-          tenant_id: string;
-          topic: string | null;
-        };
-        Insert: {
-          classification: string;
-          created_at?: string | null;
-          data_completeness?: string;
-          ethical_disclaimer?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          matched_rules?: Json;
-          missing_critical_answers?: Json;
-          potential_benefit?: string | null;
-          quiz_template_id?: string | null;
-          quiz_template_version?: number | null;
-          requires_human_review?: boolean;
-          score?: number;
-          session_id?: string | null;
-          summary?: string | null;
-          template_type?: string | null;
-          tenant_id: string;
-          topic?: string | null;
-        };
-        Update: {
-          classification?: string;
-          created_at?: string | null;
-          data_completeness?: string;
-          ethical_disclaimer?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          matched_rules?: Json;
-          missing_critical_answers?: Json;
-          potential_benefit?: string | null;
-          quiz_template_id?: string | null;
-          quiz_template_version?: number | null;
-          requires_human_review?: boolean;
-          score?: number;
-          session_id?: string | null;
-          summary?: string | null;
-          template_type?: string | null;
-          tenant_id?: string;
-          topic?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "quiz_results_lead_id_fkey";
-            columns: ["lead_id"];
-            isOneToOne: false;
-            referencedRelation: "leads";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_results_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: true;
-            referencedRelation: "quiz_sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_results_tenant_id_fkey";
-            columns: ["tenant_id"];
-            isOneToOne: false;
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quiz_sessions: {
-        Row: {
-          completed_at: string | null;
-          created_at: string | null;
-          id: string;
-          lead_id: string | null;
-          quiz_template_id: string | null;
-          quiz_template_version: number | null;
-          started_at: string | null;
-          status: string | null;
-          template_type: string | null;
-          tenant_id: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          completed_at?: string | null;
-          created_at?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          quiz_template_id?: string | null;
-          quiz_template_version?: number | null;
-          started_at?: string | null;
-          status?: string | null;
-          template_type?: string | null;
-          tenant_id: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          completed_at?: string | null;
-          created_at?: string | null;
-          id?: string;
-          lead_id?: string | null;
-          quiz_template_id?: string | null;
-          quiz_template_version?: number | null;
-          started_at?: string | null;
-          status?: string | null;
-          template_type?: string | null;
-          tenant_id?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "quiz_sessions_lead_id_fkey";
-            columns: ["lead_id"];
-            isOneToOne: false;
-            referencedRelation: "leads";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_sessions_tenant_id_fkey";
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "tenants";
