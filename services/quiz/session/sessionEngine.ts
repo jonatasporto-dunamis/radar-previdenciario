@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isMissingSchemaError } from "@/lib/supabase/schemaCompatibility";
 import { createExternalEventId } from "@/services/external-tracking";
 import { trackEvent } from "@/services/tracking";
 import type { AttributionData } from "@/types/attribution";
@@ -26,6 +27,13 @@ type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
 type QuizSessionRow = Database["public"]["Tables"]["quiz_sessions"]["Row"];
 type QuizAnswerRow = Database["public"]["Tables"]["quiz_answers"]["Row"];
 
+const quizSessionTemplateSchemaMarkers = [
+  "quiz_template_id",
+  "quiz_template_version",
+  "template_type",
+  "quiz_templates",
+];
+
 export class QuizSessionServiceError extends Error {
   constructor(message = "Quiz session service error") {
     super(message);
@@ -49,6 +57,29 @@ export type QuizSessionState = {
   progress: QuizProgress;
   quizStartedExternalEventId?: string;
 };
+
+function normalizeQuizSessionRow(
+  session: Partial<QuizSessionRow> | null,
+): QuizSessionRow | null {
+  if (!session) {
+    return null;
+  }
+
+  return {
+    quiz_template_id: null,
+    quiz_template_version: null,
+    template_type: null,
+    ...session,
+  } as QuizSessionRow;
+}
+
+function normalizeQuizSessionRows(
+  sessions: Partial<QuizSessionRow>[] | null,
+): QuizSessionRow[] {
+  return (sessions ?? [])
+    .map((session) => normalizeQuizSessionRow(session))
+    .filter((session): session is QuizSessionRow => Boolean(session));
+}
 
 function leadAttributionToTracking(lead: LeadRow): AttributionData {
   return {
@@ -171,10 +202,13 @@ export async function getQuizSessionState(
     throw new QuizSessionServiceError("Failed to load quiz session.");
   }
 
+  const normalizedExistingSessions = normalizeQuizSessionRows(existingSessions);
   const existingSession =
-    existingSessions?.find((item) => item.quiz_template_id === template.id) ??
+    normalizedExistingSessions.find(
+      (item) => item.quiz_template_id === template.id,
+    ) ??
     (template.isDefault
-      ? existingSessions?.find((item) => !item.quiz_template_id)
+      ? normalizedExistingSessions.find((item) => !item.quiz_template_id)
       : undefined) ??
     null;
   let session = existingSession;
@@ -182,11 +216,14 @@ export async function getQuizSessionState(
   let quizStartedExternalEventId: string | undefined;
 
   if (!session) {
-    const sessionPayload = {
+    const legacySessionPayload = {
       ...(template.isDefault ? { id: leadId } : {}),
       tenant_id: tenantId,
       lead_id: leadId,
       status: "started",
+    };
+    const sessionPayload = {
+      ...legacySessionPayload,
       quiz_template_id: template.id,
       quiz_template_version: template.version,
       template_type: template.type,
@@ -197,7 +234,24 @@ export async function getQuizSessionState(
       .select("*")
       .single();
 
-    if (createSessionError || !newSession) {
+    let createdRow = normalizeQuizSessionRow(newSession);
+    let createError = createSessionError;
+
+    if (
+      createSessionError &&
+      isMissingSchemaError(createSessionError, quizSessionTemplateSchemaMarkers)
+    ) {
+      const { data: legacySession, error: legacyCreateError } = await supabase
+        .from("quiz_sessions")
+        .insert(legacySessionPayload)
+        .select("*")
+        .single();
+
+      createdRow = normalizeQuizSessionRow(legacySession);
+      createError = legacyCreateError;
+    }
+
+    if (createError || !createdRow) {
       const { data: fallbackSession, error: fallbackError } = await supabase
         .from("quiz_sessions")
         .select("*")
@@ -209,11 +263,15 @@ export async function getQuizSessionState(
         throw new QuizSessionServiceError("Failed to create quiz session.");
       }
 
-      session = fallbackSession;
+      session = normalizeQuizSessionRow(fallbackSession);
     } else {
-      session = newSession;
+      session = createdRow;
       createdSession = true;
     }
+  }
+
+  if (!session) {
+    throw new QuizSessionServiceError("Failed to create quiz session.");
   }
 
   if (createdSession) {
@@ -283,7 +341,7 @@ export async function getQuizSessionForLead(
     throw new QuizSessionServiceError("Failed to validate quiz session.");
   }
 
-  return data;
+  return normalizeQuizSessionRow(data);
 }
 
 export async function saveQuizAnswer(input: {

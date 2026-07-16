@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isMissingSchemaError } from "@/lib/supabase/schemaCompatibility";
 import type {
   QuizResultComputation,
   QuizTemplateDefinition,
@@ -8,11 +9,43 @@ import type { Database } from "@/types/supabase";
 
 type QuizResultRow = Database["public"]["Tables"]["quiz_results"]["Row"];
 
+const quizResultTemplateSchemaMarkers = [
+  "quiz_template_id",
+  "quiz_template_version",
+  "template_type",
+  "topic",
+  "data_completeness",
+  "missing_critical_answers",
+  "requires_human_review",
+  "matched_rules",
+  "quiz_templates",
+];
+
 export class QuizResultPersistenceError extends Error {
   constructor(message = "Quiz result persistence error") {
     super(message);
     this.name = "QuizResultPersistenceError";
   }
+}
+
+function normalizeQuizResultRow(
+  result: Partial<QuizResultRow> | null,
+): QuizResultRow | null {
+  if (!result) {
+    return null;
+  }
+
+  return {
+    quiz_template_id: null,
+    quiz_template_version: null,
+    template_type: null,
+    topic: result.potential_benefit ?? null,
+    data_completeness: "insufficient",
+    missing_critical_answers: [],
+    requires_human_review: false,
+    matched_rules: [],
+    ...result,
+  } as QuizResultRow;
 }
 
 export async function persistQuizResult(input: {
@@ -24,16 +57,19 @@ export async function persistQuizResult(input: {
 }): Promise<QuizResultRow> {
   const supabase = createSupabaseAdminClient();
   const template = input.template;
-  const payload = {
+  const legacyPayload = {
     tenant_id: input.tenantId,
     session_id: input.sessionId,
     lead_id: input.leadId,
     potential_benefit: input.result.potentialBenefit,
-    topic: input.result.topic,
     score: input.result.score,
     classification: input.result.classification,
     summary: input.result.summary,
     ethical_disclaimer: input.result.ethicalDisclaimer,
+  };
+  const payload = {
+    ...legacyPayload,
+    topic: input.result.topic,
     data_completeness: input.result.dataCompleteness,
     missing_critical_answers: input.result.missingCriticalAnswers,
     requires_human_review: input.result.requiresHumanReview,
@@ -52,11 +88,25 @@ export async function persistQuizResult(input: {
     .select("*")
     .single();
 
-  if (error || !data) {
+  let persistedRow = normalizeQuizResultRow(data);
+  let persistenceError = error;
+
+  if (error && isMissingSchemaError(error, quizResultTemplateSchemaMarkers)) {
+    const { data: legacyData, error: legacyError } = await supabase
+      .from("quiz_results")
+      .upsert(legacyPayload, { onConflict: "session_id" })
+      .select("*")
+      .single();
+
+    persistedRow = normalizeQuizResultRow(legacyData);
+    persistenceError = legacyError;
+  }
+
+  if (persistenceError || !persistedRow) {
     throw new QuizResultPersistenceError("Failed to persist quiz result.");
   }
 
-  return data;
+  return persistedRow;
 }
 
 export async function getLatestQuizResultForLead(
@@ -77,7 +127,7 @@ export async function getLatestQuizResultForLead(
     throw new QuizResultPersistenceError("Failed to load quiz result.");
   }
 
-  return data;
+  return normalizeQuizResultRow(data);
 }
 
 export async function getQuizResultForLead(input: {
@@ -98,5 +148,5 @@ export async function getQuizResultForLead(input: {
     throw new QuizResultPersistenceError("Failed to load quiz result.");
   }
 
-  return data;
+  return normalizeQuizResultRow(data);
 }

@@ -86,8 +86,12 @@ describe("result persistence", () => {
 
     await expect(
       getLatestQuizResultForLead(TEST_TENANT_ID, "lead-1"),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       id: "result-1",
+      quiz_template_id: null,
+      template_type: null,
+      data_completeness: "insufficient",
+      requires_human_review: false,
     });
 
     expect(supabaseMock.eq).toHaveBeenCalledWith("tenant_id", TEST_TENANT_ID);
@@ -114,9 +118,13 @@ describe("result persistence", () => {
         leadId: "lead-1",
         resultId: "result-1",
       }),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       id: "result-1",
       lead_id: "lead-1",
+      quiz_template_id: null,
+      template_type: null,
+      data_completeness: "insufficient",
+      requires_human_review: false,
     });
 
     expect(supabaseMock.eq).toHaveBeenCalledWith("tenant_id", TEST_TENANT_ID);
@@ -167,5 +175,70 @@ describe("result persistence", () => {
     await expect(
       getLatestQuizResultForLead(TEST_TENANT_ID, "lead-1"),
     ).rejects.toBeInstanceOf(QuizResultPersistenceError);
+  });
+
+  it("falls back to legacy result payload when template columns are not migrated", async () => {
+    const supabaseMock = mockSupabase();
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createSupabaseAdminClient: () => supabaseMock.client,
+    }));
+    const { persistQuizResult } = await import("@/services/quiz/results");
+    supabaseMock.single
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: "PGRST204",
+          message:
+            "Could not find the 'quiz_template_id' column of 'quiz_results' in the schema cache",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "result-legacy",
+          tenant_id: TEST_TENANT_ID,
+          session_id: "session-1",
+          lead_id: "lead-1",
+          potential_benefit: "Aposentadoria",
+          score: 90,
+          classification: "alto_potencial",
+          summary: "Resumo",
+          ethical_disclaimer: "Aviso",
+          created_at: "2026-07-12T12:00:00Z",
+        },
+        error: null,
+      });
+
+    await expect(
+      persistQuizResult({
+        tenantId: TEST_TENANT_ID,
+        leadId: "lead-1",
+        sessionId: "session-1",
+        result: {
+          potentialBenefit: "Aposentadoria",
+          topic: "Aposentadoria",
+          score: 90,
+          classification: "alto_potencial",
+          summary: "Resumo",
+          ethicalDisclaimer: "Aviso",
+          candidates: [],
+          dataCompleteness: "complete",
+          missingCriticalAnswers: [],
+          requiresHumanReview: false,
+        },
+      }),
+    ).resolves.toMatchObject({
+      id: "result-legacy",
+      quiz_template_id: null,
+      template_type: null,
+      data_completeness: "insufficient",
+    });
+
+    expect(supabaseMock.upsert).toHaveBeenNthCalledWith(
+      2,
+      expect.not.objectContaining({
+        quiz_template_id: expect.anything(),
+      }),
+      { onConflict: "session_id" },
+    );
   });
 });
