@@ -12,34 +12,74 @@ export type BrandConfig = {
   foregroundColor: string;
   whatsapp: string;
   whatsappDefaultMessage: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
   website: string;
   instagram: SocialUrl;
   facebook: SocialUrl;
   linkedin: SocialUrl;
   youtube: SocialUrl;
   tiktok: SocialUrl;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  cnpj: string;
-  privacyEmail: string;
-  supportEmail: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  cnpj?: string;
+  privacyEmail?: string;
+  supportEmail?: string;
   copyright: string;
   poweredBy: string;
 };
 
+export type LegalProfessionalConfig = {
+  name: string;
+  registration: string;
+  sectional: string;
+  displayRegistration: string;
+};
+
+export type TenantLegalIdentity = {
+  officeName: string;
+  responsibleProfessionalName?: string;
+  professionalRegistration?: string;
+  companyName?: string;
+  companyDocument?: string;
+  officeRegistration?: string;
+  privacyEmail?: string;
+  address?: string;
+};
+
+export type PrivacyContactConfig = {
+  contactEmail?: string;
+  contactChannel?: string;
+};
+
+export type DataRetentionConfig = {
+  incompleteSessionDays: number;
+  completedTriageDays: number;
+  activeLeadDays: number;
+  trackingDays: number;
+  internalTrackingDays: number;
+  securityLogDays: number;
+  notificationLogDays: number;
+  externalDeliveryDays: number;
+  auditLogDays: number;
+};
+
 export type OfficeConfig = {
-  responsibleLawyer: string;
-  oab: string;
+  responsibleLawyer?: string;
+  oab?: string;
+  legalProfessional?: LegalProfessionalConfig;
+  legalIdentity: TenantLegalIdentity;
   specialties: string[];
   citiesServed: string[];
   statesServed: string[];
   serviceMode: string;
   workingHours: string;
   whatsappDefaultMessage: string;
+  units: string[];
+  privacy: PrivacyContactConfig;
+  dataRetention: DataRetentionConfig;
   email: {
     fromName: string;
     fromAddress: string;
@@ -62,6 +102,13 @@ export type LegalConfig = {
   privacyPolicyCompany: string;
   termsTitle: string;
   disclaimer: string;
+  disclaimers: {
+    full: string;
+    short: string;
+    emailInternal: string;
+    registration: string;
+    result: string;
+  };
   cookiePolicy: string;
 };
 

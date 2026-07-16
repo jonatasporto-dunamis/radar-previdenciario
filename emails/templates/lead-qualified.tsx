@@ -22,7 +22,7 @@ export function LeadQualifiedEmail({ payload }: LeadQualifiedEmailProps) {
     createElement(
       Preview,
       null,
-      "Novo lead qualificado no Radar Previdenciario",
+      "Novo contato para analise previdenciaria no Radar Previdenciario",
     ),
     createElement(
       Body,
@@ -40,9 +40,9 @@ export function LeadQualifiedEmail({ payload }: LeadQualifiedEmailProps) {
           },
         },
         createElement(Header, {
-          title: "Novo lead de alto potencial",
+          title: "Contato com prioridade alta de triagem",
           subtitle:
-            "Um lead concluiu a analise e apresentou sinais preliminares relevantes.",
+            "Um contato concluiu a triagem e apresentou elementos que podem merecer analise individualizada.",
         }),
         createElement(
           Section,
@@ -52,9 +52,30 @@ export function LeadQualifiedEmail({ payload }: LeadQualifiedEmailProps) {
               { label: "Nome", value: payload.lead.fullName },
               { label: "Telefone", value: payload.lead.phone },
               { label: "Email", value: payload.lead.email },
-              { label: "Beneficio provavel", value: payload.result.benefit },
-              { label: "Classificacao", value: payload.result.classification },
-              { label: "Score interno", value: payload.result.score },
+              { label: "Tema para analise", value: payload.result.benefit },
+              {
+                label: "Classificacao interna",
+                value: payload.result.classification,
+              },
+              {
+                label: "Indicador operacional interno",
+                value: payload.result.score,
+              },
+              {
+                label: "Completude das informacoes",
+                value: payload.result.dataCompleteness,
+              },
+              {
+                label: "Requer revisao humana",
+                value: payload.result.requiresHumanReview ? "sim" : "nao",
+              },
+              {
+                label: "Informacoes criticas ausentes",
+                value:
+                  payload.result.missingCriticalAnswers.length > 0
+                    ? payload.result.missingCriticalAnswers.join(", ")
+                    : "-",
+              },
               { label: "Horario", value: payload.generatedAt },
             ],
           }),
@@ -73,6 +94,22 @@ export function LeadQualifiedEmail({ payload }: LeadQualifiedEmailProps) {
               },
             },
             payload.result.summary,
+          ),
+        ),
+        createElement(
+          Section,
+          { title: "Aviso interno" },
+          createElement(
+            Text,
+            {
+              style: {
+                color: "#334155",
+                fontSize: "14px",
+                lineHeight: "22px",
+                margin: 0,
+              },
+            },
+            "Classificacao e indicador sao criterios internos de priorizacao. Nao representam parecer juridico, probabilidade de exito, promessa de resultado ou decisao de orgao competente.",
           ),
         ),
         createElement(
@@ -101,7 +138,7 @@ export function LeadQualifiedEmail({ payload }: LeadQualifiedEmailProps) {
         ),
         createElement(CTA, {
           href: payload.whatsappUrl,
-          label: "Conversar pelo WhatsApp",
+          label: "Abrir conversa pelo WhatsApp",
         }),
         createElement(Footer),
       ),

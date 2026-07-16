@@ -15,6 +15,9 @@ const payload: LeadNotificationPayload = {
     classification: "alto_potencial",
     score: 88,
     summary: "Resumo preliminar.",
+    dataCompleteness: "complete",
+    requiresHumanReview: false,
+    missingCriticalAnswers: [],
   },
   answers: [
     {
@@ -37,7 +40,7 @@ const payload: LeadNotificationPayload = {
     landingPage: "/cadastro",
   },
   generatedAt: "2026-07-12T12:10:00.000Z",
-  whatsappUrl: "https://wa.me/5571981533737?text=Ol%C3%A1%21%0A%0ALead",
+  whatsappUrl: "https://wa.me/5571981533737",
   qualification: {
     classification: "alto_potencial",
     priority: "high",
@@ -61,7 +64,7 @@ describe("lead notification templates", () => {
       html: expect.stringContaining("Maria Silva"),
     });
     await expect(rendered).resolves.toMatchObject({
-      html: expect.stringContaining("Conversar pelo WhatsApp"),
+      html: expect.stringContaining("Abrir conversa pelo WhatsApp"),
     });
     await expect(rendered).resolves.toMatchObject({
       text: expect.stringContaining("BPC/LOAS"),
@@ -81,7 +84,8 @@ describe("lead notification templates", () => {
       },
     });
 
-    expect(rendered.html).toContain("Novo lead de medio potencial");
-    expect(rendered.text).toContain("Score interno: 52");
+    expect(rendered.html).toContain("Contato com prioridade media de triagem");
+    expect(rendered.text).toContain("Indicador operacional interno: 52");
+    expect(rendered.text).not.toContain("Beneficio provavel");
   });
 });

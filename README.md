@@ -2,7 +2,7 @@
 
 Aplicação web responsiva para geração de leads qualificados para escritórios de advocacia previdenciária.
 
-O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, a infraestrutura do quiz com persistência automática, a geração preliminar de resultado informativo, o pipeline interno de qualificação/notificação e a camada de tracking externo em dry-run/configurável. Autenticação, APIs públicas, IA, painel administrativo, CRM e WhatsApp automático ainda não foram implementados.
+O projeto já contém a estrutura técnica inicial, o sistema visual configurável, o cadastro funcional de lead com captura de atribuição, templates modulares de quiz, persistência automática, geração preliminar de resultado informativo, pipeline interno de qualificação/notificação e camada de tracking externo em dry-run/configurável. Autenticação completa, APIs públicas, IA, CRM e WhatsApp automático ainda não foram implementados.
 
 ## Stack
 
@@ -129,6 +129,18 @@ Documentação completa:
 
 - `docs/multi-tenant.md`
 
+Dados mínimos para operar um tenant:
+
+- nome público do escritório;
+- slug;
+- e-mail operacional;
+- telefone ou WhatsApp;
+- cidade/estado;
+- status ativo;
+- responsável operacional.
+
+Dados opcionais não bloqueiam o MVP: nome de advogado, OAB, CNPJ, razão social, endereço, unidades, canal de privacidade, logo e redes sociais. Campos opcionais vazios não devem aparecer como placeholders públicos.
+
 ## Cadastro de leads
 
 Fluxo implementado:
@@ -150,13 +162,35 @@ Campos de campanha são capturados pelo componente global de atribuição e pres
 
 A deduplicação atual busca leads com o mesmo telefone normalizado nos últimos 15 minutos e reutiliza o `leadId` encontrado. O rate limit por IP é best effort em memória, adequado apenas como camada inicial em ambiente serverless. Para produção em escala, adicionar Redis ou serviço equivalente.
 
+## Modular Quiz Templates
+
+O Radar Previdenciário funciona como plataforma de qualificação preliminar de leads. A plataforma organiza informações e o escritório faz a avaliação jurídica individual.
+
+Templates padrão ativos:
+
+- `/quiz`: triagem previdenciária geral.
+- `/quiz/salario-maternidade`: salário-maternidade.
+- `/quiz/fibromialgia`: tema relacionado à fibromialgia.
+- `/quiz/depressao`: tema relacionado à depressão.
+- `/quiz/autismo`: tema relacionado ao autismo.
+
+Arquitetura:
+
+- `config/quiz/templates/`: templates `platform_managed` com perguntas, regras e textos públicos.
+- `services/quiz/templates/`: resolução por slug, fallback legado, moderação, permissões e clone para tenant.
+- `types/quiz/`: `QuizTemplateType`, `QuizTemplateSource`, `QuizTemplateStatus` e contratos relacionados.
+- `supabase/migrations/20260715120000_create_modular_quiz_templates.sql`: migration aditiva para `quiz_templates`, `quiz_template_questions`, `quiz_template_rules`, `quiz_template_versions` e vínculo em `quiz_sessions`.
+
+Templates da plataforma não são editados diretamente por tenant; devem ser clonados. Conteúdo customizado é `tenant_managed`, passa por moderação automática e registra versionamento operacional.
+
 ## Question Engine
 
 O quiz foi estruturado para suportar múltiplos benefícios e múltiplos escritórios sem hardcode de perguntas dentro da tela.
 
 Principais diretórios:
 
-- `config/quiz/questions/`: perguntas versionadas.
+- `config/quiz/templates/`: templates versionáveis.
+- `config/quiz/questions/`: perguntas legadas/versionadas.
 - `config/quiz/flows/`: fluxos e ordem dos passos.
 - `config/quiz/benefits/`: benefícios e contextos.
 - `types/quiz/`: contratos do Question Engine.
@@ -166,7 +200,7 @@ Principais diretórios:
 - `services/quiz/navigation/`: anterior, próximo e retomada.
 - `components/quiz/renderer/`: componentes por tipo de pergunta.
 
-O primeiro fluxo exemplo possui 8 perguntas. Ele salva respostas em `quiz_answers`, cria/reutiliza `quiz_sessions`, calcula progresso real e registra `QuizStarted`, `QuestionAnswered`, `QuizCompleted`, `ResultGenerated` e `ResultViewed` em `tracking_events`.
+O template geral identifica o assunto previdenciário e templates temáticos organizam informações de campanhas específicas. Os templates relacionados à saúde não realizam diagnóstico, não avaliam incapacidade e não confirmam direito a benefício.
 
 ## Rule Engine e Result Engine
 
@@ -187,7 +221,9 @@ Result Page
 
 As regras preliminares ficam em `config/quiz/rules/` e usam operadores simples como `includes`, `equals`, `min` e `max`. Essa camada não calcula direito previdenciário definitivo e não substitui avaliação jurídica individual.
 
-O resultado é persistido em `quiz_results` com `lead_id`, `session_id`, `potential_benefit`, `score`, `classification`, `summary` e `ethical_disclaimer`. A rota `/resultado` lê o resultado mais recente do lead autenticado pelo cookie HTTP-only `rp_lead_session`.
+O resultado é persistido em `quiz_results` com metadados internos como `lead_id`, `session_id`, `quiz_template_id`, `template_type`, `potential_benefit`, `topic`, `score`, `classification`, `data_completeness`, `requires_human_review`, `matched_rules`, `summary` e `ethical_disclaimer`. A rota `/resultado` lê o resultado mais recente do lead autenticado pelo cookie HTTP-only `rp_lead_session`.
+
+Campos internos como score, alto/médio/baixo, thresholds e regras combinadas não são exibidos ao usuário. A página pública mostra apenas título, resumo, tema, próximo passo e disclaimer.
 
 `quiz_results.session_id` possui constraint única no banco remoto para evitar múltiplos resultados da mesma sessão. A camada de persistência usa `upsert` por `session_id`, e eventos de resultado possuem deduplicação em aplicação para evitar repetição em refresh ou dupla conclusão. `ResultViewed` é disparado por Server Action e protegido por cookie HTTP-only por resultado.
 
@@ -337,6 +373,7 @@ Documentação operacional completa:
 - `components/`: componentes reutilizáveis, UI shadcn e layout.
 - `config/`: branding, tema, SEO, jurídico e dados institucionais do escritório.
 - `config/quiz/`: perguntas, fluxos e benefícios do Question Engine.
+- `config/quiz/templates/`: templates modulares padrão da plataforma.
 - `hooks/`: hooks React futuros.
 - `lib/`: utilitários de infraestrutura.
 - `services/`: integrações e serviços futuros.
@@ -405,6 +442,10 @@ Para trocar os dados do escritório no MVP, edite apenas os arquivos locais dent
 - `/`
 - `/cadastro`
 - `/quiz`
+- `/quiz/salario-maternidade`
+- `/quiz/fibromialgia`
+- `/quiz/depressao`
+- `/quiz/autismo`
 - `/resultado`
 - `/privacidade`
 - `/termos`
@@ -422,6 +463,25 @@ ci: altera pipeline
 ```
 
 Husky e lint-staged executam validações antes do commit.
+
+## Fluxo de desenvolvimento
+
+O fluxo atual é:
+
+```text
+desenvolvimento
+→ testes
+→ revisão técnica
+→ Preview
+→ validação operacional
+→ migration controlada
+→ deploy
+→ monitoramento
+```
+
+Revisão jurídica é preventiva, periódica e recomendada antes de lançamento comercial amplo ou mudanças jurídicas relevantes no Rule Engine central. Ela não bloqueia commit, push, Pull Request, Preview ou testes técnicos.
+
+Gates operacionais permanecem para migration em produção, deploy de produção, uso de dados reais, criação de usuários reais, ativação de tracking externo real, disparo de marketing, exclusão de dados, alteração destrutiva de banco e merge em `main` sem CI verde.
 
 ## CI
 

@@ -18,7 +18,7 @@ export function Footer() {
           margin: 0,
         },
       },
-      "Esta mensagem foi gerada automaticamente pelo Radar Previdenciario. A analise possui carater exclusivamente informativo e nao substitui avaliacao juridica individual.",
+      "Esta mensagem foi gerada automaticamente pelo Radar Previdenciario. A triagem possui carater exclusivamente informativo, nao constitui parecer juridico, nao confirma direito a beneficio e nao substitui avaliacao individual com documentos.",
     ),
   );
 }

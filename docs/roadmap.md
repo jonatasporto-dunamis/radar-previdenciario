@@ -13,12 +13,14 @@
 - Delivery logs em `external_tracking_deliveries`.
 - Dry-run e test mode para validação segura.
 - Fundação multi-tenant com tenants, domínios, tracking config, secrets e `tenant_id` operacional.
+- Fluxo de revisão preventiva desburocratizado em `docs/legal-review-guide.md`.
+- Templates modulares iniciais para quiz geral, salário-maternidade, fibromialgia, depressão e autismo.
+- Moderação inicial de conteúdo customizado e matriz de permissões para templates.
 
 ## Próximas fases do quiz
 
-- Criar catálogo real de benefícios previdenciários.
-- Mapear perguntas por benefício e por escritório.
-- Definir estratégia de versionamento de fluxos em banco.
+- Aplicar a migration modular em ambiente controlado e popular templates no banco quando o painel administrativo estiver pronto.
+- Evoluir clone, edição básica e publicação de templates por tenant no painel.
 - Evoluir regras preliminares para Rule Engine jurídico definitivo.
 - Definir critérios jurídicos e documentais para classificação real.
 - Implementar limpeza de atribuição ao concluir o fluxo.
@@ -46,6 +48,6 @@
 ## Fase SaaS
 
 - Migrar brand, office, theme, SEO e legal para configuração remota por tenant quando houver painel.
-- Adicionar painel administrativo.
+- Evoluir painel administrativo para `/painel/quizzes`, criação, clone, edição básica e versionamento.
 - Adicionar cache seguro por tenant.
 - Implementar onboarding, billing e lifecycle real de tenant.

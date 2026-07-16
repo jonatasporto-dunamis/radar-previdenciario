@@ -235,4 +235,53 @@ describe("Rule Engine", () => {
     expect(evaluation.topCandidate).toBeNull();
     expect(evaluation.candidates[0].score).toBe(0);
   });
+
+  it("does not score unknown or withheld answers and requires human review", () => {
+    const rules: BenefitRuleDefinition[] = [
+      {
+        benefitSlug: "benefit-a",
+        active: true,
+        conditions: [
+          {
+            questionId: "primary-interest",
+            operator: "includes",
+            value: "aposentadoria",
+            score: 50,
+            reason: "Tema informado",
+          },
+          {
+            questionId: "contribution-years",
+            operator: "min",
+            value: 15,
+            score: 50,
+            reason: "Tempo informado",
+          },
+        ],
+      },
+    ];
+
+    const evaluation = evaluateQuizRules(
+      {
+        "primary-interest": createStoredAnswerFixture({
+          questionId: "primary-interest",
+          answerValue: "unknown",
+          answerLabel: "Não sei informar",
+        }),
+        "contribution-years": createStoredAnswerFixture({
+          questionId: "contribution-years",
+          answerValue: "withheld",
+          answerLabel: "Prefiro não informar",
+        }),
+      },
+      rules,
+      benefits,
+    );
+
+    expect(evaluation.topCandidate).toBeNull();
+    expect(evaluation.candidates[0].score).toBe(0);
+    expect(evaluation.requiresHumanReview).toBe(true);
+    expect(evaluation.missingCriticalAnswers).toEqual(
+      expect.arrayContaining(["primary-interest", "contribution-years"]),
+    );
+  });
 });

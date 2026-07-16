@@ -3,6 +3,10 @@ import type {
   QuestionDefinition,
   QuestionOption,
 } from "@/types/quiz";
+import {
+  getAnswerState,
+  isAllowedAnswerState,
+} from "@/utils/quiz-answer-state";
 import { isValidBrazilianPhone } from "@/utils/phone";
 
 export type QuestionAnswerValidationResult =
@@ -20,6 +24,10 @@ function getRequiredMessage(question: QuestionDefinition): string {
 }
 
 function hasValue(value: QuestionAnswerValue): boolean {
+  if (getAnswerState(value) !== "answered") {
+    return true;
+  }
+
   if (Array.isArray(value)) {
     return value.length > 0;
   }
@@ -100,6 +108,13 @@ export function validateQuestionAnswer(
   question: QuestionDefinition,
   value: QuestionAnswerValue,
 ): QuestionAnswerValidationResult {
+  if (!Array.isArray(value) && isAllowedAnswerState(question, value)) {
+    return {
+      success: true,
+      value,
+    };
+  }
+
   if (question.required && !hasValue(value)) {
     return {
       success: false,
@@ -117,6 +132,24 @@ export function validateQuestionAnswer(
   if (question.type === "checkbox") {
     const selectedValues = Array.isArray(value) ? value : [];
     const allowedValues = getOptionValues(question.options);
+
+    if (
+      selectedValues.length === 1 &&
+      isAllowedAnswerState(question, selectedValues[0])
+    ) {
+      return {
+        success: true,
+        value: selectedValues[0],
+      };
+    }
+
+    if (selectedValues.some((item) => isAllowedAnswerState(question, item))) {
+      return {
+        success: false,
+        error:
+          "Use a opção de dúvida ou omissão sem combinar com outras respostas.",
+      };
+    }
 
     if (selectedValues.some((item) => !allowedValues.includes(item))) {
       return {

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const requiredString = z.string().trim().min(1);
 const optionalPublicString = z.string();
+const optionalConfiguredString = z.string().trim().optional();
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 const themeColorScaleSchema = z.object({
@@ -44,34 +45,68 @@ export const brandConfigSchema = z.object({
   foregroundColor: hexColor,
   whatsapp: requiredString,
   whatsappDefaultMessage: requiredString,
-  phone: requiredString,
-  email: z.string().email(),
+  phone: optionalConfiguredString,
+  email: z.string().email().optional(),
   website: z.string().url(),
   instagram: optionalPublicString,
   facebook: optionalPublicString,
   linkedin: optionalPublicString,
   youtube: optionalPublicString,
   tiktok: optionalPublicString,
-  address: requiredString,
-  city: requiredString,
-  state: requiredString,
-  zipCode: requiredString,
-  cnpj: requiredString,
-  privacyEmail: z.string().email(),
-  supportEmail: z.string().email(),
+  address: optionalConfiguredString,
+  city: optionalConfiguredString,
+  state: optionalConfiguredString,
+  zipCode: optionalConfiguredString,
+  cnpj: optionalConfiguredString,
+  privacyEmail: z.string().email().optional(),
+  supportEmail: z.string().email().optional(),
   copyright: requiredString,
   poweredBy: requiredString,
 });
 
 export const officeConfigSchema = z.object({
-  responsibleLawyer: requiredString,
-  oab: requiredString,
+  responsibleLawyer: optionalConfiguredString,
+  oab: optionalConfiguredString,
+  legalProfessional: z
+    .object({
+      name: requiredString,
+      registration: requiredString,
+      sectional: requiredString,
+      displayRegistration: requiredString,
+    })
+    .optional(),
+  legalIdentity: z.object({
+    officeName: requiredString,
+    responsibleProfessionalName: optionalConfiguredString,
+    professionalRegistration: optionalConfiguredString,
+    companyName: optionalConfiguredString,
+    companyDocument: optionalConfiguredString,
+    officeRegistration: optionalConfiguredString,
+    privacyEmail: z.string().email().optional(),
+    address: optionalConfiguredString,
+  }),
   specialties: z.array(requiredString).min(1),
   citiesServed: z.array(requiredString).min(1),
   statesServed: z.array(requiredString).min(1),
   serviceMode: requiredString,
   workingHours: requiredString,
   whatsappDefaultMessage: requiredString,
+  units: z.array(requiredString).min(1),
+  privacy: z.object({
+    contactEmail: z.string().email().optional(),
+    contactChannel: optionalConfiguredString,
+  }),
+  dataRetention: z.object({
+    incompleteSessionDays: z.number().int().positive(),
+    completedTriageDays: z.number().int().positive(),
+    activeLeadDays: z.number().int().positive(),
+    trackingDays: z.number().int().positive(),
+    internalTrackingDays: z.number().int().positive(),
+    securityLogDays: z.number().int().positive(),
+    notificationLogDays: z.number().int().positive(),
+    externalDeliveryDays: z.number().int().positive(),
+    auditLogDays: z.number().int().positive(),
+  }),
   email: z.object({
     fromName: z.string().trim(),
     fromAddress: z.string().trim(),
@@ -94,6 +129,13 @@ export const legalConfigSchema = z.object({
   privacyPolicyCompany: requiredString,
   termsTitle: requiredString,
   disclaimer: requiredString,
+  disclaimers: z.object({
+    full: requiredString,
+    short: requiredString,
+    emailInternal: requiredString,
+    registration: requiredString,
+    result: requiredString,
+  }),
   cookiePolicy: requiredString,
 });
 

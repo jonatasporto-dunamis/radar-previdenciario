@@ -34,7 +34,7 @@ export async function Hero({
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <PrimaryButton asChild size="lg">
               <Link href={primaryHref}>
-                Iniciar análise gratuita
+                Iniciar triagem informativa
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
             </PrimaryButton>
@@ -58,7 +58,7 @@ export async function Hero({
                   Ambiente preparado para
                 </p>
                 <p className="text-accent-foreground mt-1 text-2xl font-semibold">
-                  análise informativa
+                  triagem informativa
                 </p>
               </div>
               <ShieldCheck

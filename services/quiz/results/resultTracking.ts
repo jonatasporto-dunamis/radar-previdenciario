@@ -26,6 +26,10 @@ export async function trackResultGeneratedOnce(input: {
     eventPayload: {
       classification: input.result.classification,
       potentialBenefit: input.result.potentialBenefit,
+      topic: input.result.topic,
+      dataCompleteness: input.result.dataCompleteness,
+      requiresHumanReview: input.result.requiresHumanReview,
+      templateType: input.result.templateType,
       rulesVersion: input.rulesVersion,
       source: "rule_engine",
     },

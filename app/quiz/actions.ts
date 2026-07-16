@@ -6,7 +6,7 @@ import {
   createExternalEventId,
   dispatchExternalEvent,
 } from "@/services/external-tracking";
-import { getQuestionsForFlow } from "@/services/quiz/engine";
+import { getQuestionsForTemplate } from "@/services/quiz/engine";
 import { getQuizNavigationState } from "@/services/quiz/navigation";
 import { calculateQuizProgress } from "@/services/quiz/progress";
 import {
@@ -26,6 +26,11 @@ import {
 import { trackEvent } from "@/services/tracking";
 import { trackEventOnce } from "@/services/tracking";
 import { getTenantContext } from "@/services/tenants";
+import {
+  getDefaultQuizTemplate,
+  getQuizTemplateById,
+  getQuizTemplateByType,
+} from "@/services/quiz/templates";
 import type {
   QuestionAnswerValue,
   QuizAnswerMap,
@@ -37,6 +42,8 @@ import { validateQuestionAnswer } from "@/lib/validations/quiz";
 
 const LEAD_SESSION_COOKIE = "rp_lead_session";
 const QUIZ_SESSION_COOKIE = "rp_quiz_session";
+const SENSITIVE_DATA_CONSENT_COOKIE = "rp_sensitive_data_consent";
+const CONSENT_VERSION = "2026-07-15-mvp";
 const GENERIC_QUIZ_ERROR =
   "Não foi possível salvar sua resposta agora. Tente novamente.";
 
@@ -116,6 +123,73 @@ async function setQuizSessionCookie(sessionId: string) {
   });
 }
 
+async function setSensitiveDataConsentCookie(status: "granted" | "denied") {
+  const cookieStore = await cookies();
+
+  cookieStore.set(SENSITIVE_DATA_CONSENT_COOKIE, status, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 180,
+  });
+}
+
+export async function recordSensitiveDataConsentAction(input: {
+  sessionId: string;
+  status: "granted" | "denied";
+}): Promise<
+  { success: true; status: "granted" | "denied" } | { success: false }
+> {
+  const leadId = await getLeadIdFromCookie();
+
+  if (!leadId) {
+    return { success: false };
+  }
+
+  const tenantContext = await getTenantContext();
+  const session = await getQuizSessionForLead(
+    tenantContext.tenantId,
+    leadId,
+    input.sessionId,
+  );
+
+  if (!session || session.status !== "started") {
+    return { success: false };
+  }
+
+  const context = await getRequestContext();
+
+  try {
+    await trackEvent({
+      tenantId: tenantContext.tenantId,
+      leadId,
+      sessionId: session.id,
+      eventName:
+        input.status === "granted"
+          ? "SensitiveDataConsentGranted"
+          : "SensitiveDataConsentDenied",
+      eventPayload: {
+        source: "quiz",
+        consent_type: "sensitive_data_triage",
+        consent_version: CONSENT_VERSION,
+        policy_version: CONSENT_VERSION,
+        status: input.status,
+        timestamp: new Date().toISOString(),
+      },
+      userAgent: context.userAgent,
+      ipAddress: context.ipAddress,
+    });
+  } catch {
+    console.error("Failed to track sensitive data consent event.");
+  }
+
+  await setSensitiveDataConsentCookie(input.status);
+  await setQuizSessionCookie(session.id);
+
+  return { success: true, status: input.status };
+}
+
 export async function persistQuizSessionCookieAction(
   sessionId: string,
 ): Promise<{ success: true } | { success: false }> {
@@ -169,7 +243,11 @@ export async function saveQuizAnswerAction(input: {
     };
   }
 
-  const questions = getQuestionsForFlow();
+  const template =
+    getQuizTemplateById(session.quiz_template_id) ??
+    getQuizTemplateByType(session.template_type) ??
+    getDefaultQuizTemplate();
+  const questions = getQuestionsForTemplate(template);
   const question = questions.find((item) => item.id === input.questionId);
 
   if (!question) {
@@ -244,17 +322,26 @@ export async function saveQuizAnswerAction(input: {
 
     if (shouldComplete) {
       const legal = await getLegalConfig();
-      const ruleEvaluation = evaluateQuizRules(answers);
+      const ruleEvaluation = evaluateQuizRules(
+        answers,
+        template.rules,
+        undefined,
+        template.version,
+        questions,
+        template.type,
+      );
       const computedResult = buildQuizResult({
         answers,
         ruleEvaluation,
         ethicalDisclaimer: legal.disclaimer,
+        template,
       });
       const persistedResult = await persistQuizResult({
         tenantId: tenantContext.tenantId,
         leadId,
         sessionId: session.id,
         result: computedResult,
+        template,
       });
 
       resultId = persistedResult.id;
@@ -291,6 +378,9 @@ export async function saveQuizAnswerAction(input: {
             score: computedResult.score,
             classification: computedResult.classification,
             potentialBenefit: computedResult.potentialBenefit,
+            dataCompleteness: computedResult.dataCompleteness,
+            requiresHumanReview: computedResult.requiresHumanReview,
+            templateType: computedResult.templateType,
             external_event_id: quizCompletedExternalEventId,
           },
           eventPayloadContains: {

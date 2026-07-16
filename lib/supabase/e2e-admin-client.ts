@@ -6,6 +6,10 @@ type TableName =
   | "tenant_domains"
   | "tenant_tracking_configs"
   | "tenant_secrets"
+  | "quiz_templates"
+  | "quiz_template_questions"
+  | "quiz_template_rules"
+  | "quiz_template_versions"
   | "leads"
   | "quiz_sessions"
   | "quiz_answers"
@@ -23,6 +27,10 @@ const store: Record<TableName, Row[]> = {
   tenant_domains: [],
   tenant_tracking_configs: [],
   tenant_secrets: [],
+  quiz_templates: [],
+  quiz_template_questions: [],
+  quiz_template_rules: [],
+  quiz_template_versions: [],
   leads: [],
   quiz_sessions: [],
   quiz_answers: [],

@@ -41,9 +41,11 @@ export async function startLeadRegistration(
   await page.goto(
     `/cadastro?utm_source=e2e&utm_medium=quality_gate&utm_campaign=playwright&utm_content=${lead.email}`,
   );
+  await expect(
+    page.getByRole("button", { name: /Iniciar triagem informativa/i }),
+  ).toBeEnabled({ timeout: 30_000 });
   const fullNameInput = page.getByLabel("Nome completo", { exact: true });
-  await fullNameInput.click();
-  await fullNameInput.pressSequentially(lead.fullName);
+  await fullNameInput.fill(lead.fullName);
   await expect(fullNameInput).toHaveValue(lead.fullName);
   await page.getByLabel("E-mail", { exact: true }).fill(lead.email);
   await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue(
@@ -53,8 +55,10 @@ export async function startLeadRegistration(
   await expect(page.getByLabel("Telefone", { exact: true })).toHaveValue(
     /^\(\d{2}\) \d{5}-\d{4}$/,
   );
-  await page.getByLabel(/Li e concordo/i).check();
-  await page.getByRole("button", { name: /Iniciar análise gratuita/i }).click();
+  await page.getByLabel(/Li a Política de Privacidade/i).check();
+  await page
+    .getByRole("button", { name: /Iniciar triagem informativa/i })
+    .click();
   await page.waitForURL(/\/quiz$/, { timeout: 120_000 });
 }
 
@@ -64,21 +68,13 @@ export async function answerRequiredQuiz(
   await page.getByText("Aposentadoria", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#birth-date").fill("1970-01-01");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.getByRole("button", { name: /^Sim$/ }).click();
+  await page.getByText("Ainda não fiz pedido", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page
-    .getByText("Empregado com carteira assinada", { exact: true })
-    .click();
+  await page.getByText("Sim", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#contribution-years").fill("20");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.locator("#last-income").fill("2500");
-  await page.getByRole("button", { name: /Próximo/i }).click();
-  await page.getByRole("button", { name: /^Não$/ }).click();
+  await page.getByText("Sim", { exact: true }).click();
   await waitForAutosave(page);
   await page.getByRole("button", { name: /Próximo/i }).click();
 }

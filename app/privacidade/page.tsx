@@ -19,6 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PrivacidadePage() {
   const { brand, legal, office } = await getAppConfig();
+  const professionalDisplay = office.legalProfessional
+    ? `${office.legalProfessional.name} — ${office.legalProfessional.displayRegistration}`
+    : null;
+  const privacyContact =
+    office.privacy.contactEmail ??
+    office.privacy.contactChannel ??
+    brand.email ??
+    null;
+  const privacyContactHref =
+    privacyContact && privacyContact.includes("@")
+      ? `mailto:${privacyContact}`
+      : null;
 
   return (
     <PageContainer>
@@ -27,30 +39,74 @@ export default async function PrivacidadePage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
             <article className="bg-card shadow-card rounded-xl border p-8">
               <SectionTitle
-                description={`Documento base para ${legal.privacyPolicyCompany}. O texto final deverá ser revisado antes de uso em produção.`}
+                description={`Documento base para ${legal.privacyPolicyCompany}. A política deve acompanhar os dados tratados e as configurações vigentes do tenant.`}
                 eyebrow={brand.poweredBy}
                 title={legal.privacyPolicyTitle}
               />
 
               <div className="text-muted-foreground mt-8 grid gap-6 leading-7">
                 <p>
-                  Esta página utiliza informações institucionais configuradas
-                  para identificar o controlador responsável e os canais de
-                  contato.
+                  Esta página resume como a triagem previdenciária informativa
+                  trata dados pessoais. O controlador configurado é{" "}
+                  {brand.legalName}
+                  {professionalDisplay
+                    ? `. Responsável profissional informado: ${professionalDisplay}`
+                    : ""}
+                  . Campos institucionais opcionais são exibidos apenas quando
+                  estiverem configurados.
                 </p>
                 <p>
                   Canal de privacidade:{" "}
-                  <a
-                    className="text-foreground underline"
-                    href={`mailto:${brand.privacyEmail}`}
-                  >
-                    {brand.privacyEmail}
-                  </a>
+                  {privacyContactHref ? (
+                    <a
+                      className="text-foreground underline"
+                      href={privacyContactHref}
+                    >
+                      {privacyContact}
+                    </a>
+                  ) : privacyContact ? (
+                    <span className="text-foreground">{privacyContact}</span>
+                  ) : (
+                    <span className="text-foreground">
+                      pendente de confirmação pelo escritório responsável
+                    </span>
+                  )}
                   .
                 </p>
                 <p>
-                  Atendimento configurado: {office.serviceMode}. Horário:{" "}
-                  {office.workingHours}.
+                  Atendimento configurado: {office.serviceMode}, com unidades em{" "}
+                  {office.units.join(", ")}. Horário: {office.workingHours}.
+                </p>
+                <p>
+                  Dados tratados podem incluir identificação, contato,
+                  atribuição de campanha, dados técnicos de acesso, respostas do
+                  questionário, renda aproximada e informação limitada sobre
+                  existência de condição de saúde que impacte o trabalho. O
+                  sistema não solicita documentos, laudos ou diagnósticos
+                  detalhados nesta etapa.
+                </p>
+                <p>
+                  As finalidades são: permitir cadastro e retomada da sessão,
+                  registrar consentimentos e eventos internos, gerar triagem
+                  informativa, encaminhar contato ao escritório responsável,
+                  prevenir abuso e manter auditoria operacional.
+                </p>
+                <p>
+                  As bases legais preliminares estão organizadas por finalidade:
+                  procedimentos solicitados pelo titular para cadastro e contato
+                  relacionado à triagem; consentimento específico para dados
+                  pessoais sensíveis; consentimento separado para marketing
+                  futuro; consentimento para mensuração não essencial; e
+                  hipóteses como segurança, prevenção de fraude, obrigação legal
+                  ou exercício regular de direitos somente quando adequadas e
+                  aprovadas após análise humana.
+                </p>
+                <p>
+                  Para o MVP, o tratamento deve ser interpretado de forma
+                  restritiva, com coleta mínima e sem exposição pública de
+                  respostas, indicador interno ou classificação operacional. A
+                  política de retenção inicial é configurável por tenant e está
+                  documentada em procedimento próprio.
                 </p>
                 <p>{legal.cookiePolicy}</p>
                 <p>
@@ -68,9 +124,30 @@ export default async function PrivacidadePage() {
                 </p>
                 <p>
                   Respostas do quiz, documentos, dados de saúde, classificação,
-                  score, benefício provável, nome, e-mail e telefone em texto
-                  puro não são enviados para Meta, Google Analytics ou GTM para
-                  finalidade publicitária.
+                  indicador interno, tema de análise, nome, e-mail e telefone em
+                  texto puro não são enviados para Meta, Google Analytics ou GTM
+                  para finalidade publicitária.
+                </p>
+                <p>
+                  Podem atuar como operadores ou provedores técnicos serviços de
+                  hospedagem e deploy, banco de dados, mensuração consentida e
+                  envio de e-mails transacionais, incluindo Vercel, Supabase,
+                  Resend e, quando ativados, Meta e Google. Esses fornecedores
+                  devem ser avaliados quanto a segurança, confidencialidade e
+                  eventual transferência internacional de dados.
+                </p>
+                <p>
+                  O titular pode solicitar confirmação de tratamento, acesso,
+                  correção, eliminação, informação sobre compartilhamento,
+                  portabilidade quando aplicável e revisão de decisões
+                  automatizadas, pelos canais indicados nesta página.
+                </p>
+                <p>
+                  A revogação de consentimento, pedidos de acesso, correção,
+                  bloqueio, anonimização ou exclusão devem seguir procedimento
+                  documentado, com confirmação proporcional de identidade e
+                  avaliação de impedimentos legais ou exercício regular de
+                  direitos.
                 </p>
                 <p>{legal.disclaimer}</p>
               </div>

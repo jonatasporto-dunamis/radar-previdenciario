@@ -31,6 +31,7 @@ type QuizExperienceProps = {
   initialQuestionId: string;
   initialProgress: QuizProgress;
   disclaimer: string;
+  sensitiveDisclaimer?: string;
   quizStartedExternalEventId?: string;
 };
 
@@ -76,6 +77,7 @@ export function QuizExperience({
   initialQuestionId,
   initialProgress,
   disclaimer,
+  sensitiveDisclaimer,
   quizStartedExternalEventId,
 }: QuizExperienceProps) {
   const router = useRouter();
@@ -296,6 +298,11 @@ export function QuizExperience({
         {currentQuestion.description ? (
           <p className="text-muted-foreground mt-3 leading-7">
             {currentQuestion.description}
+          </p>
+        ) : null}
+        {currentQuestion.metadata?.sensitive && sensitiveDisclaimer ? (
+          <p className="bg-muted text-muted-foreground mt-4 rounded-lg p-4 text-sm leading-6">
+            {sensitiveDisclaimer}
           </p>
         ) : null}
       </div>
