@@ -148,6 +148,24 @@ Não executar sem autorização explícita.
 10. Auditar RLS para `anon`, `authenticated` e isolamento entre tenants.
 11. Validar aplicação pública sem regressão.
 
+## Hardening RLS do Painel
+
+A validação remota com dados sintéticos deve confirmar:
+
+- `anon` não lê tabelas de templates diretamente;
+- usuário autenticado não lê templates diretamente;
+- usuário do Tenant A não lê nem escreve notas do Tenant B;
+- viewer não cria notas nem histórico de status;
+- usuário suspenso não lê dados operacionais;
+- tenant inativo não concede acesso operacional;
+- histórico e auditoria permanecem append-only.
+
+Se qualquer ponto falhar, aplicar somente migration corretiva aprovada. A migration `20260716130000_harden_office_dashboard_rls.sql` usa funções `security definer` para checar membership ativa, tenant ativo e vínculo do lead ao tenant antes das policies de notas, histórico e auditoria.
+
+## Busca de Leads
+
+A busca por nome, e-mail ou telefone não deve trafegar em query string. O painel usa Server Action e cookie httpOnly (`rp_office_lead_search`) para o termo sensível. Os demais filtros não sensíveis podem continuar em query string para navegação e paginação.
+
 ## Checklist do Primeiro Usuário
 
 1. Criar usuário no Supabase Auth.
@@ -176,12 +194,17 @@ Se existir apenas o Supabase de produção, documente o risco e não conecte o P
 
 ## Rollback
 
-Como a migration adiciona tabelas novas e uma constraint compatível em `leads.status`, o rollback operacional deve ser planejado antes de produção:
+Estratégia de recuperação registrada antes do rollout remoto do painel:
 
-- remover acesso ao painel;
-- pausar writes em `lead_notes`, `lead_status_history` e `office_audit_logs`;
-- preservar backup das tabelas;
-- avaliar reversão de constraint de status somente se houver incompatibilidade real.
+- código público está preservado em `main` antes do merge do PR #3;
+- migrations remotas autorizadas: `20260715120000_create_modular_quiz_templates.sql` e `20260715150000_create_office_dashboard.sql`;
+- migrations são aditivas e o painel permanece em PR Draft até validação;
+- se a aplicação pública falhar, manter o PR fora da `main` e restaurar o deployment anterior da Vercel;
+- se a migration falhar, não executar `DROP`, `TRUNCATE` ou correções destrutivas;
+- se houver estado parcial, bloquear acesso ao painel, preservar tabelas/audit logs e corrigir por nova migration;
+- se RLS ou isolamento falharem, não criar usuários reais e manter `/painel` sem liberação operacional;
+- em incompatibilidade pública, priorizar hotfix da aplicação pública antes de qualquer merge;
+- nenhum token, senha ou service role deve ser registrado em documentação, logs ou commits.
 
 ## Troubleshooting
 

@@ -31,14 +31,16 @@ describe("office dashboard formatting and filters", () => {
       new URLSearchParams({
         page: "1",
         pageSize: "200",
-        search: "Maria",
+        search: "nao-deve-ser-usado",
         status: "new",
         requiresHumanReview: "true",
       }),
+      "Maria",
     );
 
     expect(filters.page).toBe(1);
     expect(filters.pageSize).toBe(50);
+    expect(filters.search).toBe("Maria");
     expect(filters.status).toBe("new");
     expect(filters.requiresHumanReview).toBe(true);
   });

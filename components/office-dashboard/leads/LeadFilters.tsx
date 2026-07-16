@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { updateLeadFiltersAction } from "@/app/painel/leads/actions";
 import { LeadSearch } from "./LeadSearch";
 import {
   leadCommercialStatusLabels,
@@ -9,8 +9,8 @@ import type { LeadListFilters } from "@/types/office-dashboard";
 export function LeadFilters({ filters }: { filters: LeadListFilters }) {
   return (
     <form
+      action={updateLeadFiltersAction}
       className="bg-card grid gap-4 rounded-lg border p-4 md:grid-cols-4"
-      method="get"
     >
       <LeadSearch defaultValue={filters.search} />
       <div className="space-y-2">
@@ -154,12 +154,15 @@ export function LeadFilters({ filters }: { filters: LeadListFilters }) {
         >
           Filtrar
         </button>
-        <Link
+        <button
           className="rounded-md border px-4 py-2 text-sm font-medium"
-          href="/painel/leads"
+          formNoValidate
+          name="intent"
+          type="submit"
+          value="clear"
         >
           Limpar
-        </Link>
+        </button>
       </div>
     </form>
   );

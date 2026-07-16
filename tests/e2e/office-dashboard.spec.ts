@@ -78,6 +78,7 @@ test.describe("office dashboard", () => {
 
     await page.getByLabel("Busca").fill("Maria");
     await page.getByRole("button", { name: "Filtrar" }).click();
+    await expect(page).not.toHaveURL(/search=/);
     await expect(page.getByLabel("Busca")).toHaveValue("Maria");
     await expect(page.getByText("Maria Lead E2E")).toBeVisible();
   });

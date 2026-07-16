@@ -3,6 +3,8 @@ import { normalizePage, normalizePageSize } from "./pagination";
 import { leadCommercialStatuses } from "./statuses";
 import type { LeadListFilters } from "@/types/office-dashboard";
 
+export const OFFICE_LEAD_SEARCH_COOKIE = "rp_office_lead_search";
+
 const classificationSchema = z.enum([
   "alto_potencial",
   "medio_potencial",
@@ -38,13 +40,20 @@ function readParam(searchParams: URLSearchParams, key: string) {
   return value === "" ? undefined : (value ?? undefined);
 }
 
+function normalizePrivateSearch(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed.slice(0, 80) : undefined;
+}
+
 export function parseLeadListFilters(
   searchParams: URLSearchParams,
+  privateSearch?: string,
 ): LeadListFilters {
   const parsed = leadListFilterSchema.safeParse({
     page: readParam(searchParams, "page"),
     pageSize: readParam(searchParams, "pageSize"),
-    search: readParam(searchParams, "search"),
+    search: normalizePrivateSearch(privateSearch),
     status: readParam(searchParams, "status"),
     classification: readParam(searchParams, "classification"),
     templateId: readParam(searchParams, "templateId"),

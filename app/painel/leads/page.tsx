@@ -1,9 +1,13 @@
+import { cookies } from "next/headers";
 import { DashboardShell } from "@/components/office-dashboard/DashboardShell";
 import { LeadEmptyState } from "@/components/office-dashboard/leads/LeadEmptyState";
 import { LeadFilters } from "@/components/office-dashboard/leads/LeadFilters";
 import { LeadPagination } from "@/components/office-dashboard/leads/LeadPagination";
 import { LeadTable } from "@/components/office-dashboard/leads/LeadTable";
-import { parseLeadListFilters } from "@/lib/office-dashboard";
+import {
+  OFFICE_LEAD_SEARCH_COOKIE,
+  parseLeadListFilters,
+} from "@/lib/office-dashboard";
 import { requireTenantRole } from "@/services/office-dashboard/auth";
 import { listOfficeLeads } from "@/services/office-dashboard/leads";
 
@@ -19,7 +23,7 @@ function toURLSearchParams(
   const params = new URLSearchParams();
 
   Object.entries(searchParams ?? {}).forEach(([key, value]) => {
-    if (typeof value === "string") {
+    if (key !== "search" && typeof value === "string") {
       params.set(key, value);
     }
   });
@@ -34,10 +38,14 @@ export default async function OfficeLeadsPage({
   searchParams,
 }: LeadsPageProps) {
   const context = await requireTenantRole("viewLead");
+  const cookieStore = await cookies();
   const urlSearchParams = toURLSearchParams(
     searchParams ? await searchParams : undefined,
   );
-  const filters = parseLeadListFilters(urlSearchParams);
+  const filters = parseLeadListFilters(
+    urlSearchParams,
+    cookieStore.get(OFFICE_LEAD_SEARCH_COOKIE)?.value,
+  );
   const result = await listOfficeLeads({ context, filters });
 
   return (
