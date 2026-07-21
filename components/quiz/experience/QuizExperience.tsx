@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Save } from "lucide-react";
 import {
   persistQuizSessionCookieAction,
+  recordSensitiveDataConsentAction,
   saveQuizAnswerAction,
 } from "@/app/quiz/actions";
 import { ExternalEventBridge } from "@/components/tracking/ExternalEventBridge";
@@ -32,6 +33,7 @@ type QuizExperienceProps = {
   initialProgress: QuizProgress;
   disclaimer: string;
   sensitiveDisclaimer?: string;
+  initialSensitiveDataConsent?: "granted" | "denied" | null;
   quizStartedExternalEventId?: string;
 };
 
@@ -78,6 +80,7 @@ export function QuizExperience({
   initialProgress,
   disclaimer,
   sensitiveDisclaimer,
+  initialSensitiveDataConsent = null,
   quizStartedExternalEventId,
 }: QuizExperienceProps) {
   const router = useRouter();
@@ -94,6 +97,9 @@ export function QuizExperience({
     "idle",
   );
   const [completed, setCompleted] = useState(false);
+  const [sensitiveDataConsent, setSensitiveDataConsent] = useState<
+    "granted" | "denied" | null
+  >(initialSensitiveDataConsent);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -133,7 +139,11 @@ export function QuizExperience({
   function saveAnswer(
     question: QuestionDefinition,
     value: QuestionAnswerValue,
-    options: { force?: boolean; moveTo?: string | null } = {},
+    options: {
+      complete?: boolean;
+      force?: boolean;
+      moveTo?: string | null;
+    } = {},
   ) {
     const nextFingerprint = fingerprint(value);
     const alreadySaved = savedFingerprints[question.id] === nextFingerprint;
@@ -161,6 +171,7 @@ export function QuizExperience({
         sessionId,
         questionId: question.id,
         value,
+        complete: options.complete,
       });
 
       if (!result.success) {
@@ -222,8 +233,35 @@ export function QuizExperience({
     const target = navigation.nextQuestionId;
 
     saveAnswer(currentQuestion, currentValue, {
+      complete: navigation.isLastQuestion,
       force: navigation.isLastQuestion,
       moveTo: target,
+    });
+  }
+
+  function handleSensitiveDataConsent(status: "granted" | "denied") {
+    setFieldError(null);
+
+    startTransition(async () => {
+      const result = await recordSensitiveDataConsentAction({
+        sessionId,
+        status,
+      });
+
+      if (!result.success) {
+        setFieldError("Não foi possível registrar sua escolha agora.");
+        return;
+      }
+
+      setSensitiveDataConsent(result.status);
+
+      if (
+        result.status === "denied" &&
+        currentQuestion.answerStateOptions?.includes("withheld")
+      ) {
+        updateCurrentValue("withheld");
+        saveAnswer(currentQuestion, "withheld", { force: true });
+      }
     });
   }
 
@@ -307,14 +345,48 @@ export function QuizExperience({
         ) : null}
       </div>
 
-      <QuestionRenderer
-        disabled={isPending}
-        error={fieldError}
-        onChange={updateCurrentValue}
-        onCommit={(value) => saveAnswer(currentQuestion, value)}
-        question={currentQuestion}
-        value={currentValue}
-      />
+      {currentQuestion.metadata?.sensitive && !sensitiveDataConsent ? (
+        <div
+          className="bg-muted mb-6 rounded-lg border p-5"
+          role="group"
+          aria-label="Consentimento para dados sensíveis"
+        >
+          <h2 className="text-foreground text-base font-semibold">
+            Consentimento para dados sensíveis
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
+            Esta etapa pode envolver informações sobre saúde ou situação
+            familiar. Você pode autorizar o uso dessas informações para a
+            triagem informativa ou preferir não informar.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Button
+              disabled={isPending}
+              onClick={() => handleSensitiveDataConsent("granted")}
+              type="button"
+            >
+              Autorizar dados sensíveis
+            </Button>
+            <Button
+              disabled={isPending}
+              onClick={() => handleSensitiveDataConsent("denied")}
+              type="button"
+              variant="outline"
+            >
+              Prefiro não informar dados sensíveis
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <QuestionRenderer
+          disabled={isPending}
+          error={fieldError}
+          onChange={updateCurrentValue}
+          onCommit={(value) => saveAnswer(currentQuestion, value)}
+          question={currentQuestion}
+          value={currentValue}
+        />
+      )}
 
       {fieldError ? (
         <p className="text-danger mt-3 text-sm" role="alert">
