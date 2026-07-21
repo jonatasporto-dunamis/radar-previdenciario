@@ -5,6 +5,7 @@ import {
   runIntegrationConnectionTest,
   saveIntegrationSettings,
 } from "@/services/office-dashboard/integrations";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getTenantIntegrationSecret } from "@/services/integrations/secrets";
 import type { OfficeUserContext } from "@/types/office-dashboard";
 
@@ -147,6 +148,20 @@ describe("office dashboard integrations", () => {
     expect(afterTest.integration.enabled).toBe(true);
     expect(afterTest.integration.status).toBe("connected");
     expect(afterTest.integration.hasSecrets).toBe(true);
+
+    const supabase = createSupabaseAdminClient();
+    const { data: trackingConfig } = await supabase
+      .from("tenant_tracking_configs")
+      .select("enabled, external_tracking_dry_run, meta_enabled, meta_pixel_id")
+      .eq("tenant_id", tenantA)
+      .maybeSingle();
+
+    expect(trackingConfig).toMatchObject({
+      enabled: true,
+      external_tracking_dry_run: false,
+      meta_enabled: true,
+      meta_pixel_id: "123456789012345",
+    });
   });
 
   it("keeps previous Meta secret when token fields are empty", async () => {

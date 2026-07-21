@@ -211,6 +211,7 @@ async function syncLegacyTrackingConfig(input: {
     input.provider === "meta"
       ? {
           enabled: input.enabled,
+          external_tracking_dry_run: !input.enabled,
           meta_enabled: input.enabled && input.browserTrackingEnabled,
           meta_pixel_id: stringValue("pixelId"),
           meta_api_version: stringValue("apiVersion") ?? "v25.0",
@@ -218,6 +219,7 @@ async function syncLegacyTrackingConfig(input: {
         }
       : {
           enabled: input.enabled,
+          external_tracking_dry_run: !input.enabled,
           ga4_enabled: input.enabled && input.browserTrackingEnabled,
           ga4_measurement_id: stringValue("measurementId"),
         };
