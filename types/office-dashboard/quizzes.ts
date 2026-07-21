@@ -30,6 +30,7 @@ export type OfficeQuizTemplateQuestion = {
   id: string;
   questionKey: string;
   title: string;
+  description: string | null;
   type: string;
   required: boolean;
   active: boolean;
@@ -37,7 +38,10 @@ export type OfficeQuizTemplateQuestion = {
   allowsUnknown: boolean;
   allowsWithheld: boolean;
   order: number;
+  options: Array<{ label: string; value: string }>;
   optionsCount: number;
+  conditions: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 };
 
 export type OfficeQuizTemplateRule = {

@@ -155,10 +155,14 @@ test.describe("office dashboard", () => {
     await page
       .getByLabel("Descrição")
       .fill("Template customizado de teste para o painel interno.");
-    await page.getByRole("button", { name: "Salvar draft" }).click();
+    await page.getByRole("button", { name: "Salvar agora" }).click();
+    await expect(page.getByText("Draft salvo.")).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.goto(page.url().replace(/\/editar(?:\?.*)?$/, ""));
 
     await expect(
-      page.getByRole("heading", { name: "Template E2E de triagem" }),
+      page.getByRole("heading", { name: "Template E2E de triagem" }).first(),
     ).toBeVisible();
     await page.getByRole("button", { name: "Publicar" }).click();
     await expect(page.getByText("Ativo").first()).toBeVisible();
