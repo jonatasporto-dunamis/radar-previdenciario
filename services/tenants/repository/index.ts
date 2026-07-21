@@ -4,6 +4,7 @@ export {
   getTenantById,
   getTenantBySlug,
   getTenantDomainByHostname,
+  getPrimaryTenantDomain,
   getTenantSecretRow,
   getTenantTrackingConfigByTenantId,
   TenantRepositoryError,

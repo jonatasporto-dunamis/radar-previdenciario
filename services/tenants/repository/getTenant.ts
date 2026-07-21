@@ -99,6 +99,25 @@ export async function getTenantDomainByHostname(
   return data ? mapTenantDomainRow(data) : null;
 }
 
+export async function getPrimaryTenantDomain(
+  tenantId: string,
+): Promise<TenantDomain | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("tenant_domains")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("is_primary", true)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (error) {
+    throw new TenantRepositoryError("Failed to load primary tenant domain.");
+  }
+
+  return data ? mapTenantDomainRow(data) : null;
+}
+
 export async function getTenantByHostname(
   hostname: string,
 ): Promise<Tenant | null> {

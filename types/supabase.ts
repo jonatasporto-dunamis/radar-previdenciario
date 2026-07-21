@@ -981,33 +981,66 @@ export type Database = {
       tenant_domains: {
         Row: {
           created_at: string;
+          created_by: string | null;
+          dns_instructions: Json;
+          domain_type: string;
           hostname: string;
           id: string;
           is_primary: boolean;
+          is_platform_subdomain: boolean;
+          last_checked_at: string | null;
+          last_error: string | null;
           metadata: Json;
+          provider_domain_id: string | null;
+          ssl_status: string;
           status: string;
           tenant_id: string;
           updated_at: string;
+          verification_method: string;
+          verification_token: string | null;
+          verified_at: string | null;
         };
         Insert: {
           created_at?: string;
+          created_by?: string | null;
+          dns_instructions?: Json;
+          domain_type?: string;
           hostname: string;
           id?: string;
           is_primary?: boolean;
+          is_platform_subdomain?: boolean;
+          last_checked_at?: string | null;
+          last_error?: string | null;
           metadata?: Json;
+          provider_domain_id?: string | null;
+          ssl_status?: string;
           status?: string;
           tenant_id: string;
           updated_at?: string;
+          verification_method?: string;
+          verification_token?: string | null;
+          verified_at?: string | null;
         };
         Update: {
           created_at?: string;
+          created_by?: string | null;
+          dns_instructions?: Json;
+          domain_type?: string;
           hostname?: string;
           id?: string;
           is_primary?: boolean;
+          is_platform_subdomain?: boolean;
+          last_checked_at?: string | null;
+          last_error?: string | null;
           metadata?: Json;
+          provider_domain_id?: string | null;
+          ssl_status?: string;
           status?: string;
           tenant_id?: string;
           updated_at?: string;
+          verification_method?: string;
+          verification_token?: string | null;
+          verified_at?: string | null;
         };
         Relationships: [
           {

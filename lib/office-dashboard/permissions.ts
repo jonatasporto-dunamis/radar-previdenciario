@@ -70,3 +70,11 @@ export function canViewIntegrations(role: OfficeRole): boolean {
 export function canManageIntegrations(role: OfficeRole): boolean {
   return role === "admin";
 }
+
+export function canViewDomains(role: OfficeRole): boolean {
+  return managerRoles.includes(role);
+}
+
+export function canManageDomains(role: OfficeRole): boolean {
+  return role === "admin";
+}

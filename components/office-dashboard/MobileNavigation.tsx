@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
   ClipboardList,
+  Globe2,
   LayoutDashboard,
   PlugZap,
-  UserCircle,
   Users,
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ const links = [
   { href: "/painel/leads", label: "Leads", icon: Users },
   { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/painel/integracoes", label: "Integrações", icon: PlugZap },
-  { href: "/painel/conta", label: "Conta", icon: UserCircle },
+  { href: "/painel/configuracoes/dominio", label: "Domínios", icon: Globe2 },
 ];
 
 export function MobileNavigation() {
