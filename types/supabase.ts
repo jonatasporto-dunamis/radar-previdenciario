@@ -986,8 +986,8 @@ export type Database = {
           domain_type: string;
           hostname: string;
           id: string;
-          is_primary: boolean;
           is_platform_subdomain: boolean;
+          is_primary: boolean;
           last_checked_at: string | null;
           last_error: string | null;
           metadata: Json;
@@ -1007,8 +1007,8 @@ export type Database = {
           domain_type?: string;
           hostname: string;
           id?: string;
-          is_primary?: boolean;
           is_platform_subdomain?: boolean;
+          is_primary?: boolean;
           last_checked_at?: string | null;
           last_error?: string | null;
           metadata?: Json;
@@ -1028,8 +1028,8 @@ export type Database = {
           domain_type?: string;
           hostname?: string;
           id?: string;
-          is_primary?: boolean;
           is_platform_subdomain?: boolean;
+          is_primary?: boolean;
           last_checked_at?: string | null;
           last_error?: string | null;
           metadata?: Json;
