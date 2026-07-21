@@ -4,6 +4,8 @@ const blockedTerms = [
   "direito garantido",
   "benefício garantido",
   "beneficio garantido",
+  "benefício está garantido",
+  "beneficio esta garantido",
   "causa ganha",
   "será aprovado",
   "sera aprovado",

@@ -8,16 +8,31 @@ import { updateQuizTemplateDraftAction } from "../../actions";
 
 type EditTemplatePageProps = {
   params: Promise<{ templateId: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function getErrorMessage(error?: string): string | null {
+  if (error === "moderation_blocked") {
+    return "O texto contém expressão bloqueada pela política editorial. Ajuste o conteúdo antes de salvar.";
+  }
+
+  if (error === "save_failed") {
+    return "Não foi possível salvar o draft. Revise os dados e tente novamente.";
+  }
+
+  return null;
+}
+
 export default async function EditOfficeQuizTemplatePage({
   params,
+  searchParams,
 }: EditTemplatePageProps) {
   const context = await requireTenantRole("editQuizTemplate");
   const { templateId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const template = await getOfficeQuizTemplate({ context, templateId });
 
   if (!template) {
@@ -25,6 +40,7 @@ export default async function EditOfficeQuizTemplatePage({
   }
 
   const canEditDraft = template.source === "tenant" && template.canEdit;
+  const errorMessage = getErrorMessage(resolvedSearchParams.error);
 
   return (
     <DashboardShell context={context}>
@@ -44,6 +60,15 @@ export default async function EditOfficeQuizTemplatePage({
             plataforma devem ser clonados antes de qualquer alteração.
           </p>
         </div>
+
+        {errorMessage ? (
+          <div
+            className="border-danger/30 bg-danger/10 text-danger rounded-lg border p-4 text-sm"
+            role="alert"
+          >
+            {errorMessage}
+          </div>
+        ) : null}
 
         {!canEditDraft ? (
           <div className="rounded-lg border p-4 text-sm">

@@ -16,6 +16,17 @@ function readString(formData: FormData, key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getEditErrorCode(error: unknown): string {
+  if (
+    error instanceof Error &&
+    /blocked by content moderation|unsupported markup/i.test(error.message)
+  ) {
+    return "moderation_blocked";
+  }
+
+  return "save_failed";
+}
+
 export async function cloneQuizTemplateAction(formData: FormData) {
   const context = await requireTenantRole("createQuizTemplate");
   const templateId = readString(formData, "templateId");
@@ -29,12 +40,18 @@ export async function updateQuizTemplateDraftAction(formData: FormData) {
   const context = await requireTenantRole("editQuizTemplate");
   const templateId = readString(formData, "templateId");
 
-  await updateOfficeQuizTemplateDraft({
-    context,
-    templateId,
-    name: readString(formData, "name"),
-    description: readString(formData, "description"),
-  });
+  try {
+    await updateOfficeQuizTemplateDraft({
+      context,
+      templateId,
+      name: readString(formData, "name"),
+      description: readString(formData, "description"),
+    });
+  } catch (error) {
+    redirect(
+      `/painel/quizzes/${templateId}/editar?error=${getEditErrorCode(error)}`,
+    );
+  }
 
   revalidatePath("/painel/quizzes");
   revalidatePath(`/painel/quizzes/${templateId}`);

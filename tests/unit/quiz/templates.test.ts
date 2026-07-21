@@ -64,6 +64,11 @@ describe("Quiz templates", () => {
       level: "blocked",
     });
     expect(
+      moderateCustomQuizContent("Seu benefício está garantido."),
+    ).toMatchObject({
+      level: "blocked",
+    });
+    expect(
       moderateCustomQuizContent("Não use a expressão benefício garantido."),
     ).toMatchObject({
       level: "allowed",
