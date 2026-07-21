@@ -1484,7 +1484,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      office_has_active_membership: {
+        Args: { allowed_roles?: string[]; required_tenant_id: string };
+        Returns: boolean;
+      };
+      office_lead_belongs_to_tenant: {
+        Args: { required_lead_id: string; required_tenant_id: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;
