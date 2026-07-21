@@ -15,9 +15,15 @@ import {
 import { calculateQuizProgress } from "@/services/quiz/progress";
 import {
   createQuizAnswersFixture,
+  createQuizSessionFixture,
   createStoredAnswerFixture,
   questionFixtures,
 } from "@/tests/fixtures";
+import {
+  generalQuizTemplate,
+  maternityQuizTemplate,
+} from "@/config/quiz/templates/default";
+import { selectReusableQuizSession } from "@/services/quiz/session/sessionEngine";
 
 describe("Question, Navigation and Progress Engines", () => {
   it("loads default flow and resolves active questions for a flow", () => {
@@ -145,5 +151,46 @@ describe("Question, Navigation and Progress Engines", () => {
       percent: 100,
       isComplete: false,
     });
+  });
+
+  it("reuses completed template sessions when no started session exists", () => {
+    const completedMaternity = createQuizSessionFixture({
+      id: "completed-maternity",
+      status: "completed",
+      quiz_template_id: maternityQuizTemplate.id,
+      quiz_template_version: maternityQuizTemplate.version,
+      template_type: maternityQuizTemplate.type,
+      completed_at: "2026-07-12T12:30:00.000Z",
+    });
+    const startedMaternity = createQuizSessionFixture({
+      id: "started-maternity",
+      status: "started",
+      quiz_template_id: maternityQuizTemplate.id,
+      quiz_template_version: maternityQuizTemplate.version,
+      template_type: maternityQuizTemplate.type,
+    });
+    const legacyCompletedGeneral = createQuizSessionFixture({
+      id: "legacy-general",
+      status: "completed",
+      quiz_template_id: null,
+      quiz_template_version: null,
+      template_type: null,
+      completed_at: "2026-07-12T12:10:00.000Z",
+    });
+
+    expect(
+      selectReusableQuizSession([completedMaternity], maternityQuizTemplate)
+        ?.id,
+    ).toBe("completed-maternity");
+    expect(
+      selectReusableQuizSession(
+        [completedMaternity, startedMaternity],
+        maternityQuizTemplate,
+      )?.id,
+    ).toBe("started-maternity");
+    expect(
+      selectReusableQuizSession([legacyCompletedGeneral], generalQuizTemplate)
+        ?.id,
+    ).toBe("legacy-general");
   });
 });

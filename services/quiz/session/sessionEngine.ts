@@ -81,6 +81,32 @@ function normalizeQuizSessionRows(
     .filter((session): session is QuizSessionRow => Boolean(session));
 }
 
+function isSessionForTemplate(
+  session: QuizSessionRow,
+  template: QuizTemplateDefinition,
+): boolean {
+  if (session.quiz_template_id === template.id) {
+    return true;
+  }
+
+  return template.isDefault && !session.quiz_template_id;
+}
+
+export function selectReusableQuizSession(
+  sessions: QuizSessionRow[],
+  template: QuizTemplateDefinition,
+): QuizSessionRow | null {
+  const matchingSessions = sessions.filter((session) =>
+    isSessionForTemplate(session, template),
+  );
+
+  return (
+    matchingSessions.find((session) => session.status === "started") ??
+    matchingSessions.find((session) => session.status === "completed") ??
+    null
+  );
+}
+
 function leadAttributionToTracking(lead: LeadRow): AttributionData {
   return {
     utmSource: lead.utm_source,
@@ -194,7 +220,7 @@ export async function getQuizSessionState(
     .select("*")
     .eq("tenant_id", tenantId)
     .eq("lead_id", leadId)
-    .eq("status", "started")
+    .in("status", ["started", "completed"])
     .order("created_at", { ascending: false })
     .limit(10);
 
@@ -203,14 +229,10 @@ export async function getQuizSessionState(
   }
 
   const normalizedExistingSessions = normalizeQuizSessionRows(existingSessions);
-  const existingSession =
-    normalizedExistingSessions.find(
-      (item) => item.quiz_template_id === template.id,
-    ) ??
-    (template.isDefault
-      ? normalizedExistingSessions.find((item) => !item.quiz_template_id)
-      : undefined) ??
-    null;
+  const existingSession = selectReusableQuizSession(
+    normalizedExistingSessions,
+    template,
+  );
   let session = existingSession;
   let createdSession = false;
   let quizStartedExternalEventId: string | undefined;
