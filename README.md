@@ -75,13 +75,14 @@ NEXT_PUBLIC_TRACKING_ENABLED=
 NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
 EXTERNAL_TRACKING_DRY_RUN=
 TENANT_SECRETS_ENCRYPTION_KEY=
+TENANT_SECRETS_KEY_VERSION=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
 
 `META_CONVERSIONS_API_ACCESS_TOKEN` também é server-only e nunca deve receber prefixo `NEXT_PUBLIC_`. Pixel ID, GA4 Measurement ID e GTM Container ID podem ser públicos.
 
-`TENANT_SECRETS_ENCRYPTION_KEY` é server-only e deve decodificar para 32 bytes em base64url ou hex. Ela é usada para criptografar secrets por tenant persistidos em `tenant_secrets`.
+`TENANT_SECRETS_ENCRYPTION_KEY` é server-only e deve decodificar para 32 bytes em base64url ou hex. Ela é usada para criptografar secrets por tenant persistidos em `tenant_secrets` e `tenant_integration_secrets`. `TENANT_SECRETS_KEY_VERSION` é opcional e registra a versão operacional da chave.
 
 ## Supabase Setup
 
@@ -364,6 +365,8 @@ Testes automatizados não enviam e-mails reais: `E2E_MOCK_SUPABASE=true` ativa S
 
 A camada externa fica desacoplada em `services/external-tracking/`, `lib/tracking/`, `components/tracking/`, `config/tracking/` e `types/tracking/`.
 
+O painel possui a Central de Integrações em `/painel/integracoes`, com configuração por tenant para Meta, Google Analytics 4, Google Ads e TikTok. Credenciais são gravadas em `tenant_integration_secrets` com criptografia server-only; a UI mostra apenas que uma credencial existe e permite substituição.
+
 Eventos implementados:
 
 - `PageView`
@@ -383,6 +386,7 @@ tracking_events
 → Browser: dataLayer, Meta Pixel, GA4 fallback
 → Server: Meta Conversions API
 → external_tracking_deliveries
+→ integration_delivery_logs
 ```
 
 O `dataLayer` é o contrato central do navegador. No MVP, quando GTM está configurado, GTM assume GA4 e Meta Pixel no browser; `gtag.js` e Meta Pixel diretos só são fallback quando não houver GTM configurado. Meta CAPI continua server-side.
@@ -402,6 +406,8 @@ EXTERNAL_TRACKING_DRY_RUN=true
 ```
 
 Para validação real, configure os IDs/tokens na Vercel por ambiente e use `META_TRACKING_TEST_MODE=true` com `META_TEST_EVENT_CODE` apenas durante testes no Events Manager.
+
+Na central multi-tenant, novos providers nascem desativados e com status `configuration_required`. O fluxo esperado é preencher, salvar, testar conexão, ativar e acompanhar `/painel/integracoes/eventos`. Não configure tokens reais em arquivos versionados.
 
 Documentação operacional completa:
 

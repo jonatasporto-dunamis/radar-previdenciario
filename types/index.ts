@@ -160,6 +160,20 @@ export type {
 } from "./tracking";
 
 export type {
+  IntegrationCardSummary,
+  IntegrationDeliveryLog,
+  IntegrationDeliveryStatus,
+  IntegrationEventName,
+  IntegrationProvider,
+  IntegrationProviderDefinition,
+  IntegrationStatus,
+  IntegrationTestRun,
+  IntegrationTestStatus,
+  TenantEventMapping,
+  TenantIntegration,
+} from "./integrations";
+
+export type {
   CompositeTypes as SupabaseCompositeTypes,
   Database as SupabaseDatabase,
   Enums as SupabaseEnums,

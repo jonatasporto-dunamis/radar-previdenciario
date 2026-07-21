@@ -14,7 +14,14 @@ export type OfficeAuditAction =
   | "question_created"
   | "question_updated"
   | "question_removed"
-  | "template_version_created";
+  | "template_version_created"
+  | "integration_created"
+  | "integration_updated"
+  | "integration_enabled"
+  | "integration_disabled"
+  | "integration_tested"
+  | "secret_rotated"
+  | "event_mapping_updated";
 
 export type OfficeAuditLog = {
   id: string;
@@ -28,7 +35,12 @@ export type OfficeAuditLog = {
     | "session"
     | "quiz_template"
     | "quiz_template_question"
-    | "quiz_template_version";
+    | "quiz_template_version"
+    | "tenant_integration"
+    | "tenant_integration_secret"
+    | "tenant_event_mapping"
+    | "integration_delivery_log"
+    | "integration_test_run";
   entityId: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;

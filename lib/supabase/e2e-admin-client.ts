@@ -4,6 +4,9 @@ type Row = Record<string, unknown>;
 type TableName =
   | "tenants"
   | "tenant_domains"
+  | "tenant_integrations"
+  | "tenant_integration_secrets"
+  | "tenant_event_mappings"
   | "tenant_tracking_configs"
   | "tenant_secrets"
   | "tenant_memberships"
@@ -20,7 +23,9 @@ type TableName =
   | "quiz_results"
   | "tracking_events"
   | "notification_logs"
-  | "external_tracking_deliveries";
+  | "external_tracking_deliveries"
+  | "integration_delivery_logs"
+  | "integration_test_runs";
 
 const now = () => new Date().toISOString();
 const DEFAULT_TENANT_ID = "00000000-0000-4000-8000-000000000001";
@@ -44,6 +49,9 @@ const E2E_INACTIVE_TENANT_USER_ID = "00000000-0000-4000-8000-000000000907";
 const store: Record<TableName, Row[]> = {
   tenants: [],
   tenant_domains: [],
+  tenant_integrations: [],
+  tenant_integration_secrets: [],
+  tenant_event_mappings: [],
   tenant_tracking_configs: [],
   tenant_secrets: [],
   tenant_memberships: [],
@@ -61,6 +69,8 @@ const store: Record<TableName, Row[]> = {
   tracking_events: [],
   notification_logs: [],
   external_tracking_deliveries: [],
+  integration_delivery_logs: [],
+  integration_test_runs: [],
 };
 
 function createDefaultTenantRows(): void {
@@ -157,6 +167,54 @@ function createDefaultTenantRows(): void {
       event_config: {},
       created_at: DEFAULT_TIMESTAMP,
       updated_at: DEFAULT_TIMESTAMP,
+    });
+  }
+
+  if (!store.tenant_integrations.length) {
+    ["meta", "ga4", "google_ads", "tiktok"].forEach((provider, index) => {
+      store.tenant_integrations.push(
+        createRow("tenant_integrations", {
+          id: `00000000-0000-4000-8000-0000000003${String(index + 1).padStart(2, "0")}`,
+          tenant_id: DEFAULT_TENANT_ID,
+          provider,
+        }),
+        createRow("tenant_integrations", {
+          id: `00000000-0000-4000-8000-0000000004${String(index + 1).padStart(2, "0")}`,
+          tenant_id: SECOND_TENANT_ID,
+          provider,
+        }),
+      );
+    });
+  }
+
+  if (!store.tenant_event_mappings.length) {
+    const defaults = [
+      ["meta", "PageViewed", "PageView", true],
+      ["meta", "LeadSubmitted", "Lead", true],
+      ["meta", "QuizCompleted", "CompleteRegistration", true],
+      ["ga4", "PageViewed", "page_view", true],
+      ["ga4", "LeadSubmitted", "generate_lead", true],
+      ["ga4", "QuizStarted", "quiz_start", true],
+      ["ga4", "QuizCompleted", "quiz_complete", true],
+      ["google_ads", "LeadSubmitted", "Lead", false],
+      ["google_ads", "LeadQualified", "Qualified Lead", false],
+      ["tiktok", "PageViewed", "PageView", true],
+      ["tiktok", "LeadSubmitted", "SubmitForm", true],
+      ["tiktok", "QuizCompleted", "CompleteRegistration", true],
+    ] as const;
+
+    [DEFAULT_TENANT_ID, SECOND_TENANT_ID].forEach((tenantId) => {
+      defaults.forEach(([provider, internalEvent, externalEvent, enabled]) => {
+        store.tenant_event_mappings.push(
+          createRow("tenant_event_mappings", {
+            tenant_id: tenantId,
+            provider,
+            internal_event: internalEvent,
+            external_event: externalEvent,
+            enabled,
+          }),
+        );
+      });
     });
   }
 
@@ -592,6 +650,96 @@ function createRow(table: TableName, row: Row): Row {
     };
   }
 
+  if (table === "tenant_integrations") {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      provider: row.provider ?? "meta",
+      status: row.status ?? "configuration_required",
+      enabled: row.enabled ?? false,
+      browser_tracking_enabled: row.browser_tracking_enabled ?? false,
+      server_tracking_enabled: row.server_tracking_enabled ?? false,
+      test_mode: row.test_mode ?? true,
+      configuration: row.configuration ?? {},
+      secret_reference: row.secret_reference ?? null,
+      last_tested_at: row.last_tested_at ?? null,
+      last_success_at: row.last_success_at ?? null,
+      last_error_at: row.last_error_at ?? null,
+      last_error_code: row.last_error_code ?? null,
+      last_error_summary: row.last_error_summary ?? null,
+      created_by: row.created_by ?? null,
+      updated_by: row.updated_by ?? null,
+      created_at: timestamp,
+      updated_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (table === "tenant_integration_secrets") {
+    return {
+      id,
+      encrypted_payload: row.encrypted_payload ?? "v1:test:test:test",
+      encryption_version: row.encryption_version ?? "v1",
+      key_version: row.key_version ?? "v1",
+      rotated_at: row.rotated_at ?? null,
+      created_at: timestamp,
+      updated_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (table === "tenant_event_mappings") {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      provider: row.provider ?? "meta",
+      internal_event: row.internal_event ?? "LeadSubmitted",
+      external_event: row.external_event ?? "Lead",
+      enabled: row.enabled ?? false,
+      configuration: row.configuration ?? {},
+      value_source: row.value_source ?? "none",
+      currency: row.currency ?? "BRL",
+      created_at: timestamp,
+      updated_at: timestamp,
+      ...row,
+    };
+  }
+
+  if (table === "integration_delivery_logs") {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      provider: row.provider ?? "meta",
+      internal_event_id: row.internal_event_id ?? null,
+      event_id: row.event_id ?? id,
+      external_event: row.external_event ?? "Lead",
+      status: row.status ?? "pending",
+      attempt: row.attempt ?? 0,
+      response_code: row.response_code ?? null,
+      error_code: row.error_code ?? null,
+      sanitized_error: row.sanitized_error ?? null,
+      external_request_id: row.external_request_id ?? null,
+      test_mode: row.test_mode ?? true,
+      created_at: timestamp,
+      delivered_at: row.delivered_at ?? null,
+      ...row,
+    };
+  }
+
+  if (table === "integration_test_runs") {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      provider: row.provider ?? "meta",
+      status: row.status ?? "pending",
+      test_type: row.test_type ?? "connection",
+      sanitized_result: row.sanitized_result ?? {},
+      created_by: row.created_by ?? null,
+      created_at: timestamp,
+      ...row,
+    };
+  }
+
   if (
     table === "quiz_answers" ||
     table === "quiz_results" ||
@@ -850,7 +998,10 @@ class QueryBuilder {
             this.table === "quiz_sessions" ||
             this.table === "leads" ||
             this.table === "lead_notes" ||
-            this.table === "tenant_memberships"
+            this.table === "tenant_memberships" ||
+            this.table === "tenant_integrations" ||
+            this.table === "tenant_integration_secrets" ||
+            this.table === "tenant_event_mappings"
               ? now()
               : row.updated_at,
         });

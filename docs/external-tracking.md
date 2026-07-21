@@ -13,6 +13,20 @@ Business Event
 
 O `dataLayer` é o contrato central no navegador. Componentes não chamam `fbq`, `gtag` ou `dataLayer.push` diretamente; eles usam `lib/tracking` e `components/tracking`.
 
+## Central de integrações por tenant
+
+O painel expõe `/painel/integracoes` como a interface administrativa para Meta, Google Analytics 4, Google Ads e TikTok. Cada tenant possui configuração própria em:
+
+- `tenant_integrations`: status, flags de browser/server, modo teste e configuração pública sanitizada;
+- `tenant_integration_secrets`: credenciais criptografadas com AES-256-GCM via `TENANT_SECRETS_ENCRYPTION_KEY`;
+- `tenant_event_mappings`: mapeamento editável entre eventos internos e eventos externos;
+- `integration_delivery_logs`: diagnóstico sanitizado por provider, sem payload bruto e sem PII;
+- `integration_test_runs`: histórico de testes de conexão sem registrar conversão real.
+
+Providers novos são criados desativados e com status `configuration_required`. O fluxo operacional é preencher, salvar, testar, ativar e acompanhar eventos. A aplicação não ativa conversões reais automaticamente.
+
+Admins podem configurar e substituir credenciais. Managers podem visualizar diagnósticos. Secrets nunca são retornados para o navegador; a UI exibe apenas que existe uma credencial criptografada.
+
 ## Estratégia de providers no MVP
 
 Quando `NEXT_PUBLIC_GTM_CONTAINER_ID` estiver configurado, o browser envia eventos para o `dataLayer` e o GTM deve ser responsável por GA4 e Meta Pixel. Nesse modo, o app não carrega `gtag.js` direto nem Meta Pixel direto, evitando duplicação de eventos no navegador.
@@ -25,6 +39,8 @@ Quando GTM não estiver configurado, o app permite fallback direto:
 Meta CAPI continua server-side e independente do carregamento browser, desde que `NEXT_PUBLIC_META_PIXEL_ID`, `META_CONVERSIONS_API_ACCESS_TOKEN` e consentimento estejam válidos.
 
 Em modo multi-tenant, Pixel ID, GA4 Measurement ID, GTM Container ID e flags vêm preferencialmente de `tenant_tracking_configs`. O token Meta CAPI deve vir de `tenant_secrets`; o fallback por variável de ambiente existe apenas para o tenant padrão do MVP.
+
+A Central de Integrações sincroniza configurações públicas de Meta e GA4 com `tenant_tracking_configs` para preservar compatibilidade com a pipeline atual. Google Ads e TikTok já possuem modelo administrativo e logs, mas devem permanecer em modo teste até a ativação operacional dos respectivos dispatchers.
 
 ## Eventos externos
 
@@ -138,6 +154,7 @@ NEXT_PUBLIC_TRACKING_ENABLED=
 NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
 EXTERNAL_TRACKING_DRY_RUN=
 TENANT_SECRETS_ENCRYPTION_KEY=
+TENANT_SECRETS_KEY_VERSION=
 ```
 
 Nunca exponha `META_CONVERSIONS_API_ACCESS_TOKEN` no cliente.

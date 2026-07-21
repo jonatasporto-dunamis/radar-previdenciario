@@ -402,6 +402,22 @@ Observabilidade:
 
 `external_tracking_deliveries` registra status por provider/canal, tentativa, hash do payload sanitizado, timestamps e erro sanitizado. Browser delivery é best effort. CAPI tem retry limitado para 429 e 5xx.
 
+### Central de Integrações
+
+O painel adiciona uma central multi-tenant em `/painel/integracoes` para administrar Meta, Google Analytics 4, Google Ads e TikTok sem hardcode por escritório.
+
+Separação de responsabilidades:
+
+- `tenant_integrations`: flags, status, modo teste e configuração pública sanitizada.
+- `tenant_integration_secrets`: credenciais criptografadas por AES-256-GCM, lidas somente por serviços server-only.
+- `tenant_event_mappings`: catálogo editável de eventos internos para eventos externos.
+- `integration_delivery_logs`: logs sanitizados e idempotentes por tenant/provider/evento.
+- `integration_test_runs`: histórico de testes sem disparar conversões reais.
+
+Novas integrações nascem desativadas e com `configuration_required`. O admin precisa salvar, testar e ativar explicitamente. Managers visualizam diagnósticos; agents e viewers não acessam configuração de tracking.
+
+Meta e GA4 continuam compatíveis com a pipeline atual por sincronização controlada com `tenant_tracking_configs`. Google Ads e TikTok ficam preparados no painel e no schema, mas sem token real ou disparo real até configuração e validação operacional.
+
 ## Quality Gate
 
 A camada de qualidade usa Vitest para testes unitários e de integração, Testing Library para componentes React e Playwright para E2E multi-browser.
