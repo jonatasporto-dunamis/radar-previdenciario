@@ -127,9 +127,19 @@ Funcionalidades do MVP:
 - alteração de status comercial;
 - notas internas;
 - histórico e audit logs;
+- central de integrações por tenant;
+- editor visual de quizzes tenant;
 - logout seguro.
 
 O painel não usa tracking público, não entra no sitemap, retorna `noindex`/`nofollow` e não deve ser cacheado publicamente.
+
+## Visual Quiz Builder
+
+O editor visual fica em `/painel/quizzes/novo` e `/painel/quizzes/[templateId]/editar`.
+
+Admins e managers podem criar drafts tenant, clonar templates platform, editar informações, perguntas, lógica condicional, resultado, aparência, preview e publicação. Templates da plataforma continuam somente leitura e devem ser clonados antes de qualquer alteração por escritório.
+
+O builder salva rascunhos com autosave debounce e botão manual. O preview é isolado e não cria lead, sessão, resposta ou tracking real. O publish usa checklist mínimo e moderação de conteúdo para bloquear promessas ou garantias.
 
 Bootstrap do primeiro usuário:
 

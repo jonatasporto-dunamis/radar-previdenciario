@@ -165,6 +165,22 @@ Permissões preparadas para o painel:
 - `agent`: visualiza templates ativos.
 - `viewer`: somente leitura.
 
+### Visual Quiz Builder
+
+O painel possui um builder visual em `/painel/quizzes/novo` e `/painel/quizzes/[templateId]/editar`. Ele usa as tabelas existentes de templates e não exige migration adicional.
+
+Responsabilidades:
+
+- criar draft tenant em branco com pergunta inicial;
+- clonar templates platform sem permitir edição direta da origem;
+- editar informações, perguntas, lógica condicional, resultado, aparência, preview e publicação;
+- salvar draft por autosave com debounce e botão manual;
+- persistir perguntas em `quiz_template_questions` com opções, condições e metadados sanitizados;
+- bloquear textos moderados como promessas, garantias ou diagnóstico jurídico;
+- publicar apenas templates tenant com checklist mínimo.
+
+O preview do builder é isolado: não cria lead real, não grava sessão, não salva respostas e não dispara tracking. A lógica visual fica em `conditions.visibleWhen`, sem expor JSON ao usuário comum.
+
 ## Question Engine
 
 A infraestrutura do quiz foi criada como um Question Engine configurável, sem arrays hardcoded dentro da tela e sem Rule Engine jurídico definitivo.

@@ -1,5 +1,9 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  quizBuilderDraftSchema,
+  type QuizBuilderDraftInput,
+} from "@/lib/validations/quiz-builder";
 import { canManageQuizTemplate } from "@/services/quiz/templates";
 import { moderateCustomQuizContent } from "@/services/quiz/templates/moderation";
 import { insertAuditLog } from "../repositories";
@@ -84,6 +88,29 @@ function toMetadata(value: Json): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function toOptions(value: Json): Array<{ label: string; value: string }> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return null;
+      }
+
+      const label = (item as Record<string, unknown>).label;
+      const value = (item as Record<string, unknown>).value;
+
+      if (typeof label !== "string" || typeof value !== "string") {
+        return null;
+      }
+
+      return { label, value };
+    })
+    .filter((item): item is { label: string; value: string } => Boolean(item));
+}
+
 function getArrayLength(value: Json): number {
   return Array.isArray(value) ? value.length : 0;
 }
@@ -158,6 +185,7 @@ function mapQuestion(row: QuestionRow): OfficeQuizTemplateQuestion {
     id: row.id,
     questionKey: row.question_key,
     title: row.title,
+    description: row.description,
     type: row.question_type,
     required: row.is_required,
     active: true,
@@ -165,7 +193,10 @@ function mapQuestion(row: QuestionRow): OfficeQuizTemplateQuestion {
     allowsUnknown: row.allows_unknown,
     allowsWithheld: row.allows_withheld,
     order: row.display_order,
+    options: toOptions(row.options),
     optionsCount: getArrayLength(row.options),
+    conditions: toMetadata(row.conditions),
+    metadata: toMetadata(row.metadata),
   };
 }
 
@@ -466,6 +497,288 @@ export async function cloneOfficeQuizTemplate(input: {
   return cloned.id;
 }
 
+export async function createBlankOfficeQuizTemplate(input: {
+  context: OfficeUserContext;
+}): Promise<string> {
+  if (
+    !canManageQuizTemplate({
+      role: input.context.role,
+      action: "clone",
+      template: { source: "platform" },
+    })
+  ) {
+    throw new Error("User cannot create quiz templates.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const timestamp = Date.now();
+  const slug = `quiz-${input.context.tenantSlug}-${timestamp}`;
+  const insert: TemplateInsert = {
+    tenant_id: input.context.tenantId,
+    slug,
+    name: "Novo quiz de triagem",
+    description:
+      "Rascunho de quiz informativo para triagem previdenciária preliminar.",
+    category: "previdenciario",
+    audience: "leads",
+    source: "tenant",
+    ownership: "tenant_managed",
+    status: "draft",
+    template_type: "custom",
+    version: 1,
+    created_by_user_id: input.context.userId,
+    metadata: {
+      editorMode: "visual_builder",
+      introMessage: "Responda às perguntas para uma análise informativa.",
+      disclaimer:
+        "Esta análise possui caráter exclusivamente informativo e não substitui avaliação jurídica individual.",
+      resultTitle: "Análise informativa registrada",
+      resultSummary:
+        "As respostas serão avaliadas pela equipe responsável antes de qualquer orientação individual.",
+      resultNextStep: "Aguardar contato do escritório.",
+      appearance: {
+        primaryColor: "#123c69",
+        secondaryColor: "#e2b714",
+        buttonText: "Continuar",
+        layoutDensity: "standard",
+      },
+    },
+  };
+  const { data: template, error: templateError } = await supabase
+    .from("quiz_templates")
+    .insert(insert)
+    .select("*")
+    .single();
+
+  if (templateError || !template) {
+    throw new Error("Unable to create blank quiz template.");
+  }
+
+  const { error: questionError } = await supabase
+    .from("quiz_template_questions")
+    .insert({
+      quiz_template_id: template.id,
+      question_key: "benefit-interest",
+      title: "Qual assunto deseja analisar?",
+      description: "Escolha o tema inicial da triagem.",
+      question_type: "radio",
+      is_required: true,
+      is_sensitive: false,
+      allows_unknown: true,
+      allows_withheld: true,
+      display_order: 1,
+      options: [
+        { label: "Aposentadoria", value: "aposentadoria" },
+        { label: "Benefício do INSS", value: "beneficio-inss" },
+        { label: "Não sei informar", value: "unknown" },
+      ] satisfies Json,
+      conditions: {},
+      metadata: {},
+    });
+
+  if (questionError) {
+    throw new Error("Unable to create default quiz question.");
+  }
+
+  const { error: versionError } = await supabase
+    .from("quiz_template_versions")
+    .insert({
+      quiz_template_id: template.id,
+      version: 1,
+      status: "draft",
+      created_by_user_id: input.context.userId,
+      snapshot: {
+        editorMode: "visual_builder",
+        questionsCount: 1,
+      } satisfies Json,
+    });
+
+  if (versionError) {
+    throw new Error("Unable to create blank quiz template version.");
+  }
+
+  await insertAuditLog({
+    tenantId: input.context.tenantId,
+    actorUserId: input.context.userId,
+    action: "template_created",
+    entityType: "quiz_template",
+    entityId: template.id,
+    metadata: {
+      slug,
+      editorMode: "visual_builder",
+    },
+  });
+
+  return template.id;
+}
+
+function normalizeNullable(value: string | null): string | null {
+  const normalized = value?.trim();
+
+  return normalized ? normalized : null;
+}
+
+function assertBuilderContentAllowed(draft: QuizBuilderDraftInput): void {
+  const content = [
+    draft.name,
+    draft.description,
+    draft.introMessage,
+    draft.disclaimer,
+    draft.resultTitle,
+    draft.resultSummary,
+    draft.resultNextStep,
+    ...draft.questions.flatMap((question) => [
+      question.title,
+      question.description,
+      ...question.options.flatMap((option) => [option.label, option.value]),
+    ]),
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .join("\n");
+
+  assertSafeTemplateText(content);
+
+  const moderation = moderateCustomQuizContent(content);
+
+  if (moderation.level === "blocked") {
+    throw new Error("Template text blocked by content moderation.");
+  }
+}
+
+export async function saveOfficeQuizTemplateBuilderDraft(input: {
+  context: OfficeUserContext;
+  draft: QuizBuilderDraftInput;
+}): Promise<void> {
+  const draft = quizBuilderDraftSchema.parse(input.draft);
+  const template = await getOfficeQuizTemplate({
+    context: input.context,
+    templateId: draft.templateId,
+  });
+
+  if (!template || template.source !== "tenant" || !template.canEdit) {
+    throw new Error("Template cannot be edited by this user.");
+  }
+
+  assertBuilderContentAllowed(draft);
+
+  const supabase = createSupabaseAdminClient();
+  const metadata = {
+    ...template.metadata,
+    editorMode: "visual_builder",
+    theme: draft.theme,
+    channel: normalizeNullable(draft.channel),
+    campaign: normalizeNullable(draft.campaign),
+    introMessage: normalizeNullable(draft.introMessage),
+    disclaimer: normalizeNullable(draft.disclaimer),
+    resultTitle: normalizeNullable(draft.resultTitle),
+    resultSummary: normalizeNullable(draft.resultSummary),
+    resultNextStep: normalizeNullable(draft.resultNextStep),
+    appearance: {
+      primaryColor: draft.primaryColor,
+      secondaryColor: draft.secondaryColor,
+      buttonText: draft.buttonText,
+      layoutDensity: draft.layoutDensity,
+    },
+  };
+  const { error: templateError } = await supabase
+    .from("quiz_templates")
+    .update({
+      name: draft.name,
+      slug: draft.slug,
+      description: draft.description,
+      template_type: draft.templateType,
+      metadata: metadata as Json,
+    })
+    .eq("id", draft.templateId)
+    .eq("tenant_id", input.context.tenantId);
+
+  if (templateError) {
+    throw new Error("Unable to save visual quiz draft.");
+  }
+
+  const { data: currentQuestions, error: questionsError } = await supabase
+    .from("quiz_template_questions")
+    .select("*")
+    .eq("quiz_template_id", draft.templateId);
+
+  if (questionsError) {
+    throw new Error("Unable to load visual quiz questions.");
+  }
+
+  const existingIds = new Set((currentQuestions ?? []).map((row) => row.id));
+  const nextIds = new Set(
+    draft.questions
+      .map((question) => question.id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const removedIds = [...existingIds].filter((id) => !nextIds.has(id));
+
+  if (removedIds.length) {
+    const { error } = await supabase
+      .from("quiz_template_questions")
+      .delete()
+      .in("id", removedIds);
+
+    if (error) {
+      throw new Error("Unable to remove visual quiz questions.");
+    }
+  }
+
+  for (const [index, question] of draft.questions.entries()) {
+    const payload = {
+      question_key: question.questionKey,
+      title: question.title,
+      description: normalizeNullable(question.description),
+      question_type: question.type,
+      is_required: question.required,
+      is_sensitive: question.sensitive,
+      allows_unknown: question.allowsUnknown,
+      allows_withheld: question.allowsWithheld,
+      display_order: index + 1,
+      options: question.options as Json,
+      conditions: question.conditions as Json,
+      metadata: {
+        ...question.metadata,
+        active: question.active,
+      } as Json,
+    };
+
+    if (question.id && existingIds.has(question.id)) {
+      const { error } = await supabase
+        .from("quiz_template_questions")
+        .update(payload)
+        .eq("id", question.id)
+        .eq("quiz_template_id", draft.templateId);
+
+      if (error) {
+        throw new Error("Unable to update visual quiz question.");
+      }
+    } else {
+      const { error } = await supabase.from("quiz_template_questions").insert({
+        quiz_template_id: draft.templateId,
+        ...payload,
+      });
+
+      if (error) {
+        throw new Error("Unable to create visual quiz question.");
+      }
+    }
+  }
+
+  await insertAuditLog({
+    tenantId: input.context.tenantId,
+    actorUserId: input.context.userId,
+    action: "template_updated",
+    entityType: "quiz_template",
+    entityId: draft.templateId,
+    metadata: {
+      editorMode: "visual_builder",
+      questionsCount: draft.questions.length,
+      removedQuestionsCount: removedIds.length,
+    },
+  });
+}
+
 export async function updateOfficeQuizTemplateDraft(input: {
   context: OfficeUserContext;
   templateId: string;
@@ -535,6 +848,16 @@ export async function updateOfficeQuizTemplateStatus(input: {
     !canManageQuizTemplate({ role: input.context.role, action: "publish" })
   ) {
     throw new Error("Only admins can publish quiz templates.");
+  }
+
+  if (input.status === "active") {
+    if (!template.name || !template.slug || template.questions.length === 0) {
+      throw new Error("Template publication checklist is incomplete.");
+    }
+
+    if (template.moderation.level === "blocked") {
+      throw new Error("Template text blocked by content moderation.");
+    }
   }
 
   if (

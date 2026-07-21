@@ -5,9 +5,12 @@ import { redirect } from "next/navigation";
 import { requireTenantRole } from "@/services/office-dashboard/auth";
 import {
   cloneOfficeQuizTemplate,
+  createBlankOfficeQuizTemplate,
+  saveOfficeQuizTemplateBuilderDraft,
   updateOfficeQuizTemplateDraft,
   updateOfficeQuizTemplateStatus,
 } from "@/services/office-dashboard/quizzes";
+import type { QuizBuilderDraftInput } from "@/lib/validations/quiz-builder";
 import type { QuizTemplateStatus } from "@/types/quiz";
 
 function readString(formData: FormData, key: string): string {
@@ -34,6 +37,44 @@ export async function cloneQuizTemplateAction(formData: FormData) {
 
   revalidatePath("/painel/quizzes");
   redirect(`/painel/quizzes/${clonedId}`);
+}
+
+export async function createBlankQuizTemplateAction() {
+  const context = await requireTenantRole("createQuizTemplate");
+  const templateId = await createBlankOfficeQuizTemplate({ context });
+
+  revalidatePath("/painel/quizzes");
+  redirect(`/painel/quizzes/${templateId}/editar`);
+}
+
+export async function saveQuizBuilderDraftAction(
+  draft: QuizBuilderDraftInput,
+): Promise<{ success: boolean; message: string }> {
+  const context = await requireTenantRole("editQuizTemplate");
+
+  try {
+    await saveOfficeQuizTemplateBuilderDraft({ context, draft });
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error &&
+        /moderation|checklist|unsupported markup|validation/i.test(
+          error.message,
+        )
+          ? "Revise o conteúdo do quiz antes de salvar."
+          : "Não foi possível salvar o draft visual.",
+    };
+  }
+
+  revalidatePath("/painel/quizzes");
+  revalidatePath(`/painel/quizzes/${draft.templateId}`);
+  revalidatePath(`/painel/quizzes/${draft.templateId}/editar`);
+
+  return {
+    success: true,
+    message: "Draft salvo.",
+  };
 }
 
 export async function updateQuizTemplateDraftAction(formData: FormData) {

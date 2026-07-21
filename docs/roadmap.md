@@ -17,6 +17,8 @@
 - Fluxo de revisão preventiva desburocratizado em `docs/legal-review-guide.md`.
 - Templates modulares iniciais para quiz geral, salário-maternidade, fibromialgia, depressão e autismo.
 - Moderação inicial de conteúdo customizado e matriz de permissões para templates.
+- Central de integrações multi-tenant no painel.
+- Builder visual de quizzes tenant com autosave, perguntas, lógica, preview e publicação.
 
 ## Próxima ativação do painel
 
@@ -31,7 +33,7 @@
 ## Próximas fases do quiz
 
 - Aplicar a migration modular em ambiente controlado e popular templates no banco quando o painel administrativo estiver pronto.
-- Evoluir clone, edição básica e publicação de templates por tenant no painel.
+- Evoluir versionamento imutável e histórico detalhado do builder visual.
 - Evoluir regras preliminares para Rule Engine jurídico definitivo.
 - Definir critérios jurídicos e documentais para classificação real.
 - Implementar limpeza de atribuição ao concluir o fluxo.

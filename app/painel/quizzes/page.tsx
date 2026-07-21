@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Copy, Eye } from "lucide-react";
+import { Copy, Eye, FilePlus2 } from "lucide-react";
 import { DashboardShell } from "@/components/office-dashboard/DashboardShell";
 import { requireTenantRole } from "@/services/office-dashboard/auth";
 import { listOfficeQuizTemplates } from "@/services/office-dashboard/quizzes";
@@ -31,12 +31,25 @@ export default async function OfficeQuizzesPage() {
     <DashboardShell context={context}>
       <div className="space-y-6">
         <div>
-          <p className="text-muted-foreground text-sm">Quizzes</p>
-          <h2 className="text-2xl font-semibold">Gestão básica de templates</h2>
-          <p className="text-muted-foreground mt-2 max-w-3xl text-sm">
-            Templates da plataforma são somente leitura. Admins e gestores podem
-            clonar para o tenant, editar rascunhos e controlar status.
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-muted-foreground text-sm">Quizzes</p>
+              <h2 className="text-2xl font-semibold">
+                Gestão básica de templates
+              </h2>
+              <p className="text-muted-foreground mt-2 max-w-3xl text-sm">
+                Templates da plataforma são somente leitura. Admins e gestores
+                podem clonar para o tenant, editar rascunhos e controlar status.
+              </p>
+            </div>
+            <Link
+              className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+              href="/painel/quizzes/novo"
+            >
+              <FilePlus2 aria-hidden="true" className="size-4" />
+              Novo quiz
+            </Link>
+          </div>
         </div>
 
         <div className="bg-card overflow-x-auto rounded-lg border">
