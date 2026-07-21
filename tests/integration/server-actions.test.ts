@@ -47,7 +47,11 @@ const completedGeneralAnswers = {
   }),
 };
 
-async function importQuizActionsWithMocks() {
+async function importQuizActionsWithMocks(options?: {
+  savedAnswer?: (typeof completedGeneralAnswers)["general-documents-available"] & {
+    wasChanged?: boolean;
+  };
+}) {
   const cookiesStore = mockCookies({ rp_lead_session: "lead-1" });
   const headersStore = mockHeaders({
     "x-forwarded-for": "127.0.0.1",
@@ -57,7 +61,9 @@ async function importQuizActionsWithMocks() {
     id: "session-1",
     lead_id: "lead-1",
   });
-  const savedAnswer = completedGeneralAnswers["general-documents-available"];
+  const savedAnswer =
+    options?.savedAnswer ??
+    completedGeneralAnswers["general-documents-available"];
   const getQuizSessionForLead = vi.fn().mockResolvedValue(session);
   const saveQuizAnswer = vi.fn().mockResolvedValue(savedAnswer);
   const loadQuizAnswers = vi.fn().mockResolvedValue(completedGeneralAnswers);
@@ -361,6 +367,27 @@ describe("server actions", () => {
     expect(completeQuizSession).not.toHaveBeenCalled();
     expect(trackEventOnce).not.toHaveBeenCalled();
     expect(runLeadQualificationNotificationPipeline).not.toHaveBeenCalled();
+  });
+
+  it("does not duplicate question tracking when the answer is unchanged", async () => {
+    const { actions, trackEvent } = await importQuizActionsWithMocks({
+      savedAnswer: {
+        ...completedGeneralAnswers["general-documents-available"],
+        wasChanged: false,
+      },
+    });
+
+    await actions.saveQuizAnswerAction({
+      sessionId: "session-1",
+      questionId: "general-documents-available",
+      value: "yes",
+    });
+
+    expect(trackEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "QuestionAnswered",
+      }),
+    );
   });
 
   it("completes the quiz only when explicitly requested", async () => {

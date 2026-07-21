@@ -372,14 +372,14 @@ export async function saveQuizAnswer(input: {
   sessionId: string;
   question: QuestionDefinition;
   value: QuizStoredAnswer["answerValue"];
-}): Promise<QuizStoredAnswer> {
+}): Promise<QuizStoredAnswer & { wasChanged: boolean }> {
   const supabase = createSupabaseAdminClient();
   const serialized = serializeQuestionAnswer(input.question, input.value);
   const benefitContext = input.question.benefits.join(",");
 
   const { data: existingAnswer, error: lookupError } = await supabase
     .from("quiz_answers")
-    .select("id")
+    .select("id, answer_value, answer_label, benefit_context, created_at")
     .eq("tenant_id", input.tenantId)
     .eq("session_id", input.sessionId)
     .eq("question_id", input.question.id)
@@ -392,6 +392,23 @@ export async function saveQuizAnswer(input: {
   }
 
   if (existingAnswer?.id) {
+    if (
+      existingAnswer.answer_value === serialized.answerValue &&
+      existingAnswer.answer_label === serialized.answerLabel &&
+      existingAnswer.benefit_context === benefitContext
+    ) {
+      return {
+        ...createStoredAnswer(
+          input.question,
+          existingAnswer.answer_value,
+          existingAnswer.answer_label,
+          existingAnswer.benefit_context,
+          existingAnswer.created_at,
+        ),
+        wasChanged: false,
+      };
+    }
+
     const { data, error } = await supabase
       .from("quiz_answers")
       .update({
@@ -409,13 +426,16 @@ export async function saveQuizAnswer(input: {
       throw new QuizSessionServiceError("Failed to update quiz answer.");
     }
 
-    return createStoredAnswer(
-      input.question,
-      data.answer_value,
-      data.answer_label,
-      data.benefit_context,
-      data.created_at,
-    );
+    return {
+      ...createStoredAnswer(
+        input.question,
+        data.answer_value,
+        data.answer_label,
+        data.benefit_context,
+        data.created_at,
+      ),
+      wasChanged: true,
+    };
   }
 
   const { data, error } = await supabase
@@ -437,13 +457,16 @@ export async function saveQuizAnswer(input: {
     throw new QuizSessionServiceError("Failed to save quiz answer.");
   }
 
-  return createStoredAnswer(
-    input.question,
-    data.answer_value,
-    data.answer_label,
-    data.benefit_context,
-    data.created_at,
-  );
+  return {
+    ...createStoredAnswer(
+      input.question,
+      data.answer_value,
+      data.answer_label,
+      data.benefit_context,
+      data.created_at,
+    ),
+    wasChanged: true,
+  };
 }
 
 export async function loadQuizAnswers(

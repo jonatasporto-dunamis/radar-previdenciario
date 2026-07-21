@@ -295,25 +295,27 @@ export async function saveQuizAnswerAction(input: {
       leadId,
     );
 
-    try {
-      await trackEvent({
-        tenantId: tenantContext.tenantId,
-        leadId,
-        sessionId: session.id,
-        eventName: "QuestionAnswered",
-        eventPayload: {
-          source: "quiz",
-          questionId: question.id,
-          questionSlug: question.slug,
-          questionType: question.type,
-          questionVersion: question.version,
-        },
-        attribution,
-        userAgent: context.userAgent,
-        ipAddress: context.ipAddress,
-      });
-    } catch {
-      console.error("Failed to track question answered event.");
+    if (answer.wasChanged ?? true) {
+      try {
+        await trackEvent({
+          tenantId: tenantContext.tenantId,
+          leadId,
+          sessionId: session.id,
+          eventName: "QuestionAnswered",
+          eventPayload: {
+            source: "quiz",
+            questionId: question.id,
+            questionSlug: question.slug,
+            questionType: question.type,
+            questionVersion: question.version,
+          },
+          attribution,
+          userAgent: context.userAgent,
+          ipAddress: context.ipAddress,
+        });
+      } catch {
+        console.error("Failed to track question answered event.");
+      }
     }
 
     const shouldComplete =
