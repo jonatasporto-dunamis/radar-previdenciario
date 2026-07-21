@@ -9,6 +9,7 @@ const findDeliveryByEvent = vi.hoisted(() => vi.fn());
 const sendMetaConversionsEvent = vi.hoisted(() => vi.fn());
 const getTenantContext = vi.hoisted(() => vi.fn());
 const getTenantSecret = vi.hoisted(() => vi.fn());
+const getTenantIntegrationSecret = vi.hoisted(() => vi.fn());
 const supabase = vi.hoisted(() => {
   const builder: {
     select: ReturnType<typeof vi.fn>;
@@ -57,6 +58,10 @@ vi.mock("@/services/external-tracking/providers/meta/server", async () => {
 vi.mock("@/services/tenants", () => ({
   getTenantContext,
   getTenantSecret,
+}));
+
+vi.mock("@/services/integrations/secrets", () => ({
+  getTenantIntegrationSecret,
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -143,6 +148,7 @@ describe("external tracking orchestrator", () => {
       tenantId: TEST_TENANT_ID,
       slug: "resende-advogados",
     });
+    getTenantIntegrationSecret.mockResolvedValue(null);
     getTenantSecret.mockResolvedValue("test-token");
     getTrackingConfig.mockResolvedValue(trackingConfig);
     resolveTrackingConsent.mockResolvedValue("granted");
@@ -298,6 +304,34 @@ describe("external tracking orchestrator", () => {
           status: "sent",
           provider_event_id: "fbtrace-2",
         }),
+      }),
+    );
+  });
+
+  it("uses the encrypted Meta integration token before the legacy fallback", async () => {
+    getTenantIntegrationSecret.mockResolvedValue("integration-token");
+    getTenantSecret.mockResolvedValue(null);
+    const { dispatchExternalEvent } =
+      await import("@/services/external-tracking");
+
+    await expect(
+      dispatchExternalEvent({
+        event,
+        server: true,
+      }),
+    ).resolves.toMatchObject({
+      attempted: true,
+      status: "sent",
+    });
+
+    expect(sendMetaConversionsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: "integration-token",
+      }),
+    );
+    expect(getTenantSecret).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        secretKey: "meta_conversions_api_access_token",
       }),
     );
   });

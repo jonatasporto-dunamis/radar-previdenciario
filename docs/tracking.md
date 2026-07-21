@@ -229,7 +229,7 @@ O catálogo completo e o runbook operacional ficam em `docs/external-tracking.md
 
 `tracking_events` e `external_tracking_deliveries` possuem `tenant_id` obrigatório. Eventos internos, deliveries browser e deliveries server-side são filtrados por tenant para evitar colisões entre escritórios.
 
-`tenant_tracking_configs` controla flags e IDs públicos por tenant. Tokens como Meta CAPI são lidos por `tenant_secrets` ou, apenas para o tenant padrão no MVP, por fallback server-only de ambiente.
+`tenant_tracking_configs` controla flags e IDs públicos por tenant. Tokens como Meta CAPI são lidos preferencialmente dos segredos criptografados da Central de Integrações, com fallback por `tenant_secrets` ou variável server-only apenas para compatibilidade do tenant padrão do MVP.
 
 ## Eventos de notificação
 

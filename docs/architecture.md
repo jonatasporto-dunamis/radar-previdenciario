@@ -447,7 +447,7 @@ Separação de responsabilidades:
 
 Novas integrações nascem desativadas e com `configuration_required`. O admin precisa salvar, testar e ativar explicitamente. Managers visualizam diagnósticos; agents e viewers não acessam configuração de tracking.
 
-Meta e GA4 continuam compatíveis com a pipeline atual por sincronização controlada com `tenant_tracking_configs`. Google Ads e TikTok ficam preparados no painel e no schema, mas sem token real ou disparo real até configuração e validação operacional.
+Meta e GA4 continuam compatíveis com a pipeline atual por sincronização controlada com `tenant_tracking_configs`. Segredos da Meta CAPI são lidos da Central de Integrações antes dos fallbacks legados. Google Ads e TikTok ficam preparados no painel e no schema, mas sem token real ou disparo real até configuração e validação operacional.
 
 ## Quality Gate
 

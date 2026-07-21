@@ -102,6 +102,8 @@ describe("Meta external tracking", () => {
     ).resolves.toMatchObject({
       ok: false,
       temporary: true,
+      responseStatus: 429,
+      errorCategory: "rate_limited",
     });
 
     expect(fetcher.mock.calls[0][0]).toContain("access_token=secret-token");
@@ -123,6 +125,30 @@ describe("Meta external tracking", () => {
     ).resolves.toMatchObject({
       ok: false,
       temporary: false,
+      responseStatus: 400,
+      errorCategory: "invalid_payload",
+    });
+  });
+
+  it("returns sanitized success metadata for Meta CAPI", async () => {
+    await expect(
+      sendMetaConversionsEvent({
+        pixelId: "123",
+        accessToken: "token",
+        apiVersion: "v25.0",
+        payload: { data: [] },
+        fetcher: vi.fn().mockResolvedValue(
+          Response.json({
+            events_received: 1,
+            fbtrace_id: "trace-id",
+          }),
+        ),
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      responseStatus: 200,
+      eventsReceived: 1,
+      providerEventId: "trace-id",
     });
   });
 

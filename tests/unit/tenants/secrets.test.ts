@@ -31,4 +31,21 @@ describe("tenant secret encryption", () => {
       TenantSecretEncryptionError,
     );
   });
+
+  it("rejects missing encryption keys", () => {
+    delete process.env.TENANT_SECRETS_ENCRYPTION_KEY;
+
+    expect(() => encryptTenantSecret("secret-token")).toThrow(
+      TenantSecretEncryptionError,
+    );
+  });
+
+  it("rejects corrupted encrypted payloads", () => {
+    process.env.TENANT_SECRETS_ENCRYPTION_KEY =
+      randomBytes(32).toString("base64url");
+
+    expect(() => decryptTenantSecret("v1:invalid")).toThrow(
+      TenantSecretEncryptionError,
+    );
+  });
 });

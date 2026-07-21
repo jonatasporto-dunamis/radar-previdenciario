@@ -2,6 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { getTrackingConfig } from "@/services/configuration";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getTenantIntegrationSecret } from "@/services/integrations/secrets";
 import { sanitizeErrorMessage } from "@/services/notification/security";
 import { getTenantContext, getTenantSecret } from "@/services/tenants";
 import { resolveTrackingConsent } from "../consent";
@@ -167,11 +168,16 @@ export async function dispatchExternalEvent(
       config.meta.testMode && config.meta.testEventCode
         ? config.meta.testEventCode
         : config.meta.testMode
-          ? await getTenantSecret({
+          ? ((await getTenantIntegrationSecret({
+              tenantId: tenantContext.tenantId,
+              provider: "meta",
+              secretKey: "testEventCode",
+            })) ??
+            (await getTenantSecret({
               tenantId: tenantContext.tenantId,
               secretKey: "meta_test_event_code",
               allowDefaultEnvFallback: true,
-            })
+            })))
           : null;
     const payload = buildMetaConversionsPayload({
       event: input.event,
@@ -229,11 +235,17 @@ export async function dispatchExternalEvent(
       };
     }
 
-    const accessToken = await getTenantSecret({
-      tenantId: tenantContext.tenantId,
-      secretKey: "meta_conversions_api_access_token",
-      allowDefaultEnvFallback: true,
-    });
+    const accessToken =
+      (await getTenantIntegrationSecret({
+        tenantId: tenantContext.tenantId,
+        provider: "meta",
+        secretKey: "accessToken",
+      })) ??
+      (await getTenantSecret({
+        tenantId: tenantContext.tenantId,
+        secretKey: "meta_conversions_api_access_token",
+        allowDefaultEnvFallback: true,
+      }));
 
     if (!accessToken) {
       await updateDeliveryLog({
