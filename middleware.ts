@@ -18,6 +18,15 @@ export async function middleware(request: NextRequest) {
   const isPanelPath = pathname === "/painel" || pathname.startsWith("/painel/");
   const forwardedHeaders = new Headers(request.headers);
   forwardedHeaders.set("x-radar-pathname", pathname);
+  forwardedHeaders.set("x-radar-search", request.nextUrl.search);
+
+  if (!isPanelPath && request.nextUrl.pathname !== "/auth/callback") {
+    return NextResponse.next({
+      request: {
+        headers: forwardedHeaders,
+      },
+    });
+  }
 
   if (process.env.E2E_MOCK_SUPABASE === "true") {
     const hasMockSession = Boolean(
@@ -67,5 +76,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/painel/:path*", "/auth/callback"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json).*)"],
 };

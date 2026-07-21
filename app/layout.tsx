@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { buildThemeCss } from "@/config/theme";
 import { AttributionCapture } from "@/components/tracking/AttributionCapture";
@@ -17,7 +18,7 @@ import {
   getThemeConfig,
   getTrackingConfig,
 } from "@/services/configuration";
-import { getTenantContext } from "@/services/tenants";
+import { getTenantContext, getTenantSiteUrl } from "@/services/tenants";
 import type { PublicTrackingConfig } from "@/lib/tracking";
 import "./globals.css";
 
@@ -35,18 +36,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const hostname =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const pathname = requestHeaders.get("x-radar-pathname");
+  const currentPathname = requestHeaders.get("x-radar-pathname");
   const isOfficePanelPath =
-    pathname === "/painel" || Boolean(pathname?.startsWith("/painel/"));
+    currentPathname === "/painel" ||
+    Boolean(currentPathname?.startsWith("/painel/"));
   const tenantContext = await getTenantContext({ hostname });
-  const [brand, seo] = await Promise.all([
+  const [brand, seo, siteUrl] = await Promise.all([
     getBrandConfig(tenantContext),
     getSeoConfig(tenantContext),
+    getTenantSiteUrl(tenantContext),
   ]);
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    brand.website ||
-    "http://localhost:3000";
 
   return {
     metadataBase: new URL(siteUrl),
@@ -96,14 +95,31 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const hostname =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const pathname = requestHeaders.get("x-radar-pathname");
+  const currentPathname = requestHeaders.get("x-radar-pathname");
   const isOfficePanelPath =
-    pathname === "/painel" || Boolean(pathname?.startsWith("/painel/"));
+    currentPathname === "/painel" ||
+    Boolean(currentPathname?.startsWith("/painel/"));
   const tenantContext = await getTenantContext({ hostname });
-  const [theme, tracking] = await Promise.all([
+  const [theme, tracking, siteUrl] = await Promise.all([
     getThemeConfig(tenantContext),
     getTrackingConfig(tenantContext),
+    getTenantSiteUrl(tenantContext),
   ]);
+  const currentHostname = hostname?.split(",")[0]?.trim().toLowerCase();
+  const canonicalHostname = new URL(siteUrl).hostname;
+  const shouldRedirectToCanonical =
+    process.env.VERCEL_ENV === "production" &&
+    !isOfficePanelPath &&
+    tenantContext.source === "hostname" &&
+    currentHostname &&
+    currentHostname !== canonicalHostname;
+
+  if (shouldRedirectToCanonical) {
+    const search = requestHeaders.get("x-radar-search") ?? "";
+
+    redirect(`${siteUrl}${currentPathname ?? "/"}${search}`);
+  }
+
   const themeCss = buildThemeCss(theme);
   const publicTrackingConfig: PublicTrackingConfig = {
     enabled: tracking.enabled,

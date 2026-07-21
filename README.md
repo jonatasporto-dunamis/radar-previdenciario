@@ -76,6 +76,11 @@ NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=
 EXTERNAL_TRACKING_DRY_RUN=
 TENANT_SECRETS_ENCRYPTION_KEY=
 TENANT_SECRETS_KEY_VERSION=
+VERCEL_TOKEN=
+VERCEL_PROJECT_ID=
+VERCEL_TEAM_ID=
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_ZONE_ID=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` deve existir somente em `.env.local` e nos secrets da Vercel. Nunca use prefixo `NEXT_PUBLIC_`, nunca importe em Client Components e nunca commite essa chave.
@@ -83,6 +88,8 @@ TENANT_SECRETS_KEY_VERSION=
 `META_CONVERSIONS_API_ACCESS_TOKEN` também é server-only e nunca deve receber prefixo `NEXT_PUBLIC_`. Pixel ID, GA4 Measurement ID e GTM Container ID podem ser públicos.
 
 `TENANT_SECRETS_ENCRYPTION_KEY` é server-only e deve decodificar para 32 bytes em base64url ou hex. Ela é usada para criptografar secrets por tenant persistidos em `tenant_secrets` e `tenant_integration_secrets`. `TENANT_SECRETS_KEY_VERSION` é opcional e registra a versão operacional da chave.
+
+`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ZONE_ID` são credenciais server-only da plataforma para provisionamento de domínios. Nunca use prefixo `NEXT_PUBLIC_` nessas variáveis.
 
 ## Supabase Setup
 
@@ -129,6 +136,7 @@ Funcionalidades do MVP:
 - histórico e audit logs;
 - central de integrações por tenant;
 - editor visual de quizzes tenant;
+- gestão de domínios por tenant;
 - logout seguro.
 
 O painel não usa tracking público, não entra no sitemap, retorna `noindex`/`nofollow` e não deve ser cacheado publicamente.
@@ -140,6 +148,25 @@ O editor visual fica em `/painel/quizzes/novo` e `/painel/quizzes/[templateId]/e
 Admins e managers podem criar drafts tenant, clonar templates platform, editar informações, perguntas, lógica condicional, resultado, aparência, preview e publicação. Templates da plataforma continuam somente leitura e devem ser clonados antes de qualquer alteração por escritório.
 
 O builder salva rascunhos com autosave debounce e botão manual. O preview é isolado e não cria lead, sessão, resposta ou tracking real. O publish usa checklist mínimo e moderação de conteúdo para bloquear promessas ou garantias.
+
+## Tenant Domain Management
+
+A gestão de domínios fica em `/painel/configuracoes/dominio`.
+
+Admins podem solicitar subdomínios da plataforma e domínios personalizados por tenant. Managers visualizam status e instruções. Agents e viewers não acessam essa configuração.
+
+O fluxo mantém credenciais de Vercel/Cloudflare somente no servidor. Quando as credenciais da plataforma não estão configuradas, novas solicitações ficam em `awaiting_dns` com orientação manual segura. O sistema não troca nameservers automaticamente e não presume registros DNS fixos.
+
+Ordem de resolução pública:
+
+```text
+domínio customizado ativo
+→ subdomínio ativo da plataforma
+→ domínio principal do tenant
+→ fallback local/preview
+```
+
+O subdomínio inicial planejado para o tenant `resende-advogados` é `resende.radarprevidenciario.com.br`. A solicitação nasce pendente de provisionamento/validação quando o provedor não retorna instruções oficiais.
 
 Bootstrap do primeiro usuário:
 

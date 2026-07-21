@@ -168,6 +168,43 @@ test.describe("office dashboard", () => {
     await expect(page.getByText("Ativo").first()).toBeVisible();
   });
 
+  test("manages tenant domain requests without exposing provider credentials", async ({
+    page,
+  }, testInfo) => {
+    await login(page);
+    await page.goto("/painel/configuracoes/dominio");
+
+    await expect(
+      page.getByRole("heading", { name: "Domínios do escritório" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("resende.radarprevidenciario.com.br"),
+    ).toBeVisible();
+    await expect(page.getByText("VERCEL_TOKEN")).toHaveCount(0);
+
+    await page.getByRole("link", { name: "Novo domínio" }).click();
+    const slug = `dominio-${testInfo.project.name
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .slice(0, 24)}`;
+    await page.getByLabel("Slug do subdomínio").fill(slug);
+    await page.getByRole("button", { name: "Criar solicitação" }).click();
+
+    await expect(page).toHaveURL(
+      /\/painel\/configuracoes\/dominio\/[0-9a-f-]+/,
+    );
+    await expect(page.getByText("Solicitação criada.")).toBeVisible();
+    await expect(
+      page.getByText(`${slug}.radarprevidenciario.com.br`),
+    ).toBeVisible();
+    await expect(page.getByText("Aguardando DNS").first()).toBeVisible();
+    await expect(page.getByText("VERCEL_TOKEN")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Verificar" }).click();
+    await expect(page).toHaveURL(/verified=1/);
+    await expect(page.getByText("Verificação atualizada.")).toBeVisible();
+  });
+
   test("updates status and manages an internal note", async ({ page }) => {
     await login(page);
     await page.goto("/painel/leads");

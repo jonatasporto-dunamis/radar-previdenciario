@@ -4,7 +4,9 @@ import {
   canCreateLeadNote,
   canDeleteLeadNote,
   canEditLeadNote,
+  canManageDomains,
   canViewLead,
+  canViewDomains,
   canViewMetrics,
   canTransitionLeadStatus,
 } from "@/lib/office-dashboard";
@@ -21,6 +23,14 @@ describe("office dashboard permissions", () => {
   it("keeps viewer roles read-only", () => {
     expect(canChangeLeadStatus("viewer")).toBe(false);
     expect(canCreateLeadNote("viewer")).toBe(false);
+  });
+
+  it("limits domain management to admins", () => {
+    expect(canViewDomains("admin")).toBe(true);
+    expect(canViewDomains("manager")).toBe(true);
+    expect(canViewDomains("viewer")).toBe(false);
+    expect(canManageDomains("admin")).toBe(true);
+    expect(canManageDomains("manager")).toBe(false);
   });
 
   it("allows note edits only for owners or admins", () => {

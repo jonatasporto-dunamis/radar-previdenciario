@@ -124,9 +124,20 @@ function createDefaultTenantRows(): void {
         id: "00000000-0000-4000-8000-000000000101",
         tenant_id: DEFAULT_TENANT_ID,
         hostname: "radarprevidenciario.com.br",
+        domain_type: "custom_domain",
         is_primary: true,
+        is_platform_subdomain: false,
         status: "active",
+        verification_method: "manual",
+        verification_token: null,
+        dns_instructions: { records: [], notes: [] },
+        provider_domain_id: null,
+        ssl_status: "active",
+        verified_at: DEFAULT_TIMESTAMP,
+        last_checked_at: DEFAULT_TIMESTAMP,
+        last_error: null,
         metadata: {},
+        created_by: null,
         created_at: DEFAULT_TIMESTAMP,
         updated_at: DEFAULT_TIMESTAMP,
       },
@@ -134,9 +145,46 @@ function createDefaultTenantRows(): void {
         id: "00000000-0000-4000-8000-000000000102",
         tenant_id: DEFAULT_TENANT_ID,
         hostname: "radar-previdenciario.vercel.app",
+        domain_type: "custom_domain",
         is_primary: false,
+        is_platform_subdomain: false,
         status: "active",
+        verification_method: "manual",
+        verification_token: null,
+        dns_instructions: { records: [], notes: [] },
+        provider_domain_id: null,
+        ssl_status: "active",
+        verified_at: DEFAULT_TIMESTAMP,
+        last_checked_at: DEFAULT_TIMESTAMP,
+        last_error: null,
         metadata: {},
+        created_by: null,
+        created_at: DEFAULT_TIMESTAMP,
+        updated_at: DEFAULT_TIMESTAMP,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000103",
+        tenant_id: DEFAULT_TENANT_ID,
+        hostname: "resende.radarprevidenciario.com.br",
+        domain_type: "platform_subdomain",
+        is_primary: false,
+        is_platform_subdomain: true,
+        status: "awaiting_dns",
+        verification_method: "cname",
+        verification_token: null,
+        dns_instructions: {
+          records: [],
+          notes: [
+            "Aguardando provisionamento pela Vercel para gerar instrucoes oficiais de DNS.",
+          ],
+        },
+        provider_domain_id: null,
+        ssl_status: "pending",
+        verified_at: null,
+        last_checked_at: null,
+        last_error: null,
+        metadata: { source: "e2e" },
+        created_by: null,
         created_at: DEFAULT_TIMESTAMP,
         updated_at: DEFAULT_TIMESTAMP,
       },
@@ -612,6 +660,30 @@ function createRow(table: TableName, row: Row): Row {
     };
   }
 
+  if (table === "tenant_domains") {
+    return {
+      id,
+      tenant_id: row.tenant_id ?? DEFAULT_TENANT_ID,
+      domain_type: row.domain_type ?? "custom_domain",
+      is_primary: row.is_primary ?? false,
+      is_platform_subdomain: row.is_platform_subdomain ?? false,
+      status: row.status ?? "awaiting_dns",
+      verification_method: row.verification_method ?? "manual",
+      verification_token: row.verification_token ?? null,
+      dns_instructions: row.dns_instructions ?? { records: [], notes: [] },
+      provider_domain_id: row.provider_domain_id ?? null,
+      ssl_status: row.ssl_status ?? "pending",
+      verified_at: row.verified_at ?? null,
+      last_checked_at: row.last_checked_at ?? null,
+      last_error: row.last_error ?? null,
+      metadata: row.metadata ?? {},
+      created_by: row.created_by ?? null,
+      created_at: timestamp,
+      updated_at: timestamp,
+      ...row,
+    };
+  }
+
   if (table === "lead_notes") {
     return {
       id,
@@ -998,6 +1070,7 @@ class QueryBuilder {
             this.table === "quiz_sessions" ||
             this.table === "leads" ||
             this.table === "lead_notes" ||
+            this.table === "tenant_domains" ||
             this.table === "tenant_memberships" ||
             this.table === "tenant_integrations" ||
             this.table === "tenant_integration_secrets" ||

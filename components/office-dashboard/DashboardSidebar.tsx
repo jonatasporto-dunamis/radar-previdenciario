@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ClipboardList,
+  Globe2,
   LayoutDashboard,
   PlugZap,
   UserCircle,
@@ -12,6 +13,7 @@ const links = [
   { href: "/painel/leads", label: "Leads", icon: Users },
   { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/painel/integracoes", label: "Integrações", icon: PlugZap },
+  { href: "/painel/configuracoes/dominio", label: "Domínios", icon: Globe2 },
   { href: "/painel/conta", label: "Minha conta", icon: UserCircle },
 ];
 

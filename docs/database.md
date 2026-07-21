@@ -16,6 +16,19 @@ Cadastro dos escritórios/tenants. O tenant padrão inicial é `resende-advogado
 
 Mapeia hostname para tenant. `localhost` e hosts de desenvolvimento são resolvidos por fallback na aplicação e não precisam ser persistidos.
 
+Campos de gestão adicionados:
+
+- `domain_type`: `platform_subdomain` ou `custom_domain`.
+- `is_platform_subdomain`: diferencia subdomínios da plataforma de domínios do cliente.
+- `status`: `pending`, `awaiting_dns`, `verifying`, `active`, `failed`, `disabled` ou `inactive` legado.
+- `verification_method`: `manual`, `cname`, `txt` ou `http`.
+- `dns_instructions`: registros e notas sanitizadas para o painel.
+- `provider_domain_id`: referência server-side do provedor, não exibida ao navegador.
+- `ssl_status`, `verified_at`, `last_checked_at`, `last_error`.
+- `created_by`: usuário do painel que solicitou o domínio.
+
+O hostname é globalmente único, deve estar normalizado em lowercase, sem protocolo, caminho, porta ou wildcard. Apenas um domínio pode ser `is_primary = true` por tenant.
+
 ### tenant_tracking_configs
 
 Armazena flags e IDs públicos de tracking por tenant. Não armazena tokens, service role ou secrets.
@@ -422,15 +435,13 @@ Migration aplicada:
 - `20260712120000_expand_notification_logs_for_pipeline.sql`
 - `20260714010000_create_external_tracking_deliveries.sql`
 - `20260714150000_create_multi_tenant_foundation.sql`
+- `20260721100000_create_tenant_tracking_integrations.sql`
 
 Migrations locais pendentes de aplicação remota controlada:
 
-- `20260715120000_create_modular_quiz_templates.sql`
-- `20260715150000_create_office_dashboard.sql`
+- `20260721130000_expand_tenant_domains.sql`
 
-A migration modular cria `quiz_templates`, `quiz_template_questions`, `quiz_template_rules`, `quiz_template_versions` e vínculos opcionais em `quiz_sessions` e `quiz_results`.
-
-A migration do painel cria `tenant_memberships`, `lead_notes`, `lead_status_history`, `office_audit_logs`, RLS, policies restritivas e padronização segura de status comercial em `leads.status`.
+A migration de domínios expande `tenant_domains` e cria a solicitação inicial de `resende.radarprevidenciario.com.br` como subdomínio da plataforma em `awaiting_dns`, sem alterar nameservers e sem presumir registros DNS fixos.
 
 Não aplique essas migrations no Supabase remoto sem aprovação explícita.
 

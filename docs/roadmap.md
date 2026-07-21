@@ -19,6 +19,7 @@
 - Moderação inicial de conteúdo customizado e matriz de permissões para templates.
 - Central de integrações multi-tenant no painel.
 - Builder visual de quizzes tenant com autosave, perguntas, lógica, preview e publicação.
+- Gestão de domínios por tenant com subdomínio da plataforma, domínio customizado, Vercel server-side e DNS manual seguro.
 
 ## Próxima ativação do painel
 
@@ -61,6 +62,6 @@
 ## Fase SaaS
 
 - Migrar brand, office, theme, SEO e legal para configuração remota por tenant quando houver painel.
-- Evoluir painel administrativo para `/painel/quizzes`, criação, clone, edição básica e versionamento.
+- Evoluir versionamento de quizzes e histórico detalhado.
 - Adicionar cache seguro por tenant.
 - Implementar onboarding, billing e lifecycle real de tenant.

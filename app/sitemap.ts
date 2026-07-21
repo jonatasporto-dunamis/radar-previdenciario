@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getBrandConfig } from "@/services/configuration";
+import { headers } from "next/headers";
+import { getTenantContext, getTenantSiteUrl } from "@/services/tenants";
 
 const routes = [
   "/",
@@ -11,11 +12,12 @@ const routes = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const brand = await getBrandConfig();
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    brand.website ||
-    "http://localhost:3000";
+  const requestHeaders = await headers();
+  const tenantContext = await getTenantContext({
+    hostname:
+      requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+  });
+  const siteUrl = await getTenantSiteUrl(tenantContext);
 
   return routes.map((route) => ({
     url: `${siteUrl}${route}`,

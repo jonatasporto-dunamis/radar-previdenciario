@@ -81,6 +81,21 @@ Secrets por tenant são criptografados com AES-256-GCM no servidor e dependem de
 
 Referência operacional completa: `docs/multi-tenant.md`.
 
+### Tenant Domain Management
+
+O painel possui gestão de domínios em `/painel/configuracoes/dominio`, com rotas para listagem, criação e detalhe/verificação.
+
+Separação de responsabilidades:
+
+- `tenant_domains`: hostname, tipo de domínio, status, domínio principal, instruções DNS sanitizadas, SSL, última verificação e erro resumido.
+- `services/office-dashboard/domains/`: validação server-only, provisionamento Vercel quando credenciais da plataforma existem, verificação, domínio principal, desativação, remoção e auditoria.
+- `lib/validations/domain-management.ts`: normalização de hostname, bloqueio de protocolo, porta, caminho, wildcard e subdomínios reservados.
+- `services/tenants/siteUrl.ts`: calcula a URL canônica pelo domínio primário ativo do tenant.
+
+O tenant nunca vem de query string ou cookie como fonte principal para a aplicação pública. A resolução usa hostname normalizado no servidor e mantém fallback apenas para desenvolvimento/preview. Domínios secundários ativos redirecionam para o domínio primário em produção.
+
+Credenciais `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ZONE_ID` são server-only. O painel mostra somente status, registros DNS sanitizados e mensagens operacionais, nunca tokens ou IDs internos de provider.
+
 ## Lead Registration Flow
 
 O primeiro fluxo funcional do MVP segue a cadeia:

@@ -55,7 +55,22 @@ export type JsonObject = Record<string, unknown>;
 
 export type TenantStatus = "active" | "inactive" | "suspended";
 
-export type TenantDomainStatus = "active" | "inactive";
+export type TenantDomainType = "platform_subdomain" | "custom_domain";
+
+export type TenantDomainStatus =
+  | "pending"
+  | "awaiting_dns"
+  | "verifying"
+  | "active"
+  | "failed"
+  | "disabled"
+  | "inactive";
+
+export type TenantDomainVerificationMethod =
+  "manual" | "cname" | "txt" | "http";
+
+export type TenantDomainSslStatus =
+  "unknown" | "pending" | "provisioning" | "active" | "failed";
 
 export type TenantSecretStatus = "active" | "inactive" | "rotated";
 
@@ -86,9 +101,20 @@ export type TenantDomain = {
   id: string;
   tenant_id: string;
   hostname: string;
+  domain_type: TenantDomainType;
   is_primary: boolean;
+  is_platform_subdomain: boolean;
   status: TenantDomainStatus;
+  verification_method: TenantDomainVerificationMethod;
+  verification_token: string | null;
+  dns_instructions: JsonObject;
+  provider_domain_id: string | null;
+  ssl_status: TenantDomainSslStatus;
+  verified_at: string | null;
+  last_checked_at: string | null;
+  last_error: string | null;
   metadata: JsonObject;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };

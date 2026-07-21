@@ -48,19 +48,55 @@ export function mapTenantDomainRow(row: {
   id: string;
   tenant_id: string;
   hostname: string;
+  domain_type?: string | null;
   is_primary: boolean;
+  is_platform_subdomain?: boolean | null;
   status: string;
+  verification_method?: string | null;
+  verification_token?: string | null;
+  dns_instructions?: Json | null;
+  provider_domain_id?: string | null;
+  ssl_status?: string | null;
+  verified_at?: string | null;
+  last_checked_at?: string | null;
+  last_error?: string | null;
   metadata: Json | null;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }): TenantDomain {
+  const dnsInstructions = asObject(row.dns_instructions);
+
   return {
     id: row.id,
     tenantId: row.tenant_id,
     hostname: row.hostname,
+    domainType:
+      (row.domain_type as TenantDomain["domainType"] | undefined) ??
+      "custom_domain",
     isPrimary: row.is_primary,
+    isPlatformSubdomain: row.is_platform_subdomain ?? false,
     status: row.status as TenantDomain["status"],
+    verificationMethod:
+      (row.verification_method as TenantDomain["verificationMethod"] | null) ??
+      "manual",
+    verificationToken: row.verification_token ?? null,
+    dnsInstructions: {
+      records: Array.isArray(dnsInstructions.records)
+        ? (dnsInstructions.records as TenantDomain["dnsInstructions"]["records"])
+        : [],
+      notes: Array.isArray(dnsInstructions.notes)
+        ? (dnsInstructions.notes as string[])
+        : [],
+    },
+    providerDomainId: row.provider_domain_id ?? null,
+    sslStatus:
+      (row.ssl_status as TenantDomain["sslStatus"] | null) ?? "unknown",
+    verifiedAt: row.verified_at ?? null,
+    lastCheckedAt: row.last_checked_at ?? null,
+    lastError: row.last_error ?? null,
     metadata: asObject(row.metadata),
+    createdBy: row.created_by ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

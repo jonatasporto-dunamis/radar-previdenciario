@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
-import { getBrandConfig } from "@/services/configuration";
+import { headers } from "next/headers";
+import { getTenantContext, getTenantSiteUrl } from "@/services/tenants";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const brand = await getBrandConfig();
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    brand.website ||
-    "http://localhost:3000";
+  const requestHeaders = await headers();
+  const tenantContext = await getTenantContext({
+    hostname:
+      requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+  });
+  const siteUrl = await getTenantSiteUrl(tenantContext);
 
   return {
     rules: {
