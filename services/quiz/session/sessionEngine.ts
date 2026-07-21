@@ -2,7 +2,7 @@ import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isMissingSchemaError } from "@/lib/supabase/schemaCompatibility";
 import { createExternalEventId } from "@/services/external-tracking";
-import { trackEvent } from "@/services/tracking";
+import { trackEventOnce } from "@/services/tracking";
 import type { AttributionData } from "@/types/attribution";
 import type {
   FlowDefinition,
@@ -107,6 +107,19 @@ export function selectReusableQuizSession(
   );
 }
 
+export function shouldArchiveDuplicateStartedSession(input: {
+  currentSessionId: string;
+  candidateSessionId: string;
+  candidateStatus: string | null;
+  answerCount: number;
+}): boolean {
+  return (
+    input.candidateSessionId !== input.currentSessionId &&
+    input.candidateStatus === "started" &&
+    input.answerCount === 0
+  );
+}
+
 function leadAttributionToTracking(lead: LeadRow): AttributionData {
   return {
     utmSource: lead.utm_source,
@@ -164,7 +177,7 @@ async function trackQuizStarted(
   const externalEventId = createExternalEventId("QuizStarted");
 
   try {
-    await trackEvent({
+    const tracked = await trackEventOnce({
       tenantId,
       leadId: lead.id,
       sessionId: session.id,
@@ -179,15 +192,101 @@ async function trackQuizStarted(
         templateVersion: template.version,
         external_event_id: externalEventId,
       },
+      eventPayloadContains: {
+        templateId: template.id,
+      },
+      dedupeSessionId: false,
       attribution: leadAttributionToTracking(lead),
       userAgent: context.userAgent ?? null,
       ipAddress: context.ipAddress ?? null,
     });
 
-    return externalEventId;
+    return tracked ? externalEventId : undefined;
   } catch {
     console.error("Failed to track quiz started event.");
     return undefined;
+  }
+}
+
+async function archiveEmptyDuplicateStartedSessions(input: {
+  tenantId: string;
+  leadId: string | null;
+  completedSessionId: string;
+  quizTemplateId: string | null;
+  templateType: string | null;
+}): Promise<void> {
+  if (!input.leadId) {
+    return;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  let query = supabase
+    .from("quiz_sessions")
+    .select("id, status")
+    .eq("tenant_id", input.tenantId)
+    .eq("lead_id", input.leadId)
+    .eq("status", "started")
+    .neq("id", input.completedSessionId);
+
+  if (input.quizTemplateId) {
+    query = query.eq("quiz_template_id", input.quizTemplateId);
+  } else {
+    query = query.is("quiz_template_id", null);
+  }
+
+  if (input.templateType) {
+    query = query.eq("template_type", input.templateType);
+  }
+
+  const { data: candidates, error } = await query;
+
+  if (error) {
+    throw new QuizSessionServiceError(
+      "Failed to find duplicate quiz sessions.",
+    );
+  }
+
+  const emptyDuplicateIds: string[] = [];
+
+  for (const candidate of candidates ?? []) {
+    const { count, error: countError } = await supabase
+      .from("quiz_answers")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", input.tenantId)
+      .eq("session_id", candidate.id);
+
+    if (countError) {
+      throw new QuizSessionServiceError(
+        "Failed to count duplicate quiz session answers.",
+      );
+    }
+
+    if (
+      shouldArchiveDuplicateStartedSession({
+        currentSessionId: input.completedSessionId,
+        candidateSessionId: candidate.id,
+        candidateStatus: candidate.status,
+        answerCount: count ?? 0,
+      })
+    ) {
+      emptyDuplicateIds.push(candidate.id);
+    }
+  }
+
+  if (emptyDuplicateIds.length === 0) {
+    return;
+  }
+
+  const { error: updateError } = await supabase
+    .from("quiz_sessions")
+    .update({ status: "abandoned" })
+    .eq("tenant_id", input.tenantId)
+    .in("id", emptyDuplicateIds);
+
+  if (updateError) {
+    throw new QuizSessionServiceError(
+      "Failed to archive duplicate quiz sessions.",
+    );
   }
 }
 
@@ -494,6 +593,17 @@ export async function completeQuizSession(
   sessionId: string,
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
+  const { data: session, error: lookupError } = await supabase
+    .from("quiz_sessions")
+    .select("id, lead_id, quiz_template_id, template_type")
+    .eq("tenant_id", tenantId)
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (lookupError || !session) {
+    throw new QuizSessionServiceError("Failed to load quiz session.");
+  }
+
   const { error } = await supabase
     .from("quiz_sessions")
     .update({
@@ -505,6 +615,18 @@ export async function completeQuizSession(
 
   if (error) {
     throw new QuizSessionServiceError("Failed to complete quiz session.");
+  }
+
+  try {
+    await archiveEmptyDuplicateStartedSessions({
+      tenantId,
+      leadId: session.lead_id,
+      completedSessionId: session.id,
+      quizTemplateId: session.quiz_template_id,
+      templateType: session.template_type,
+    });
+  } catch {
+    console.error("Failed to archive duplicate quiz sessions.");
   }
 }
 

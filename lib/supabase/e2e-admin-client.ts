@@ -685,6 +685,16 @@ class QueryBuilder {
     return this;
   }
 
+  neq(column: string, value: unknown) {
+    this.filters.push((row) => row[column] !== value);
+    return this;
+  }
+
+  is(column: string, value: null) {
+    this.filters.push((row) => row[column] === value);
+    return this;
+  }
+
   gte(column: string, value: unknown) {
     this.filters.push((row) => String(row[column] ?? "") >= String(value));
     return this;

@@ -23,6 +23,7 @@ export type TrackEventInput = {
 };
 
 export type TrackEventOnceInput = TrackEventInput & {
+  dedupeSessionId?: boolean;
   eventPayloadContains?: Record<string, unknown>;
 };
 
@@ -92,7 +93,7 @@ export async function trackEventOnce(
     query = query.eq("lead_id", input.leadId);
   }
 
-  if (input.sessionId) {
+  if (input.sessionId && input.dedupeSessionId !== false) {
     query = query.eq("session_id", input.sessionId);
   }
 
