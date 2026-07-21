@@ -125,6 +125,116 @@ export type Database = {
           },
         ];
       };
+      integration_delivery_logs: {
+        Row: {
+          attempt: number;
+          created_at: string;
+          delivered_at: string | null;
+          error_code: string | null;
+          event_id: string;
+          external_event: string;
+          external_request_id: string | null;
+          id: string;
+          internal_event_id: string | null;
+          provider: string;
+          response_code: number | null;
+          sanitized_error: string | null;
+          status: string;
+          tenant_id: string;
+          test_mode: boolean;
+        };
+        Insert: {
+          attempt?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          error_code?: string | null;
+          event_id: string;
+          external_event: string;
+          external_request_id?: string | null;
+          id?: string;
+          internal_event_id?: string | null;
+          provider: string;
+          response_code?: number | null;
+          sanitized_error?: string | null;
+          status?: string;
+          tenant_id: string;
+          test_mode?: boolean;
+        };
+        Update: {
+          attempt?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          error_code?: string | null;
+          event_id?: string;
+          external_event?: string;
+          external_request_id?: string | null;
+          id?: string;
+          internal_event_id?: string | null;
+          provider?: string;
+          response_code?: number | null;
+          sanitized_error?: string | null;
+          status?: string;
+          tenant_id?: string;
+          test_mode?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "integration_delivery_logs_internal_event_id_fkey";
+            columns: ["internal_event_id"];
+            isOneToOne: false;
+            referencedRelation: "tracking_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "integration_delivery_logs_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      integration_test_runs: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          provider: string;
+          sanitized_result: Json;
+          status: string;
+          tenant_id: string;
+          test_type: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          provider: string;
+          sanitized_result?: Json;
+          status?: string;
+          tenant_id: string;
+          test_type?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          provider?: string;
+          sanitized_result?: Json;
+          status?: string;
+          tenant_id?: string;
+          test_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "integration_test_runs_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lead_notes: {
         Row: {
           author_user_id: string;
@@ -909,6 +1019,171 @@ export type Database = {
           },
         ];
       };
+      tenant_event_mappings: {
+        Row: {
+          configuration: Json;
+          created_at: string;
+          currency: string;
+          enabled: boolean;
+          external_event: string;
+          id: string;
+          internal_event: string;
+          provider: string;
+          tenant_id: string;
+          updated_at: string;
+          value_source: string;
+        };
+        Insert: {
+          configuration?: Json;
+          created_at?: string;
+          currency?: string;
+          enabled?: boolean;
+          external_event: string;
+          id?: string;
+          internal_event: string;
+          provider: string;
+          tenant_id: string;
+          updated_at?: string;
+          value_source?: string;
+        };
+        Update: {
+          configuration?: Json;
+          created_at?: string;
+          currency?: string;
+          enabled?: boolean;
+          external_event?: string;
+          id?: string;
+          internal_event?: string;
+          provider?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          value_source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_event_mappings_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_integration_secrets: {
+        Row: {
+          created_at: string;
+          encrypted_payload: string;
+          encryption_version: string;
+          id: string;
+          key_version: string;
+          rotated_at: string | null;
+          tenant_integration_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          encrypted_payload: string;
+          encryption_version?: string;
+          id?: string;
+          key_version?: string;
+          rotated_at?: string | null;
+          tenant_integration_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          encrypted_payload?: string;
+          encryption_version?: string;
+          id?: string;
+          key_version?: string;
+          rotated_at?: string | null;
+          tenant_integration_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_integration_secrets_tenant_integration_id_fkey";
+            columns: ["tenant_integration_id"];
+            isOneToOne: false;
+            referencedRelation: "tenant_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_integrations: {
+        Row: {
+          browser_tracking_enabled: boolean;
+          configuration: Json;
+          created_at: string;
+          created_by: string | null;
+          enabled: boolean;
+          id: string;
+          last_error_at: string | null;
+          last_error_code: string | null;
+          last_error_summary: string | null;
+          last_success_at: string | null;
+          last_tested_at: string | null;
+          provider: string;
+          secret_reference: string | null;
+          server_tracking_enabled: boolean;
+          status: string;
+          tenant_id: string;
+          test_mode: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          browser_tracking_enabled?: boolean;
+          configuration?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          id?: string;
+          last_error_at?: string | null;
+          last_error_code?: string | null;
+          last_error_summary?: string | null;
+          last_success_at?: string | null;
+          last_tested_at?: string | null;
+          provider: string;
+          secret_reference?: string | null;
+          server_tracking_enabled?: boolean;
+          status?: string;
+          tenant_id: string;
+          test_mode?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          browser_tracking_enabled?: boolean;
+          configuration?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          id?: string;
+          last_error_at?: string | null;
+          last_error_code?: string | null;
+          last_error_summary?: string | null;
+          last_success_at?: string | null;
+          last_tested_at?: string | null;
+          provider?: string;
+          secret_reference?: string | null;
+          server_tracking_enabled?: boolean;
+          status?: string;
+          tenant_id?: string;
+          test_mode?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_integrations_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tenant_memberships: {
         Row: {
           created_at: string;
@@ -1209,7 +1484,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      office_has_active_membership: {
+        Args: { allowed_roles?: string[]; required_tenant_id: string };
+        Returns: boolean;
+      };
+      office_lead_belongs_to_tenant: {
+        Args: { required_lead_id: string; required_tenant_id: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;

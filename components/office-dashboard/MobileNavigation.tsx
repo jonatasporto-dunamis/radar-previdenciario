@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ClipboardList,
   LayoutDashboard,
+  PlugZap,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -10,6 +11,7 @@ const links = [
   { href: "/painel", label: "Visão geral", icon: LayoutDashboard },
   { href: "/painel/leads", label: "Leads", icon: Users },
   { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
+  { href: "/painel/integracoes", label: "Integrações", icon: PlugZap },
   { href: "/painel/conta", label: "Conta", icon: UserCircle },
 ];
 
@@ -19,7 +21,7 @@ export function MobileNavigation() {
       aria-label="Navegação mobile"
       className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t px-2 py-2 backdrop-blur lg:hidden"
     >
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-1">
         {links.map((link) => {
           const Icon = link.icon;
 

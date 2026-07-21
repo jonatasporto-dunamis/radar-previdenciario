@@ -62,3 +62,11 @@ export function canViewAuditLogs(role: OfficeRole): boolean {
 export function canViewInternalQualification(role: OfficeRole): boolean {
   return ["admin", "manager", "agent", "viewer"].includes(role);
 }
+
+export function canViewIntegrations(role: OfficeRole): boolean {
+  return managerRoles.includes(role);
+}
+
+export function canManageIntegrations(role: OfficeRole): boolean {
+  return role === "admin";
+}

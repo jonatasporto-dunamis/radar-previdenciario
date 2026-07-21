@@ -37,6 +37,8 @@ export default defineConfig({
       EMAIL_FROM_NAME: "Radar Previdenciario",
       EMAIL_FROM_ADDRESS: "no-reply@example.com",
       EMAIL_REPLY_TO: "reply@example.com",
+      TENANT_SECRETS_ENCRYPTION_KEY:
+        "0000000000000000000000000000000000000000000000000000000000000000",
       NEXT_PUBLIC_TRACKING_ENABLED: "true",
       NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED: "true",
       EXTERNAL_TRACKING_DRY_RUN: "true",

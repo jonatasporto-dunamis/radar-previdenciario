@@ -5,7 +5,9 @@ import {
   canCreateQuizTemplate,
   canCreateLeadNote,
   canEditQuizTemplate,
+  canManageIntegrations,
   canPublishQuizTemplate,
+  canViewIntegrations,
   canViewLead,
   canViewMetrics,
   canViewQuizTemplates,
@@ -21,7 +23,9 @@ type Permission =
   | "viewQuizTemplate"
   | "createQuizTemplate"
   | "editQuizTemplate"
-  | "publishQuizTemplate";
+  | "publishQuizTemplate"
+  | "viewIntegrations"
+  | "manageIntegrations";
 
 function hasPermission(
   context: OfficeUserContext,
@@ -53,6 +57,14 @@ function hasPermission(
 
   if (permission === "publishQuizTemplate") {
     return canPublishQuizTemplate(context.role);
+  }
+
+  if (permission === "viewIntegrations") {
+    return canViewIntegrations(context.role);
+  }
+
+  if (permission === "manageIntegrations") {
+    return canManageIntegrations(context.role);
   }
 
   return canViewMetrics(context.role);
