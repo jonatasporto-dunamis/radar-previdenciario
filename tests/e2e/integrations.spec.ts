@@ -27,6 +27,7 @@ test.describe("tenant tracking integrations", () => {
     await expect(page).toHaveURL(/\/painel\/integracoes\/meta/);
     await page.getByLabel("Pixel/Dataset ID").fill("123456789012345");
     await page.getByLabel("Access token da Conversions API").fill("token-e2e");
+    await page.getByLabel("Código de teste").fill("TEST123");
     await page.getByLabel("Ativar integração").check();
     await page.getByLabel("Tracking no navegador").check();
     await page.getByLabel("Tracking server-side").check();
@@ -61,7 +62,7 @@ test.describe("tenant tracking integrations", () => {
       page.getByRole("heading", { name: "Histórico de testes de conexão" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Formato público validado.").first(),
+      page.getByText("Meta CAPI validada em modo E2E mockado.").first(),
     ).toBeVisible();
   });
 });

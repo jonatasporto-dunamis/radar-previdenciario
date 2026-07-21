@@ -442,7 +442,7 @@ NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED=true
 EXTERNAL_TRACKING_DRY_RUN=true
 ```
 
-Para validação real, configure os IDs/tokens na Vercel por ambiente e use `META_TRACKING_TEST_MODE=true` com `META_TEST_EVENT_CODE` apenas durante testes no Events Manager.
+Para validação real multi-tenant, configure Pixel ID, token da API de Conversões e Test Event Code pela Central de Integrações do painel. As variáveis server-only continuam disponíveis como fallback do tenant padrão e devem ser usadas sem prefixo `NEXT_PUBLIC_`.
 
 Na central multi-tenant, novos providers nascem desativados e com status `configuration_required`. O fluxo esperado é preencher, salvar, testar conexão, ativar e acompanhar `/painel/integracoes/eventos`. Não configure tokens reais em arquivos versionados.
 

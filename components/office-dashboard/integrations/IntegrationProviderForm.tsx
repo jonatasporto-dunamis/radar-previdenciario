@@ -96,6 +96,22 @@ function ToggleField({
   );
 }
 
+function getActionErrorMessage(error?: string): string | null {
+  if (!error) {
+    return null;
+  }
+
+  if (error === "encryption_key_missing") {
+    return "A chave de criptografia do servidor não está configurada.";
+  }
+
+  if (error === "encryption_key_invalid") {
+    return "A chave de criptografia do servidor está em formato inválido.";
+  }
+
+  return "Não foi possível concluir a ação.";
+}
+
 function ProviderSpecificFields({
   provider,
   configuration,
@@ -307,17 +323,20 @@ export function IntegrationProviderForm({
   saved,
   tested,
   error,
+  diagnostic,
 }: {
   detail: IntegrationDetail;
   canManage: boolean;
   saved?: boolean;
   tested?: string;
   error?: string;
+  diagnostic?: string;
 }) {
   const { integration } = detail;
   const providerSlug = getIntegrationProviderSlug(integration.provider);
   const definition = integrationProviderDefinitions[integration.provider];
   const disabled = !canManage;
+  const errorMessage = getActionErrorMessage(error);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -353,10 +372,14 @@ export function IntegrationProviderForm({
           </p>
         ) : null}
 
-        {error ? (
+        {errorMessage ? (
           <p className="bg-danger/10 text-danger mt-5 rounded-md p-3 text-sm">
-            Não foi possível concluir a ação. Revise os campos e tente
-            novamente.
+            {errorMessage}{" "}
+            {diagnostic ? (
+              <span>Código de diagnóstico: {diagnostic}.</span>
+            ) : (
+              <span>Revise os campos e tente novamente.</span>
+            )}
           </p>
         ) : null}
 
@@ -432,8 +455,9 @@ export function IntegrationProviderForm({
           <TestTube2 aria-hidden="true" className="text-primary size-5" />
           <h3 className="mt-3 font-semibold">Teste de conexão</h3>
           <p className="text-muted-foreground mt-2 text-sm">
-            O teste valida formato, presença de credenciais e modo de envio sem
-            registrar conversão real.
+            Em modo teste, a Meta recebe um evento sintético pela Conversions
+            API usando o código de teste informado. O payload não usa dados
+            reais de lead.
           </p>
           {canManage ? (
             <button

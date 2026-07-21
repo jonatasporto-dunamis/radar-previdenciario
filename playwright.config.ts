@@ -42,6 +42,7 @@ export default defineConfig({
       NEXT_PUBLIC_TRACKING_ENABLED: "true",
       NEXT_PUBLIC_TRACKING_CONSENT_REQUIRED: "true",
       EXTERNAL_TRACKING_DRY_RUN: "true",
+      META_CAPI_TEST_MOCK: "true",
     },
   },
   projects: [

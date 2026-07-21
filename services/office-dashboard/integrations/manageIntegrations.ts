@@ -1,10 +1,16 @@
 import "server-only";
+import { randomUUID } from "crypto";
 import { encryptTenantSecret } from "@/lib/security/tenant-secrets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   integrationEventMappingSchema,
   validateProviderConfiguration,
 } from "@/lib/validations/integrations";
+import { getTenantIntegrationSecret } from "@/services/integrations/secrets";
+import {
+  hashMetaValue,
+  sendMetaConversionsEvent,
+} from "@/services/external-tracking/providers/meta/server";
 import { insertAuditLog } from "../repositories";
 import {
   defaultIntegrationMappings,
@@ -220,6 +226,225 @@ async function syncLegacyTrackingConfig(input: {
     .from("tenant_tracking_configs")
     .update(patch)
     .eq("tenant_id", input.tenantId);
+}
+
+function getConfigString(
+  configuration: Record<string, unknown>,
+  key: string,
+): string {
+  const value = configuration[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function hasConfigurationChanged(
+  current: Json,
+  next: Record<string, unknown>,
+): boolean {
+  return JSON.stringify(toRecord(current)) !== JSON.stringify(next);
+}
+
+function getMetaTestFailureMessage(category?: string): string {
+  if (category === "invalid_or_expired_token") {
+    return "Token da Conversions API inválido ou expirado.";
+  }
+
+  if (category === "insufficient_permission") {
+    return "Token sem permissão suficiente para o Pixel/Dataset informado.";
+  }
+
+  if (category === "invalid_dataset_or_pixel") {
+    return "Pixel/Dataset ID não encontrado ou não vinculado ao token.";
+  }
+
+  if (category === "invalid_api_version") {
+    return "Versão da API inválida para a chamada da Meta.";
+  }
+
+  if (category === "invalid_test_event_code") {
+    return "Código de teste da Meta inválido.";
+  }
+
+  if (category === "rate_limited") {
+    return "Meta limitou temporariamente as requisições.";
+  }
+
+  return "Meta recusou o evento sintético de teste.";
+}
+
+async function runMetaServerConnectionTest(input: {
+  tenantId: string;
+  integration: TenantIntegration;
+}): Promise<{
+  status: IntegrationTestRun["status"];
+  sanitizedResult: Record<string, unknown>;
+  lastErrorCode: string | null;
+  lastErrorSummary: string | null;
+}> {
+  if (!input.integration.serverTrackingEnabled) {
+    return {
+      status: "success",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "browser_only",
+        realRequest: false,
+        checks: ["Configuração browser-only validada."],
+      },
+      lastErrorCode: null,
+      lastErrorSummary: null,
+    };
+  }
+
+  if (!input.integration.testMode) {
+    return {
+      status: "failed",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "configured",
+        realRequest: false,
+        checks: ["Ative o modo teste para validar a Conversions API."],
+        errorCategory: "test_mode_required",
+      },
+      lastErrorCode: "test_mode_required",
+      lastErrorSummary:
+        "Ative o modo teste antes de executar validação real da Meta.",
+    };
+  }
+
+  const [accessToken, testEventCode] = await Promise.all([
+    getTenantIntegrationSecret({
+      tenantId: input.tenantId,
+      provider: "meta",
+      secretKey: "accessToken",
+    }),
+    getTenantIntegrationSecret({
+      tenantId: input.tenantId,
+      provider: "meta",
+      secretKey: "testEventCode",
+    }),
+  ]);
+
+  if (!accessToken) {
+    return {
+      status: "configuration_required",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "test",
+        realRequest: false,
+        checks: ["Informe o token da Conversions API."],
+        errorCategory: "missing_access_token",
+      },
+      lastErrorCode: "missing_access_token",
+      lastErrorSummary: "Informe o token da Conversions API.",
+    };
+  }
+
+  if (!testEventCode) {
+    return {
+      status: "configuration_required",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "test",
+        realRequest: false,
+        checks: ["Informe o código de teste da Meta."],
+        errorCategory: "missing_test_event_code",
+      },
+      lastErrorCode: "missing_test_event_code",
+      lastErrorSummary:
+        "Informe o código de teste da Meta para evitar conversão real.",
+    };
+  }
+
+  if (process.env.META_CAPI_TEST_MOCK === "true") {
+    return {
+      status: "success",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "test",
+        realRequest: false,
+        mocked: true,
+        checks: ["Meta CAPI validada em modo E2E mockado."],
+        responseStatus: 200,
+        eventsReceived: 1,
+        providerTraceIdPresent: true,
+        testEventCodeUsed: true,
+      },
+      lastErrorCode: null,
+      lastErrorSummary: null,
+    };
+  }
+
+  const pixelId = getConfigString(input.integration.configuration, "pixelId");
+  const apiVersion =
+    getConfigString(input.integration.configuration, "apiVersion") || "v25.0";
+  const eventId = `rp_meta_test_${randomUUID()}`;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://radarprevidenciario.com.br";
+  const result = await sendMetaConversionsEvent({
+    pixelId,
+    accessToken,
+    apiVersion,
+    payload: {
+      data: [
+        {
+          event_name: "Lead",
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: eventId,
+          action_source: "website",
+          event_source_url: `${siteUrl.replace(/\/$/, "")}/painel/integracoes/meta`,
+          user_data: {
+            external_id: [hashMetaValue(`meta-integration-test:${eventId}`)],
+            client_user_agent: "RadarPrevidenciario/MetaIntegrationTest",
+          },
+          custom_data: {
+            content_name: "Radar Previdenciário",
+            content_category: "integration_test",
+            source: "office_dashboard",
+            test_event: true,
+          },
+        },
+      ],
+      test_event_code: testEventCode,
+    },
+    timeoutMs: 5000,
+  });
+
+  if (result.ok) {
+    return {
+      status: "success",
+      sanitizedResult: {
+        provider: "meta",
+        mode: "test",
+        realRequest: true,
+        checks: ["Meta CAPI recebeu o evento sintético de teste."],
+        responseStatus: result.responseStatus ?? 200,
+        eventsReceived: result.eventsReceived ?? null,
+        providerTraceIdPresent: Boolean(result.providerEventId),
+        testEventCodeUsed: true,
+      },
+      lastErrorCode: null,
+      lastErrorSummary: null,
+    };
+  }
+
+  const lastErrorSummary = getMetaTestFailureMessage(result.errorCategory);
+
+  return {
+    status: "failed",
+    sanitizedResult: {
+      provider: "meta",
+      mode: "test",
+      realRequest: true,
+      checks: [lastErrorSummary],
+      responseStatus: result.responseStatus ?? null,
+      errorCategory: result.errorCategory ?? "meta_api_error",
+      temporary: result.temporary,
+      sanitizedError: result.error,
+      testEventCodeUsed: true,
+    },
+    lastErrorCode: result.errorCategory ?? "meta_api_error",
+    lastErrorSummary,
+  };
 }
 
 export async function ensureTenantIntegrations(
@@ -449,6 +674,9 @@ export async function saveIntegrationSettings(
   const secretRows = await getSecretRows([existing.id]);
   const willHaveSecrets =
     Object.keys(newSecrets).length > 0 || secretRows.has(existing.id);
+  const requiresRetest =
+    Object.keys(newSecrets).length > 0 ||
+    hasConfigurationChanged(existing.configuration, input.configuration);
   const issues = validateProviderConfiguration({
     provider: input.provider,
     configuration: input.configuration,
@@ -456,14 +684,17 @@ export async function saveIntegrationSettings(
     hasSecrets: willHaveSecrets,
   });
   const canEnable =
-    input.enabled && issues.length === 0 && Boolean(existing.last_success_at);
+    input.enabled &&
+    issues.length === 0 &&
+    !requiresRetest &&
+    Boolean(existing.last_success_at);
   const nextStatus: IntegrationStatus =
     issues.length > 0
       ? "configuration_required"
-      : input.enabled && !existing.last_success_at
-        ? "test_pending"
-        : canEnable
-          ? "connected"
+      : canEnable
+        ? "connected"
+        : !existing.last_success_at || requiresRetest
+          ? "test_pending"
           : "disconnected";
 
   const { error: updateError } = await supabase
@@ -475,15 +706,10 @@ export async function saveIntegrationSettings(
       test_mode: input.testMode,
       configuration: input.configuration as Json,
       status: nextStatus,
-      last_error_at: issues.length
-        ? new Date().toISOString()
-        : existing.last_error_at,
-      last_error_code: issues.length
-        ? "configuration_required"
-        : existing.last_error_code,
-      last_error_summary: issues.length
-        ? issues.join(" ")
-        : existing.last_error_summary,
+      last_error_at: issues.length ? new Date().toISOString() : null,
+      last_error_code: issues.length ? "configuration_required" : null,
+      last_error_summary: issues.length ? issues.join(" ") : null,
+      last_success_at: requiresRetest ? null : existing.last_success_at,
       updated_by: input.context.userId,
     })
     .eq("id", existing.id)
@@ -567,18 +793,47 @@ export async function runIntegrationConnectionTest(input: {
     serverTrackingEnabled: detail.integration.serverTrackingEnabled,
     hasSecrets: detail.integration.hasSecrets,
   });
-  const status = issues.length ? "configuration_required" : "success";
+  const testResult =
+    issues.length > 0
+      ? {
+          status: "configuration_required" as const,
+          sanitizedResult: {
+            provider: input.provider,
+            mode: detail.integration.testMode ? "test" : "configured",
+            browserTrackingEnabled: detail.integration.browserTrackingEnabled,
+            serverTrackingEnabled: detail.integration.serverTrackingEnabled,
+            hasEncryptedSecrets: detail.integration.hasSecrets,
+            checks: issues,
+          },
+          lastErrorCode: "configuration_required",
+          lastErrorSummary: issues.join(" "),
+        }
+      : input.provider === "meta"
+        ? await runMetaServerConnectionTest({
+            tenantId: input.context.tenantId,
+            integration: detail.integration,
+          })
+        : {
+            status: "success" as const,
+            sanitizedResult: {
+              provider: input.provider,
+              mode: detail.integration.testMode ? "test" : "configured",
+              browserTrackingEnabled: detail.integration.browserTrackingEnabled,
+              serverTrackingEnabled: detail.integration.serverTrackingEnabled,
+              hasEncryptedSecrets: detail.integration.hasSecrets,
+              checks: ["Formato público validado."],
+            },
+            lastErrorCode: null,
+            lastErrorSummary: null,
+          };
+  const status = testResult.status;
   const integrationStatus: IntegrationStatus =
-    status === "success" ? "connected" : "configuration_required";
+    status === "success"
+      ? "connected"
+      : status === "configuration_required"
+        ? "configuration_required"
+        : "error";
   const now = new Date().toISOString();
-  const sanitizedResult = {
-    provider: input.provider,
-    mode: detail.integration.testMode ? "test" : "configured",
-    browserTrackingEnabled: detail.integration.browserTrackingEnabled,
-    serverTrackingEnabled: detail.integration.serverTrackingEnabled,
-    hasEncryptedSecrets: detail.integration.hasSecrets,
-    checks: issues.length ? issues : ["Formato público validado."],
-  };
   const supabase = createSupabaseAdminClient();
   const { data: testRun, error: testRunError } = await supabase
     .from("integration_test_runs")
@@ -586,8 +841,8 @@ export async function runIntegrationConnectionTest(input: {
       tenant_id: input.context.tenantId,
       provider: input.provider,
       status,
-      test_type: "connection",
-      sanitized_result: sanitizedResult,
+      test_type: input.provider === "meta" ? "server" : "connection",
+      sanitized_result: testResult.sanitizedResult as Json,
       created_by: input.context.userId,
     })
     .select("*")
@@ -602,11 +857,10 @@ export async function runIntegrationConnectionTest(input: {
     .update({
       status: integrationStatus,
       last_tested_at: now,
-      last_success_at:
-        status === "success" ? now : detail.integration.lastSuccessAt,
+      last_success_at: status === "success" ? now : null,
       last_error_at: status === "success" ? null : now,
-      last_error_code: status === "success" ? null : "configuration_required",
-      last_error_summary: status === "success" ? null : issues.join(" "),
+      last_error_code: testResult.lastErrorCode,
+      last_error_summary: testResult.lastErrorSummary,
       updated_by: input.context.userId,
     })
     .eq("id", detail.integration.id)
@@ -625,7 +879,7 @@ export async function runIntegrationConnectionTest(input: {
     metadata: {
       provider: input.provider,
       status,
-      issues,
+      issues: status === "success" ? [] : testResult.lastErrorCode,
     },
   });
 

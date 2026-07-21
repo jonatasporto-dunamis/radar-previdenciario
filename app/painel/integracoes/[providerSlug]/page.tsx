@@ -21,6 +21,7 @@ type PageProps = {
     saved?: string;
     tested?: string;
     error?: string;
+    diagnostic?: string;
   }>;
 };
 
@@ -63,6 +64,7 @@ export default async function OfficeIntegrationProviderPage({
         <IntegrationProviderForm
           canManage={canManageIntegrations(context.role)}
           detail={detail}
+          diagnostic={query.diagnostic}
           error={query.error}
           saved={query.saved === "1"}
           tested={query.tested}

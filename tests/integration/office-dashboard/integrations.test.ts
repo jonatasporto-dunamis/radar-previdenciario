@@ -1,11 +1,25 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getIntegrationDetail,
   listIntegrationCards,
   runIntegrationConnectionTest,
   saveIntegrationSettings,
 } from "@/services/office-dashboard/integrations";
+import { getTenantIntegrationSecret } from "@/services/integrations/secrets";
 import type { OfficeUserContext } from "@/types/office-dashboard";
+
+const sendMetaConversionsEvent = vi.hoisted(() => vi.fn());
+
+vi.mock("@/services/external-tracking/providers/meta/server", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/services/external-tracking/providers/meta/server")
+  >("@/services/external-tracking/providers/meta/server");
+
+  return {
+    ...actual,
+    sendMetaConversionsEvent,
+  };
+});
 
 const tenantA = "00000000-0000-4000-8000-000000000001";
 const tenantB = "00000000-0000-4000-8000-000000000002";
@@ -38,6 +52,16 @@ describe("office dashboard integrations", () => {
       "0000000000000000000000000000000000000000000000000000000000000000";
   });
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sendMetaConversionsEvent.mockResolvedValue({
+      ok: true,
+      responseStatus: 200,
+      eventsReceived: 1,
+      providerEventId: "fbtrace-test",
+    });
+  });
+
   it("initializes default providers per tenant", async () => {
     const cards = await listIntegrationCards(adminContext);
 
@@ -64,6 +88,7 @@ describe("office dashboard integrations", () => {
       },
       secrets: {
         accessToken: "meta-test-token",
+        testEventCode: "TEST123",
       },
     });
 
@@ -78,6 +103,13 @@ describe("office dashboard integrations", () => {
     expect(beforeTest.integration.configuration).not.toHaveProperty(
       "accessToken",
     );
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "accessToken",
+      }),
+    ).resolves.toBe("meta-test-token");
 
     const testRun = await runIntegrationConnectionTest({
       context: adminContext,
@@ -85,6 +117,14 @@ describe("office dashboard integrations", () => {
     });
 
     expect(testRun.status).toBe("success");
+    expect(sendMetaConversionsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: "meta-test-token",
+        payload: expect.objectContaining({
+          test_event_code: "TEST123",
+        }),
+      }),
+    );
 
     await saveIntegrationSettings({
       context: adminContext,
@@ -107,6 +147,50 @@ describe("office dashboard integrations", () => {
     expect(afterTest.integration.enabled).toBe(true);
     expect(afterTest.integration.status).toBe("connected");
     expect(afterTest.integration.hasSecrets).toBe(true);
+  });
+
+  it("keeps previous Meta secret when token fields are empty", async () => {
+    await saveIntegrationSettings({
+      context: adminContext,
+      provider: "meta",
+      enabled: false,
+      browserTrackingEnabled: true,
+      serverTrackingEnabled: true,
+      testMode: true,
+      configuration: {
+        pixelId: "123456789012345",
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        accessToken: "preserved-token",
+        testEventCode: "TEST123",
+      },
+    });
+
+    await saveIntegrationSettings({
+      context: adminContext,
+      provider: "meta",
+      enabled: false,
+      browserTrackingEnabled: true,
+      serverTrackingEnabled: true,
+      testMode: true,
+      configuration: {
+        pixelId: "123456789012345",
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        accessToken: "",
+        testEventCode: "",
+      },
+    });
+
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "accessToken",
+      }),
+    ).resolves.toBe("preserved-token");
   });
 
   it("keeps integration changes isolated by tenant", async () => {

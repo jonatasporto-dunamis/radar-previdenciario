@@ -1,7 +1,10 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { TenantSecretEncryptionError } from "@/lib/security/tenant-secrets";
+import { sanitizeErrorMessage } from "@/services/notification/security";
 import {
   getIntegrationProviderFromSlug,
   getIntegrationProviderSlug,
@@ -106,6 +109,37 @@ function getSecrets(
   };
 }
 
+function getActionErrorCode(error: unknown): string {
+  if (error instanceof TenantSecretEncryptionError) {
+    return error.message.includes("not configured")
+      ? "encryption_key_missing"
+      : "encryption_key_invalid";
+  }
+
+  return "internal_error";
+}
+
+function redirectWithActionError(input: {
+  provider: IntegrationProvider;
+  action: "save" | "test";
+  error: unknown;
+}): never {
+  const diagnosticId = randomUUID().slice(0, 8);
+  const errorCode = getActionErrorCode(input.error);
+
+  console.error("office_integration_action_failed", {
+    provider: input.provider,
+    action: input.action,
+    errorCode,
+    diagnosticId,
+    error: sanitizeErrorMessage(input.error),
+  });
+
+  redirect(
+    `/painel/integracoes/${getIntegrationProviderSlug(input.provider)}?error=${errorCode}&diagnostic=${diagnosticId}`,
+  );
+}
+
 export async function saveIntegrationAction(formData: FormData) {
   const provider = readProvider(formData);
   const context = await requireTenantRole("manageIntegrations");
@@ -121,10 +155,12 @@ export async function saveIntegrationAction(formData: FormData) {
       configuration: getPublicConfiguration(provider, formData),
       secrets: getSecrets(provider, formData),
     });
-  } catch {
-    redirect(
-      `/painel/integracoes/${getIntegrationProviderSlug(provider)}?error=save_failed`,
-    );
+  } catch (error) {
+    redirectWithActionError({
+      provider,
+      action: "save",
+      error,
+    });
   }
 
   revalidatePath("/painel/integracoes");
@@ -142,10 +178,12 @@ export async function testIntegrationAction(formData: FormData) {
   try {
     const result = await runIntegrationConnectionTest({ context, provider });
     status = result.status;
-  } catch {
-    redirect(
-      `/painel/integracoes/${getIntegrationProviderSlug(provider)}?error=test_failed`,
-    );
+  } catch (error) {
+    redirectWithActionError({
+      provider,
+      action: "test",
+      error,
+    });
   }
 
   revalidatePath("/painel/integracoes");

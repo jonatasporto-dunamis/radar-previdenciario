@@ -36,9 +36,9 @@ Quando GTM não estiver configurado, o app permite fallback direto:
 - GA4 direto via `NEXT_PUBLIC_GA4_MEASUREMENT_ID`;
 - Meta Pixel direto via `NEXT_PUBLIC_META_PIXEL_ID`.
 
-Meta CAPI continua server-side e independente do carregamento browser, desde que `NEXT_PUBLIC_META_PIXEL_ID`, `META_CONVERSIONS_API_ACCESS_TOKEN` e consentimento estejam válidos.
+Meta CAPI continua server-side e independente do carregamento browser, desde que o Pixel/Dataset ID, o token da API de Conversões e o consentimento estejam válidos.
 
-Em modo multi-tenant, Pixel ID, GA4 Measurement ID, GTM Container ID e flags vêm preferencialmente de `tenant_tracking_configs`. O token Meta CAPI deve vir de `tenant_secrets`; o fallback por variável de ambiente existe apenas para o tenant padrão do MVP.
+Em modo multi-tenant, Pixel ID, GA4 Measurement ID, GTM Container ID e flags vêm preferencialmente de `tenant_tracking_configs`. O token Meta CAPI e o Test Event Code vêm primeiro dos segredos criptografados da Central de Integrações. O fallback por `tenant_secrets` ou variável server-only existe apenas para compatibilidade do tenant padrão do MVP.
 
 A Central de Integrações sincroniza configurações públicas de Meta e GA4 com `tenant_tracking_configs` para preservar compatibilidade com a pipeline atual. Google Ads e TikTok já possuem modelo administrativo e logs, mas devem permanecer em modo teste até a ativação operacional dos respectivos dispatchers.
 
