@@ -71,6 +71,14 @@ export async function QuizPageContent({
 
   const cookieStore = await cookies();
   const leadId = cookieStore.get("rp_lead_session")?.value;
+  const sensitiveDataConsentCookie = cookieStore.get(
+    "rp_sensitive_data_consent",
+  )?.value;
+  const initialSensitiveDataConsent =
+    sensitiveDataConsentCookie === "granted" ||
+    sensitiveDataConsentCookie === "denied"
+      ? sensitiveDataConsentCookie
+      : null;
 
   if (!leadId) {
     redirect(
@@ -132,6 +140,7 @@ export async function QuizPageContent({
               initialAnswers={sessionState.answers}
               initialProgress={sessionState.progress}
               initialQuestionId={sessionState.currentQuestionId}
+              initialSensitiveDataConsent={initialSensitiveDataConsent}
               quizStartedExternalEventId={
                 sessionState.quizStartedExternalEventId
               }

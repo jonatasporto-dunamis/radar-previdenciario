@@ -219,6 +219,7 @@ export async function saveQuizAnswerAction(input: {
   sessionId: string;
   questionId: string;
   value: unknown;
+  complete?: boolean;
 }): Promise<SaveQuizAnswerActionResult> {
   const leadId = await getLeadIdFromCookie();
 
@@ -315,7 +316,10 @@ export async function saveQuizAnswerAction(input: {
       console.error("Failed to track question answered event.");
     }
 
-    const shouldComplete = progress.isComplete && navigation.isLastQuestion;
+    const shouldComplete =
+      input.complete === true &&
+      progress.isComplete &&
+      navigation.isLastQuestion;
     let resultId: string | undefined;
     let quizCompletedExternalEventId: string | undefined;
     let quizCompletedTracked = false;
