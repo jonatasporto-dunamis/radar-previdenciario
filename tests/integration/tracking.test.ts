@@ -104,6 +104,38 @@ describe("tracking service", () => {
     );
   });
 
+  it("can deduplicate without constraining the lookup to session id", async () => {
+    const supabaseMock = mockSupabase();
+    supabaseMock.setQueryResult({ data: [], error: null });
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createSupabaseAdminClient: () => supabaseMock.client,
+    }));
+    const { trackEventOnce } = await import("@/services/tracking");
+    supabaseMock.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    await expect(
+      trackEventOnce({
+        leadId: "lead-1",
+        tenantId: TEST_TENANT_ID,
+        sessionId: "session-2",
+        eventName: "QuizStarted",
+        eventPayload: { templateId: "template-1" },
+        eventPayloadContains: { templateId: "template-1" },
+        dedupeSessionId: false,
+      }),
+    ).resolves.toBe(true);
+
+    expect(supabaseMock.eq).not.toHaveBeenCalledWith("session_id", "session-2");
+    expect(supabaseMock.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        session_id: "session-2",
+      }),
+    );
+  });
+
   it("throws a typed error when insert fails", async () => {
     const supabaseMock = mockSupabase();
     supabaseMock.setQueryResult({ data: null, error: { message: "failure" } });

@@ -23,7 +23,10 @@ import {
   generalQuizTemplate,
   maternityQuizTemplate,
 } from "@/config/quiz/templates/default";
-import { selectReusableQuizSession } from "@/services/quiz/session/sessionEngine";
+import {
+  selectReusableQuizSession,
+  shouldArchiveDuplicateStartedSession,
+} from "@/services/quiz/session/sessionEngine";
 
 describe("Question, Navigation and Progress Engines", () => {
   it("loads default flow and resolves active questions for a flow", () => {
@@ -192,5 +195,43 @@ describe("Question, Navigation and Progress Engines", () => {
       selectReusableQuizSession([legacyCompletedGeneral], generalQuizTemplate)
         ?.id,
     ).toBe("legacy-general");
+  });
+
+  it("only archives duplicate started sessions without answers", () => {
+    expect(
+      shouldArchiveDuplicateStartedSession({
+        currentSessionId: "current",
+        candidateSessionId: "duplicate",
+        candidateStatus: "started",
+        answerCount: 0,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldArchiveDuplicateStartedSession({
+        currentSessionId: "current",
+        candidateSessionId: "duplicate",
+        candidateStatus: "started",
+        answerCount: 1,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldArchiveDuplicateStartedSession({
+        currentSessionId: "current",
+        candidateSessionId: "current",
+        candidateStatus: "started",
+        answerCount: 0,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldArchiveDuplicateStartedSession({
+        currentSessionId: "current",
+        candidateSessionId: "duplicate",
+        candidateStatus: "completed",
+        answerCount: 0,
+      }),
+    ).toBe(false);
   });
 });
