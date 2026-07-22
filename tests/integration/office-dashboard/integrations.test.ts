@@ -99,6 +99,8 @@ describe("office dashboard integrations", () => {
     });
 
     expect(saved.integration.hasSecrets).toBe(true);
+    expect(saved.integration.hasAccessToken).toBe(true);
+    expect(saved.integration.hasTestEventCode).toBe(false);
     expect(saved.integration.enabled).toBe(false);
     expect(saved.integration.status).toBe("test_pending");
     expect(saved.integration.configuration).not.toHaveProperty("accessToken");
@@ -127,6 +129,15 @@ describe("office dashboard integrations", () => {
     });
 
     expect(testRun.status).toBe("configuration_required");
+    expect(testRun.sanitizedResult).toMatchObject({
+      secrets: {
+        source: "tenant_integration_secrets",
+        accessTokenKey: "accessToken",
+        testEventCodeKey: "testEventCode",
+        hasAccessToken: true,
+        hasTestEventCode: false,
+      },
+    });
     expect(afterTest.integration.status).toBe("test_pending");
     expect(afterTest.integration.lastErrorCode).toBe("missing_test_event_code");
     expect(sendMetaConversionsEvent).not.toHaveBeenCalled();
@@ -156,6 +167,8 @@ describe("office dashboard integrations", () => {
     });
 
     expect(beforeTest.integration.hasSecrets).toBe(true);
+    expect(beforeTest.integration.hasAccessToken).toBe(true);
+    expect(beforeTest.integration.hasTestEventCode).toBe(true);
     expect(beforeTest.integration.enabled).toBe(false);
     expect(beforeTest.integration.status).toBe("test_pending");
     expect(beforeTest.integration.configuration).not.toHaveProperty(
@@ -175,6 +188,22 @@ describe("office dashboard integrations", () => {
     });
 
     expect(testRun.status).toBe("success");
+    expect(testRun.sanitizedResult).toMatchObject({
+      requestShape: {
+        hasData: true,
+        eventCount: 1,
+        hasRootTestEventCode: true,
+        testEventCodeField: "test_event_code",
+        pixelConfigured: true,
+        tokenConfigured: true,
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        source: "tenant_integration_secrets",
+        hasAccessToken: true,
+        hasTestEventCode: true,
+      },
+    });
     expect(sendMetaConversionsEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "meta-test-token",
@@ -205,6 +234,8 @@ describe("office dashboard integrations", () => {
     expect(afterTest.integration.enabled).toBe(true);
     expect(afterTest.integration.status).toBe("connected");
     expect(afterTest.integration.hasSecrets).toBe(true);
+    expect(afterTest.integration.hasAccessToken).toBe(true);
+    expect(afterTest.integration.hasTestEventCode).toBe(true);
 
     const supabase = createSupabaseAdminClient();
     const { data: trackingConfig } = await supabase
@@ -295,6 +326,38 @@ describe("office dashboard integrations", () => {
         secretKey: "testEventCode",
       }),
     ).resolves.toBe("NEWTEST123");
+
+    await saveIntegrationSettings({
+      context: adminContext,
+      provider: "meta",
+      enabled: false,
+      browserTrackingEnabled: true,
+      serverTrackingEnabled: true,
+      testMode: true,
+      configuration: {
+        pixelId: "123456789012345",
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        accessToken: "new-token",
+        testEventCode: "",
+      },
+    });
+
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "accessToken",
+      }),
+    ).resolves.toBe("new-token");
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "testEventCode",
+      }),
+    ).resolves.toBe("NEWTEST123");
   });
 
   it("keeps integration changes isolated by tenant", async () => {
@@ -306,5 +369,7 @@ describe("office dashboard integrations", () => {
     expect(tenantBMeta.integration.tenantId).toBe(tenantB);
     expect(tenantBMeta.integration.enabled).toBe(false);
     expect(tenantBMeta.integration.hasSecrets).toBe(false);
+    expect(tenantBMeta.integration.hasAccessToken).toBe(false);
+    expect(tenantBMeta.integration.hasTestEventCode).toBe(false);
   });
 });

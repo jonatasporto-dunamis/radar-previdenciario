@@ -55,6 +55,8 @@ export type TenantIntegration = {
   testMode: boolean;
   configuration: Record<string, unknown>;
   hasSecrets: boolean;
+  hasAccessToken: boolean;
+  hasTestEventCode: boolean;
   lastTestedAt: string | null;
   lastSuccessAt: string | null;
   lastErrorAt: string | null;
