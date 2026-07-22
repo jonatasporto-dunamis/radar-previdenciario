@@ -32,9 +32,15 @@ test.describe("tenant tracking integrations", () => {
         "Configuração salva. Agora teste a conexão antes de ativar a integração.",
       ),
     ).toBeVisible();
-    await expect(page.getByText("Teste pendente")).toBeVisible();
     await expect(
-      page.getByPlaceholder("Credencial já configurada").first(),
+      page.getByText("Teste pendente", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Token configurado").first()).toBeVisible();
+    await expect(
+      page.getByText("Código de teste pendente").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByPlaceholder("Token configurado").first(),
     ).toBeVisible();
     await expect(page.getByText("token-without-test-code")).toHaveCount(0);
 
@@ -45,7 +51,9 @@ test.describe("tenant tracking integrations", () => {
         hasText: "Para enviar um evento à área Test Events da Meta",
       }),
     ).toBeVisible();
-    await expect(page.getByText("Teste pendente")).toBeVisible();
+    await expect(
+      page.getByText("Teste pendente", { exact: true }),
+    ).toBeVisible();
   });
 
   test("configures and tests Meta without exposing secrets", async ({
@@ -74,10 +82,18 @@ test.describe("tenant tracking integrations", () => {
 
     await expect(page).toHaveURL(/saved=1/);
     await expect(page.getByText("Configuração salva.")).toBeVisible();
+    await expect(page.getByText("Token configurado").first()).toBeVisible();
     await expect(
-      page.getByPlaceholder("Credencial já configurada").first(),
+      page.getByText("Código de teste configurado").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByPlaceholder("Token configurado").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByPlaceholder("Código de teste configurado").first(),
     ).toBeVisible();
     await expect(page.getByText("token-e2e")).toHaveCount(0);
+    await expect(page.getByText("TEST123")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Testar conexão" }).click();
     await expect(page).toHaveURL(/tested=success/);

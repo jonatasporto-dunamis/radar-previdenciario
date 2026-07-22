@@ -2,6 +2,7 @@ import "server-only";
 
 import { decryptTenantSecret } from "@/lib/security/tenant-secrets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeIntegrationSecretPayload } from "./secretPayload";
 import type { IntegrationProvider } from "@/types/integrations";
 
 type GetTenantIntegrationSecretInput = {
@@ -18,7 +19,7 @@ function parseSecretPayload(payload: string): Record<string, unknown> {
     return {};
   }
 
-  return parsed as Record<string, unknown>;
+  return normalizeIntegrationSecretPayload(parsed);
 }
 
 export async function getTenantIntegrationSecret(

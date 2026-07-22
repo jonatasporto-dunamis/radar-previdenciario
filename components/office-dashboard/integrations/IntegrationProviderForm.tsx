@@ -135,15 +135,69 @@ function getTestResultMessage(input: {
   return `Teste registrado com status: ${input.tested}.`;
 }
 
+function ConfiguredStatus({ configured }: { configured: boolean }) {
+  return (
+    <span
+      className={
+        configured ? "text-success font-semibold" : "text-warning font-semibold"
+      }
+    >
+      {configured ? "configurado" : "pendente"}
+    </span>
+  );
+}
+
+function MetaReadinessChecklist({
+  integration,
+}: {
+  integration: IntegrationDetail["integration"];
+}) {
+  if (integration.provider !== "meta") {
+    return null;
+  }
+
+  const pixelConfigured = Boolean(
+    readConfig(integration.configuration, "pixelId"),
+  );
+
+  return (
+    <div
+      aria-label="Checklist de teste Meta"
+      className="bg-muted/40 mt-5 rounded-md border p-4 text-sm"
+    >
+      <h3 className="font-semibold">Checklist de teste Meta</h3>
+      <ul className="mt-3 grid gap-2 md:grid-cols-2">
+        <li>
+          Pixel/Dataset ID <ConfiguredStatus configured={pixelConfigured} />
+        </li>
+        <li>
+          Token <ConfiguredStatus configured={integration.hasAccessToken} />
+        </li>
+        <li>
+          Código de teste{" "}
+          <ConfiguredStatus configured={integration.hasTestEventCode} />
+        </li>
+        <li>
+          Modo teste <ConfiguredStatus configured={integration.testMode} />
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 function ProviderSpecificFields({
   provider,
   configuration,
   hasSecrets,
+  hasAccessToken,
+  hasTestEventCode,
   disabled,
 }: {
   provider: IntegrationProvider;
   configuration: Record<string, unknown>;
   hasSecrets: boolean;
+  hasAccessToken: boolean;
+  hasTestEventCode: boolean;
   disabled?: boolean;
 }) {
   if (provider === "meta") {
@@ -167,25 +221,29 @@ function ProviderSpecificFields({
         <TextField
           disabled={disabled}
           help={
-            hasSecrets
-              ? "Já existe credencial criptografada. Preencha para substituir."
+            hasAccessToken
+              ? "Token configurado. Preencha para substituir."
               : undefined
           }
           label="Access token da Conversions API"
           name="accessToken"
           placeholder={
-            hasSecrets
-              ? "Credencial já configurada"
-              : "Cole o token server-side"
+            hasAccessToken ? "Token configurado" : "Cole o token server-side"
           }
           secret
         />
         <TextField
           disabled={disabled}
-          help="Para enviar um evento à área Test Events da Meta, informe o Código de teste."
+          help={
+            hasTestEventCode
+              ? "Código de teste configurado. Preencha para substituir."
+              : "Para enviar um evento à área Test Events da Meta, informe o Código de teste."
+          }
           label="Código de teste"
           name="testEventCode"
-          placeholder="Opcional"
+          placeholder={
+            hasTestEventCode ? "Código de teste configurado" : "Opcional"
+          }
           secret
         />
       </>
@@ -441,10 +499,14 @@ export function IntegrationProviderForm({
           />
         </div>
 
+        <MetaReadinessChecklist integration={integration} />
+
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <ProviderSpecificFields
             configuration={integration.configuration}
             disabled={disabled}
+            hasAccessToken={integration.hasAccessToken}
+            hasTestEventCode={integration.hasTestEventCode}
             hasSecrets={integration.hasSecrets}
             provider={integration.provider}
           />

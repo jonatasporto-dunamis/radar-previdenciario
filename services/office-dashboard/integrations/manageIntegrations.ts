@@ -14,6 +14,10 @@ import {
   hashMetaValue,
   sendMetaConversionsEvent,
 } from "@/services/external-tracking/providers/meta/server";
+import {
+  getIntegrationSecretPresence,
+  normalizeIntegrationSecretPayload,
+} from "@/services/integrations/secretPayload";
 import { insertAuditLog } from "../repositories";
 import {
   defaultIntegrationMappings,
@@ -31,6 +35,7 @@ import type {
   TenantIntegration,
 } from "@/types/integrations";
 import type { OfficeUserContext } from "@/types/office-dashboard";
+import type { IntegrationSecretPresence } from "@/services/integrations/secretPayload";
 import type { Database, Json } from "@/types/supabase";
 
 type IntegrationRow =
@@ -100,7 +105,7 @@ function isProvider(value: string): value is IntegrationProvider {
 
 function mapIntegration(
   row: IntegrationRow,
-  hasSecrets: boolean,
+  secretPresence: IntegrationSecretPresence,
 ): TenantIntegration {
   const provider = isProvider(row.provider) ? row.provider : "meta";
 
@@ -114,7 +119,9 @@ function mapIntegration(
     serverTrackingEnabled: row.server_tracking_enabled,
     testMode: row.test_mode,
     configuration: toRecord(row.configuration),
-    hasSecrets,
+    hasSecrets: secretPresence.hasAnySecret,
+    hasAccessToken: secretPresence.hasAccessToken,
+    hasTestEventCode: secretPresence.hasTestEventCode,
     lastTestedAt: row.last_tested_at,
     lastSuccessAt: row.last_success_at,
     lastErrorAt: row.last_error_at,
@@ -175,11 +182,7 @@ function mapTestRun(row: TestRunRow): IntegrationTestRun {
 }
 
 function getNonEmptySecrets(secrets?: Record<string, string>) {
-  return Object.fromEntries(
-    Object.entries(secrets ?? {})
-      .map(([key, value]) => [key, value.trim()])
-      .filter(([, value]) => value.length > 0),
-  );
+  return normalizeIntegrationSecretPayload(secrets ?? {});
 }
 
 function parseStoredSecrets(
@@ -197,12 +200,13 @@ function parseStoredSecrets(
     return {};
   }
 
-  return Object.fromEntries(
-    Object.entries(parsed).filter(
-      (entry): entry is [string, string] =>
-        typeof entry[1] === "string" && entry[1].trim().length > 0,
-    ),
-  );
+  return normalizeIntegrationSecretPayload(parsed);
+}
+
+function getSecretPresence(
+  secretRow: IntegrationSecretRow | undefined,
+): IntegrationSecretPresence {
+  return getIntegrationSecretPresence(parseStoredSecrets(secretRow));
 }
 
 async function getSecretRows(
@@ -324,6 +328,19 @@ function getSaveValidationCode(issues: string[]): string {
   return "invalid_configuration";
 }
 
+function getMetaSecretDiagnostics(input: {
+  accessToken: string | null;
+  testEventCode: string | null;
+}) {
+  return {
+    source: "tenant_integration_secrets",
+    accessTokenKey: "accessToken",
+    testEventCodeKey: "testEventCode",
+    hasAccessToken: Boolean(input.accessToken),
+    hasTestEventCode: Boolean(input.testEventCode),
+  };
+}
+
 async function runMetaServerConnectionTest(input: {
   tenantId: string;
   integration: TenantIntegration;
@@ -383,6 +400,7 @@ async function runMetaServerConnectionTest(input: {
         provider: "meta",
         mode: "test",
         realRequest: false,
+        secrets: getMetaSecretDiagnostics({ accessToken, testEventCode }),
         checks: ["Informe o token da Conversions API."],
         errorCategory: "missing_access_token",
       },
@@ -398,6 +416,7 @@ async function runMetaServerConnectionTest(input: {
         provider: "meta",
         mode: "test",
         realRequest: false,
+        secrets: getMetaSecretDiagnostics({ accessToken, testEventCode }),
         checks: ["Informe o código de teste da Meta."],
         errorCategory: "missing_test_event_code",
       },
@@ -407,6 +426,19 @@ async function runMetaServerConnectionTest(input: {
     };
   }
 
+  const pixelId = getConfigString(input.integration.configuration, "pixelId");
+  const apiVersion =
+    getConfigString(input.integration.configuration, "apiVersion") || "v25.0";
+  const requestShape = {
+    hasData: true,
+    eventCount: 1,
+    hasRootTestEventCode: true,
+    testEventCodeField: "test_event_code",
+    pixelConfigured: Boolean(pixelId),
+    tokenConfigured: Boolean(accessToken),
+    apiVersion,
+  };
+
   if (process.env.META_CAPI_TEST_MOCK === "true") {
     return {
       status: "success",
@@ -415,6 +447,8 @@ async function runMetaServerConnectionTest(input: {
         mode: "test",
         realRequest: false,
         mocked: true,
+        secrets: getMetaSecretDiagnostics({ accessToken, testEventCode }),
+        requestShape,
         checks: ["Meta CAPI validada em modo E2E mockado."],
         responseStatus: 200,
         eventsReceived: 1,
@@ -426,9 +460,6 @@ async function runMetaServerConnectionTest(input: {
     };
   }
 
-  const pixelId = getConfigString(input.integration.configuration, "pixelId");
-  const apiVersion =
-    getConfigString(input.integration.configuration, "apiVersion") || "v25.0";
   const eventId = `rp_meta_test_${randomUUID()}`;
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://radarprevidenciario.com.br";
@@ -468,6 +499,8 @@ async function runMetaServerConnectionTest(input: {
         provider: "meta",
         mode: "test",
         realRequest: true,
+        secrets: getMetaSecretDiagnostics({ accessToken, testEventCode }),
+        requestShape,
         checks: ["Meta CAPI recebeu o evento sintético de teste."],
         responseStatus: result.responseStatus ?? 200,
         eventsReceived: result.eventsReceived ?? null,
@@ -487,6 +520,8 @@ async function runMetaServerConnectionTest(input: {
       provider: "meta",
       mode: "test",
       realRequest: true,
+      secrets: getMetaSecretDiagnostics({ accessToken, testEventCode }),
+      requestShape,
       checks: [lastErrorSummary],
       responseStatus: result.responseStatus ?? null,
       errorCategory: result.errorCategory ?? "meta_api_error",
@@ -636,7 +671,7 @@ export async function listIntegrationCards(
     .map((row) => {
       const integration = mapIntegration(
         row,
-        secretsByIntegrationId.has(row.id),
+        getSecretPresence(secretsByIntegrationId.get(row.id)),
       );
 
       return {
