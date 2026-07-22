@@ -101,6 +101,14 @@ function getActionErrorMessage(error?: string): string | null {
     return null;
   }
 
+  if (error === "invalid_pixel_id") {
+    return "O Pixel/Dataset ID deve conter apenas números.";
+  }
+
+  if (error === "missing_server_secret") {
+    return "Informe o token da Conversions API.";
+  }
+
   if (error === "encryption_key_missing") {
     return "A chave de criptografia do servidor não está configurada.";
   }
@@ -109,7 +117,22 @@ function getActionErrorMessage(error?: string): string | null {
     return "A chave de criptografia do servidor está em formato inválido.";
   }
 
-  return "Não foi possível concluir a ação.";
+  return "Não foi possível salvar a configuração.";
+}
+
+function getTestResultMessage(input: {
+  tested?: string;
+  lastErrorCode: string | null;
+}): string | null {
+  if (!input.tested) {
+    return null;
+  }
+
+  if (input.lastErrorCode === "missing_test_event_code") {
+    return "Para enviar um evento à área Test Events da Meta, informe o Código de teste.";
+  }
+
+  return `Teste registrado com status: ${input.tested}.`;
 }
 
 function ProviderSpecificFields({
@@ -159,6 +182,7 @@ function ProviderSpecificFields({
         />
         <TextField
           disabled={disabled}
+          help="Para enviar um evento à área Test Events da Meta, informe o Código de teste."
           label="Código de teste"
           name="testEventCode"
           placeholder="Opcional"
@@ -302,6 +326,7 @@ function ProviderSpecificFields({
       />
       <TextField
         disabled={disabled}
+        help="Para enviar um evento à área Test Events do provedor, informe o Código de teste."
         label="Código de teste"
         name="testEventCode"
         placeholder="Opcional"
@@ -337,6 +362,10 @@ export function IntegrationProviderForm({
   const definition = integrationProviderDefinitions[integration.provider];
   const disabled = !canManage;
   const errorMessage = getActionErrorMessage(error);
+  const testResultMessage = getTestResultMessage({
+    tested,
+    lastErrorCode: integration.lastErrorCode,
+  });
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -361,14 +390,14 @@ export function IntegrationProviderForm({
 
         {saved ? (
           <p className="bg-success/10 text-success mt-5 rounded-md p-3 text-sm">
-            Configuração salva. Se a integração ainda não foi testada, ela
-            permanece pendente.
+            Configuração salva. Agora teste a conexão antes de ativar a
+            integração.
           </p>
         ) : null}
 
-        {tested ? (
+        {testResultMessage ? (
           <p className="bg-primary/10 text-primary mt-5 rounded-md p-3 text-sm">
-            Teste registrado com status: {tested}.
+            {testResultMessage}
           </p>
         ) : null}
 
