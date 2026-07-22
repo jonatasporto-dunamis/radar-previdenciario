@@ -8,8 +8,25 @@ import {
   integrationProviderDefinitions,
 } from "@/services/office-dashboard/integrations";
 import { IntegrationStatusBadge } from "./IntegrationStatusBadge";
+import { SecretFieldsReset } from "./SecretFieldsReset";
 import type { IntegrationDetail } from "@/services/office-dashboard/integrations";
 import type { IntegrationProvider } from "@/types/integrations";
+
+const secretFieldNamesByProvider: Record<
+  IntegrationProvider,
+  readonly string[]
+> = {
+  meta: ["accessToken", "testEventCode"],
+  ga4: ["apiSecret"],
+  google_ads: [
+    "developerToken",
+    "oauthClientId",
+    "oauthClientSecret",
+    "refreshToken",
+    "loginCustomerId",
+  ],
+  tiktok: ["accessToken", "testEventCode"],
+};
 
 function readConfig(
   configuration: Record<string, unknown>,
@@ -455,6 +472,10 @@ export function IntegrationProviderForm({
         className="bg-card rounded-lg border p-5"
       >
         <input name="provider" type="hidden" value={providerSlug} />
+        <SecretFieldsReset
+          fieldNames={secretFieldNamesByProvider[integration.provider]}
+          resetKey={secretResetKey}
+        />
 
         <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
