@@ -34,6 +34,7 @@ function TextField({
   disabled,
   help,
   secret,
+  resetKey,
 }: {
   label: string;
   name: string;
@@ -42,12 +43,14 @@ function TextField({
   disabled?: boolean;
   help?: string;
   secret?: boolean;
+  resetKey?: string;
 }) {
   return (
     <label className="space-y-2 text-sm font-medium">
       <span>{label}</span>
       <input
-        autoComplete="off"
+        key={secret ? `${name}-${resetKey ?? "secret"}` : name}
+        autoComplete={secret ? "new-password" : "off"}
         className="bg-background focus:ring-primary/30 w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
         defaultValue={secret ? "" : defaultValue}
         disabled={disabled}
@@ -192,6 +195,7 @@ function ProviderSpecificFields({
   hasAccessToken,
   hasTestEventCode,
   disabled,
+  resetKey,
 }: {
   provider: IntegrationProvider;
   configuration: Record<string, unknown>;
@@ -199,6 +203,7 @@ function ProviderSpecificFields({
   hasAccessToken: boolean;
   hasTestEventCode: boolean;
   disabled?: boolean;
+  resetKey: string;
 }) {
   if (provider === "meta") {
     return (
@@ -230,6 +235,7 @@ function ProviderSpecificFields({
           placeholder={
             hasAccessToken ? "Token configurado" : "Cole o token server-side"
           }
+          resetKey={resetKey}
           secret
         />
         <TextField
@@ -244,6 +250,7 @@ function ProviderSpecificFields({
           placeholder={
             hasTestEventCode ? "Código de teste configurado" : "Opcional"
           }
+          resetKey={resetKey}
           secret
         />
       </>
@@ -273,6 +280,7 @@ function ProviderSpecificFields({
           placeholder={
             hasSecrets ? "Credencial já configurada" : "Cole o API Secret"
           }
+          resetKey={resetKey}
           secret
         />
         <ToggleField
@@ -322,30 +330,35 @@ function ProviderSpecificFields({
           placeholder={
             hasSecrets ? "Credencial já configurada" : "Developer token"
           }
+          resetKey={resetKey}
           secret
         />
         <TextField
           disabled={disabled}
           label="OAuth Client ID"
           name="oauthClientId"
+          resetKey={resetKey}
           secret
         />
         <TextField
           disabled={disabled}
           label="OAuth Client Secret"
           name="oauthClientSecret"
+          resetKey={resetKey}
           secret
         />
         <TextField
           disabled={disabled}
           label="Refresh token"
           name="refreshToken"
+          resetKey={resetKey}
           secret
         />
         <TextField
           disabled={disabled}
           label="Login Customer ID"
           name="loginCustomerId"
+          resetKey={resetKey}
           secret
         />
         <ToggleField
@@ -380,6 +393,7 @@ function ProviderSpecificFields({
         placeholder={
           hasSecrets ? "Credencial já configurada" : "Cole o token server-side"
         }
+        resetKey={resetKey}
         secret
       />
       <TextField
@@ -388,6 +402,7 @@ function ProviderSpecificFields({
         label="Código de teste"
         name="testEventCode"
         placeholder="Opcional"
+        resetKey={resetKey}
         secret
       />
       <ToggleField
@@ -424,6 +439,14 @@ export function IntegrationProviderForm({
     tested,
     lastErrorCode: integration.lastErrorCode,
   });
+  const secretResetKey = [
+    integration.updatedAt,
+    saved ? "saved" : "idle",
+    tested ?? "untested",
+    error ?? "ok",
+    String(integration.hasAccessToken),
+    String(integration.hasTestEventCode),
+  ].join(":");
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -509,6 +532,7 @@ export function IntegrationProviderForm({
             hasTestEventCode={integration.hasTestEventCode}
             hasSecrets={integration.hasSecrets}
             provider={integration.provider}
+            resetKey={secretResetKey}
           />
         </div>
 

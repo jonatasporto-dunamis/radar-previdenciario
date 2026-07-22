@@ -42,6 +42,10 @@ test.describe("tenant tracking integrations", () => {
     await expect(
       page.getByPlaceholder("Token configurado").first(),
     ).toBeVisible();
+    await expect(
+      page.getByLabel("Access token da Conversions API"),
+    ).toHaveValue("");
+    await expect(page.getByLabel("Código de teste")).toHaveValue("");
     await expect(page.getByText("token-without-test-code")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Testar conexão" }).click();
@@ -92,6 +96,10 @@ test.describe("tenant tracking integrations", () => {
     await expect(
       page.getByPlaceholder("Código de teste configurado").first(),
     ).toBeVisible();
+    await expect(
+      page.getByLabel("Access token da Conversions API"),
+    ).toHaveValue("");
+    await expect(page.getByLabel("Código de teste")).toHaveValue("");
     await expect(page.getByText("token-e2e")).toHaveCount(0);
     await expect(page.getByText("TEST123")).toHaveCount(0);
 
