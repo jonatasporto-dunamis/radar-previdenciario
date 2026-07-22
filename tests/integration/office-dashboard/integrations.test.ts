@@ -75,6 +75,63 @@ describe("office dashboard integrations", () => {
     expect(cards.every((card) => card.tenantId === tenantA)).toBe(true);
   });
 
+  it("saves Meta server-side config without test event code as test pending", async () => {
+    await saveIntegrationSettings({
+      context: adminContext,
+      provider: "meta",
+      enabled: true,
+      browserTrackingEnabled: true,
+      serverTrackingEnabled: true,
+      testMode: true,
+      configuration: {
+        pixelId: "123456789012345",
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        accessToken: "meta-token-without-test-code",
+        testEventCode: "",
+      },
+    });
+
+    const saved = await getIntegrationDetail({
+      context: adminContext,
+      provider: "meta",
+    });
+
+    expect(saved.integration.hasSecrets).toBe(true);
+    expect(saved.integration.enabled).toBe(false);
+    expect(saved.integration.status).toBe("test_pending");
+    expect(saved.integration.configuration).not.toHaveProperty("accessToken");
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "accessToken",
+      }),
+    ).resolves.toBe("meta-token-without-test-code");
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "testEventCode",
+      }),
+    ).resolves.toBeNull();
+
+    const testRun = await runIntegrationConnectionTest({
+      context: adminContext,
+      provider: "meta",
+    });
+    const afterTest = await getIntegrationDetail({
+      context: adminContext,
+      provider: "meta",
+    });
+
+    expect(testRun.status).toBe("configuration_required");
+    expect(afterTest.integration.status).toBe("test_pending");
+    expect(afterTest.integration.lastErrorCode).toBe("missing_test_event_code");
+    expect(sendMetaConversionsEvent).not.toHaveBeenCalled();
+  });
+
   it("stores secrets encrypted and never returns them in configuration", async () => {
     await saveIntegrationSettings({
       context: adminContext,
@@ -206,6 +263,38 @@ describe("office dashboard integrations", () => {
         secretKey: "accessToken",
       }),
     ).resolves.toBe("preserved-token");
+
+    await saveIntegrationSettings({
+      context: adminContext,
+      provider: "meta",
+      enabled: false,
+      browserTrackingEnabled: true,
+      serverTrackingEnabled: true,
+      testMode: true,
+      configuration: {
+        pixelId: "123456789012345",
+        apiVersion: "v25.0",
+      },
+      secrets: {
+        accessToken: "",
+        testEventCode: "NEWTEST123",
+      },
+    });
+
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "accessToken",
+      }),
+    ).resolves.toBe("preserved-token");
+    await expect(
+      getTenantIntegrationSecret({
+        tenantId: tenantA,
+        provider: "meta",
+        secretKey: "testEventCode",
+      }),
+    ).resolves.toBe("NEWTEST123");
   });
 
   it("keeps integration changes isolated by tenant", async () => {

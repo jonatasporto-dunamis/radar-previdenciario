@@ -8,6 +8,7 @@ import { sanitizeErrorMessage } from "@/services/notification/security";
 import {
   getIntegrationProviderFromSlug,
   getIntegrationProviderSlug,
+  IntegrationSettingsValidationError,
   saveIntegrationSettings,
   runIntegrationConnectionTest,
   updateTenantEventMapping,
@@ -110,6 +111,10 @@ function getSecrets(
 }
 
 function getActionErrorCode(error: unknown): string {
+  if (error instanceof IntegrationSettingsValidationError) {
+    return error.code;
+  }
+
   if (error instanceof TenantSecretEncryptionError) {
     return error.message.includes("not configured")
       ? "encryption_key_missing"
@@ -126,17 +131,22 @@ function redirectWithActionError(input: {
 }): never {
   const diagnosticId = randomUUID().slice(0, 8);
   const errorCode = getActionErrorCode(input.error);
+  const needsDiagnostic = errorCode === "internal_error";
 
-  console.error("office_integration_action_failed", {
-    provider: input.provider,
-    action: input.action,
-    errorCode,
-    diagnosticId,
-    error: sanitizeErrorMessage(input.error),
-  });
+  if (needsDiagnostic) {
+    console.error("office_integration_action_failed", {
+      provider: input.provider,
+      action: input.action,
+      errorCode,
+      diagnosticId,
+      error: sanitizeErrorMessage(input.error),
+    });
+  }
 
   redirect(
-    `/painel/integracoes/${getIntegrationProviderSlug(input.provider)}?error=${errorCode}&diagnostic=${diagnosticId}`,
+    `/painel/integracoes/${getIntegrationProviderSlug(input.provider)}?error=${errorCode}${
+      needsDiagnostic ? `&diagnostic=${diagnosticId}` : ""
+    }`,
   );
 }
 

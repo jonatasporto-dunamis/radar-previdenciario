@@ -10,7 +10,7 @@ describe("integration configuration validation", () => {
         serverTrackingEnabled: false,
         hasSecrets: false,
       }),
-    ).toContain("Informe um Pixel/Dataset ID numérico.");
+    ).toContain("O Pixel/Dataset ID deve conter apenas números.");
   });
 
   it("requires GA4 measurement id format", () => {
@@ -33,6 +33,17 @@ describe("integration configuration validation", () => {
         hasSecrets: false,
       }),
     ).toContain("Configure a credencial server-side antes de ativar o envio.");
+  });
+
+  it("requires Meta access token before server-side dispatch", () => {
+    expect(
+      validateProviderConfiguration({
+        provider: "meta",
+        configuration: { pixelId: "123456789012345" },
+        serverTrackingEnabled: true,
+        hasSecrets: false,
+      }),
+    ).toContain("Informe o token da Conversions API.");
   });
 
   it("accepts valid browser-only Google Ads configuration", () => {

@@ -1,14 +1,53 @@
 import { expect, test } from "@playwright/test";
 
-async function login(page: import("@playwright/test").Page) {
+async function login(
+  page: import("@playwright/test").Page,
+  email = "admin@example.com",
+) {
   await page.goto("/painel/login");
-  await page.getByLabel("E-mail").fill("admin@example.com");
+  await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha").fill("painel-e2e");
   await page.getByRole("button", { name: "Entrar no painel" }).click();
   await page.waitForURL(/\/painel$/, { timeout: 60_000 });
 }
 
 test.describe("tenant tracking integrations", () => {
+  test("saves Meta configuration without test event code", async ({ page }) => {
+    await login(page, "admin-b@example.com");
+    await page.goto("/painel/integracoes/meta");
+
+    await page.getByLabel("Pixel/Dataset ID").fill("123456789012345");
+    await page
+      .getByLabel("Access token da Conversions API")
+      .fill("token-without-test-code");
+    await page.getByLabel("Código de teste").fill("");
+    await page.getByLabel("Ativar integração").check();
+    await page.getByLabel("Tracking no navegador").check();
+    await page.getByLabel("Tracking server-side").check();
+    await page.getByRole("button", { name: "Salvar configuração" }).click();
+
+    await expect(page).toHaveURL(/saved=1/);
+    await expect(
+      page.getByText(
+        "Configuração salva. Agora teste a conexão antes de ativar a integração.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText("Teste pendente")).toBeVisible();
+    await expect(
+      page.getByPlaceholder("Credencial já configurada").first(),
+    ).toBeVisible();
+    await expect(page.getByText("token-without-test-code")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Testar conexão" }).click();
+    await expect(page).toHaveURL(/tested=configuration_required/);
+    await expect(
+      page.getByRole("paragraph").filter({
+        hasText: "Para enviar um evento à área Test Events da Meta",
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Teste pendente")).toBeVisible();
+  });
+
   test("configures and tests Meta without exposing secrets", async ({
     page,
   }) => {

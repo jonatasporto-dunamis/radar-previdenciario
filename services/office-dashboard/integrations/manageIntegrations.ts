@@ -1,6 +1,9 @@
 import "server-only";
 import { randomUUID } from "crypto";
-import { encryptTenantSecret } from "@/lib/security/tenant-secrets";
+import {
+  decryptTenantSecret,
+  encryptTenantSecret,
+} from "@/lib/security/tenant-secrets";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   integrationEventMappingSchema,
@@ -57,6 +60,16 @@ type SaveIntegrationInput = {
   configuration: Record<string, unknown>;
   secrets?: Record<string, string>;
 };
+
+export class IntegrationSettingsValidationError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "IntegrationSettingsValidationError";
+  }
+}
 
 type UpdateMappingInput = {
   context: OfficeUserContext;
@@ -169,6 +182,29 @@ function getNonEmptySecrets(secrets?: Record<string, string>) {
   );
 }
 
+function parseStoredSecrets(
+  secretRow: IntegrationSecretRow | undefined,
+): Record<string, string> {
+  if (!secretRow) {
+    return {};
+  }
+
+  const parsed = JSON.parse(
+    decryptTenantSecret(secretRow.encrypted_payload),
+  ) as Record<string, unknown> | null;
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsed).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[1] === "string" && entry[1].trim().length > 0,
+    ),
+  );
+}
+
 async function getSecretRows(
   integrationIds: string[],
 ): Promise<Map<string, IntegrationSecretRow>> {
@@ -272,6 +308,20 @@ function getMetaTestFailureMessage(category?: string): string {
   }
 
   return "Meta recusou o evento sintético de teste.";
+}
+
+function getSaveValidationCode(issues: string[]): string {
+  const message = issues.join(" ");
+
+  if (message.includes("Pixel/Dataset ID")) {
+    return "invalid_pixel_id";
+  }
+
+  if (message.includes("token da Conversions API")) {
+    return "missing_server_secret";
+  }
+
+  return "invalid_configuration";
 }
 
 async function runMetaServerConnectionTest(input: {
@@ -685,19 +735,21 @@ export async function saveIntegrationSettings(
     serverTrackingEnabled: input.serverTrackingEnabled,
     hasSecrets: willHaveSecrets,
   });
+
+  if (issues.length > 0) {
+    throw new IntegrationSettingsValidationError(
+      getSaveValidationCode(issues),
+      issues.join(" "),
+    );
+  }
+
   const canEnable =
-    input.enabled &&
-    issues.length === 0 &&
-    !requiresRetest &&
-    Boolean(existing.last_success_at);
-  const nextStatus: IntegrationStatus =
-    issues.length > 0
-      ? "configuration_required"
-      : canEnable
-        ? "connected"
-        : !existing.last_success_at || requiresRetest
-          ? "test_pending"
-          : "disconnected";
+    input.enabled && !requiresRetest && Boolean(existing.last_success_at);
+  const nextStatus: IntegrationStatus = canEnable
+    ? "connected"
+    : !existing.last_success_at || requiresRetest
+      ? "test_pending"
+      : "disconnected";
 
   const { error: updateError } = await supabase
     .from("tenant_integrations")
@@ -708,9 +760,9 @@ export async function saveIntegrationSettings(
       test_mode: input.testMode,
       configuration: input.configuration as Json,
       status: nextStatus,
-      last_error_at: issues.length ? new Date().toISOString() : null,
-      last_error_code: issues.length ? "configuration_required" : null,
-      last_error_summary: issues.length ? issues.join(" ") : null,
+      last_error_at: null,
+      last_error_code: null,
+      last_error_summary: null,
       last_success_at: requiresRetest ? null : existing.last_success_at,
       updated_by: input.context.userId,
     })
@@ -722,7 +774,12 @@ export async function saveIntegrationSettings(
   }
 
   if (Object.keys(newSecrets).length > 0) {
-    const encryptedPayload = encryptTenantSecret(JSON.stringify(newSecrets));
+    const encryptedPayload = encryptTenantSecret(
+      JSON.stringify({
+        ...parseStoredSecrets(secretRows.get(existing.id)),
+        ...newSecrets,
+      }),
+    );
     const keyVersion = process.env.TENANT_SECRETS_KEY_VERSION || "v1";
     const { error: secretError } = await supabase
       .from("tenant_integration_secrets")
@@ -779,7 +836,7 @@ export async function saveIntegrationSettings(
       browserTrackingEnabled: input.browserTrackingEnabled,
       serverTrackingEnabled: input.serverTrackingEnabled,
       testMode: input.testMode,
-      configurationIssues: issues,
+      configurationIssues: [],
     },
   });
 }
@@ -832,9 +889,11 @@ export async function runIntegrationConnectionTest(input: {
   const integrationStatus: IntegrationStatus =
     status === "success"
       ? "connected"
-      : status === "configuration_required"
-        ? "configuration_required"
-        : "error";
+      : testResult.lastErrorCode === "missing_test_event_code"
+        ? "test_pending"
+        : status === "configuration_required"
+          ? "configuration_required"
+          : "error";
   const now = new Date().toISOString();
   const supabase = createSupabaseAdminClient();
   const { data: testRun, error: testRunError } = await supabase

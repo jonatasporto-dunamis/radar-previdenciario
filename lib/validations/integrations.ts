@@ -47,7 +47,7 @@ export function validateProviderConfiguration(input: {
 
   if (input.provider === "meta") {
     if (!/^[0-9]{5,30}$/.test(getString("pixelId"))) {
-      issues.push("Informe um Pixel/Dataset ID numérico.");
+      issues.push("O Pixel/Dataset ID deve conter apenas números.");
     }
   }
 
@@ -72,7 +72,11 @@ export function validateProviderConfiguration(input: {
   }
 
   if (input.serverTrackingEnabled && !input.hasSecrets) {
-    issues.push("Configure a credencial server-side antes de ativar o envio.");
+    issues.push(
+      input.provider === "meta"
+        ? "Informe o token da Conversions API."
+        : "Configure a credencial server-side antes de ativar o envio.",
+    );
   }
 
   return issues;
