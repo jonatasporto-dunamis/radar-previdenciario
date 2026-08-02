@@ -6,7 +6,10 @@ import { getSafeAttributionFromSession } from "./attribution";
 import { readTrackingConsent } from "./cookies";
 import { createExternalEventId } from "@/services/external-tracking/event-id";
 import { trackGa4BrowserEvent } from "@/services/external-tracking/providers/ga4/browser";
-import { trackMetaBrowserEvent } from "@/services/external-tracking/providers/meta/browser";
+import {
+  initializeMetaPixel,
+  trackMetaBrowserEvent,
+} from "@/services/external-tracking/providers/meta/browser";
 import { pushExternalEventToDataLayer } from "@/services/external-tracking/providers/gtm";
 import type {
   ExternalTrackingEvent,
@@ -112,6 +115,10 @@ export function dispatchBrowserExternalEvent(input: {
   pushExternalEventToDataLayer(event);
 
   if (input.config.meta.enabled) {
+    if (input.config.meta.pixelId) {
+      initializeMetaPixel(input.config.meta.pixelId);
+    }
+
     trackMetaBrowserEvent(event);
   }
 
