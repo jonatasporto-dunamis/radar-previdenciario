@@ -64,4 +64,26 @@ describe("browser tracking dispatch", () => {
     ).toHaveLength(1);
     expect(recordBrowserExternalDeliveryAction).toHaveBeenCalledOnce();
   });
+
+  it("allows navigation flows to await the sanitized delivery record", async () => {
+    const { dispatchBrowserExternalEvent } =
+      await import("@/lib/tracking/browser");
+
+    await expect(
+      dispatchBrowserExternalEvent({
+        config: {
+          enabled: true,
+          consentRequired: false,
+          meta: { enabled: true, pixelId: "123456" },
+          ga4: { enabled: false },
+          gtm: { enabled: false },
+          events: enabledEvents,
+        },
+        eventName: "QuizCompleted",
+        eventId: "rp_QuizCompleted_11111111-1111-4111-8111-111111111111",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(recordBrowserExternalDeliveryAction).toHaveBeenCalledOnce();
+  });
 });
