@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TEST_TENANT_ID, TEST_TENANT_B_ID } from "@/tests/fixtures";
 
 const getDefaultTenant = vi.hoisted(() => vi.fn());
-const getTenantByHostname = vi.hoisted(() => vi.fn());
+const getTenantDomainByHostname = vi.hoisted(() => vi.fn());
 const getTenantById = vi.hoisted(() => vi.fn());
 const getTenantBySlug = vi.hoisted(() => vi.fn());
 
 vi.mock("@/services/tenants/repository", () => ({
   getDefaultTenant,
-  getTenantByHostname,
+  getTenantDomainByHostname,
   getTenantById,
   getTenantBySlug,
 }));
@@ -41,6 +41,28 @@ const tenantB = {
   isDefault: false,
 };
 
+const tenantDomain = {
+  id: "11111111-1111-4111-8111-111111111112",
+  tenantId: TEST_TENANT_ID,
+  hostname: "resende.radarprevidenciario.com.br",
+  domainType: "platform_subdomain" as const,
+  isPrimary: false,
+  isPlatformSubdomain: true,
+  status: "active" as const,
+  verificationMethod: "cname" as const,
+  verificationToken: null,
+  dnsInstructions: { records: [], notes: [] },
+  providerDomainId: "resende.radarprevidenciario.com.br",
+  sslStatus: "active" as const,
+  verifiedAt: "2026-08-02T00:00:00.000Z",
+  lastCheckedAt: "2026-08-02T00:00:00.000Z",
+  lastError: null,
+  metadata: {},
+  createdBy: null,
+  createdAt: "2026-07-21T00:00:00.000Z",
+  updatedAt: "2026-08-02T00:00:00.000Z",
+};
+
 describe("tenant resolver", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -48,7 +70,7 @@ describe("tenant resolver", () => {
     getDefaultTenant.mockResolvedValue(tenant);
     getTenantById.mockResolvedValue(tenant);
     getTenantBySlug.mockResolvedValue(tenantB);
-    getTenantByHostname.mockResolvedValue(tenant);
+    getTenantDomainByHostname.mockResolvedValue(tenantDomain);
   });
 
   afterEach(() => {
@@ -87,6 +109,7 @@ describe("tenant resolver", () => {
     ).resolves.toMatchObject({
       tenantId: TEST_TENANT_ID,
       source: "hostname",
+      domain: tenantDomain,
     });
   });
 
@@ -103,7 +126,7 @@ describe("tenant resolver", () => {
       source: "hostname",
     });
 
-    expect(getTenantByHostname).toHaveBeenCalledWith(
+    expect(getTenantDomainByHostname).toHaveBeenCalledWith(
       "radarprevidenciario.com.br",
     );
     expect(getTenantBySlug).not.toHaveBeenCalled();
@@ -111,7 +134,7 @@ describe("tenant resolver", () => {
 
   it("falls back to the default tenant for development localhost", async () => {
     vi.stubEnv("NODE_ENV", "development");
-    getTenantByHostname.mockResolvedValue(null);
+    getTenantDomainByHostname.mockResolvedValue(null);
     const { resolveTenant } = await import("@/services/tenants");
 
     await expect(
@@ -125,7 +148,7 @@ describe("tenant resolver", () => {
   it("rejects unknown production hostnames", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("VERCEL_ENV", "production");
-    getTenantByHostname.mockResolvedValue(null);
+    getTenantDomainByHostname.mockResolvedValue(null);
     const { resolveTenant, TenantResolutionError } =
       await import("@/services/tenants");
 

@@ -20,6 +20,7 @@ import {
 } from "@/services/configuration";
 import { getTenantContext, getTenantSiteUrl } from "@/services/tenants";
 import type { PublicTrackingConfig } from "@/lib/tracking";
+import { shouldRedirectTenantToCanonical } from "@/lib/tenants";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -107,12 +108,14 @@ export default async function RootLayout({
   ]);
   const currentHostname = hostname?.split(",")[0]?.trim().toLowerCase();
   const canonicalHostname = new URL(siteUrl).hostname;
-  const shouldRedirectToCanonical =
-    process.env.VERCEL_ENV === "production" &&
-    !isOfficePanelPath &&
-    tenantContext.source === "hostname" &&
-    currentHostname &&
-    currentHostname !== canonicalHostname;
+  const shouldRedirectToCanonical = shouldRedirectTenantToCanonical({
+    canonicalHostname,
+    currentHostname,
+    isOfficePanelPath,
+    isPlatformSubdomain: tenantContext.domain?.isPlatformSubdomain ?? false,
+    isProduction: process.env.VERCEL_ENV === "production",
+    source: tenantContext.source,
+  });
 
   if (shouldRedirectToCanonical) {
     const search = requestHeaders.get("x-radar-search") ?? "";

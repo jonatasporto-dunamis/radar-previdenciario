@@ -1,4 +1,5 @@
 import type { Tenant } from "./tenant";
+import type { TenantDomain } from "./domain";
 
 export type TenantResolutionSource =
   | "id"
@@ -14,6 +15,7 @@ export type TenantContext = {
   hostname?: string;
   source: TenantResolutionSource;
   tenant: Tenant;
+  domain?: TenantDomain;
 };
 
 export type TenantResolveInput = {
