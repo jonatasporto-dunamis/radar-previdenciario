@@ -82,6 +82,28 @@ describe("external browser tracking providers", () => {
     );
   });
 
+  it("uses the tenant Meta event mapping in the browser", async () => {
+    const { initializeMetaPixel, trackMetaBrowserEvent } =
+      await import("@/services/external-tracking/providers/meta/browser");
+
+    initializeMetaPixel("123456");
+    trackMetaBrowserEvent(
+      {
+        eventName: "QuizCompleted",
+        eventId: "rp_QuizCompleted_11111111-1111-4111-8111-111111111111",
+        eventTime: 1_785_000_000,
+      },
+      "CompleteRegistration",
+    );
+
+    expect(window.fbq?.queue).toContainEqual([
+      "track",
+      "CompleteRegistration",
+      expect.objectContaining({ content_category: "lead_generation" }),
+      { eventID: "rp_QuizCompleted_11111111-1111-4111-8111-111111111111" },
+    ]);
+  });
+
   it("uses direct GA4 only as a fallback when gtag is initialized", async () => {
     const { initializeGa4, trackGa4BrowserEvent } =
       await import("@/services/external-tracking/providers/ga4/browser");

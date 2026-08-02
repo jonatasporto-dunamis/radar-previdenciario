@@ -3,7 +3,10 @@ import type { TrackingConfig } from "@/config/tracking";
 import type { ConfigurationContext } from "@/types/configuration";
 import type { ExternalTrackingEventName } from "@/types/tracking";
 import { getTenantContext } from "@/services/tenants";
-import { getTenantTrackingConfigByTenantId } from "@/services/tenants/repository";
+import {
+  getTenantMetaEventMappingsByTenantId,
+  getTenantTrackingConfigByTenantId,
+} from "@/services/tenants/repository";
 
 function isExternalTrackingEventName(
   value: string,
@@ -17,6 +20,7 @@ function mergeTenantTrackingConfig(input: {
   tenant: NonNullable<
     Awaited<ReturnType<typeof getTenantTrackingConfigByTenantId>>
   >;
+  metaEventMappings: Record<string, string>;
 }): TrackingConfig {
   const events = { ...input.base.events };
 
@@ -28,8 +32,23 @@ function mergeTenantTrackingConfig(input: {
     events[eventName] = {
       ...events[eventName],
       ...override,
+      metaEventName:
+        input.metaEventMappings[eventName] ?? events[eventName].metaEventName,
     };
   });
+
+  Object.entries(input.metaEventMappings).forEach(
+    ([eventName, metaEventName]) => {
+      if (!isExternalTrackingEventName(eventName, input.base)) {
+        return;
+      }
+
+      events[eventName] = {
+        ...events[eventName],
+        metaEventName,
+      };
+    },
+  );
 
   return {
     enabled: input.tenant.enabled,
@@ -69,9 +88,10 @@ export async function getTrackingConfig(
     return config.tracking;
   }
 
-  const tenantTracking = await getTenantTrackingConfigByTenantId(
-    tenantContext.tenantId,
-  );
+  const [tenantTracking, metaEventMappings] = await Promise.all([
+    getTenantTrackingConfigByTenantId(tenantContext.tenantId),
+    getTenantMetaEventMappingsByTenantId(tenantContext.tenantId),
+  ]);
 
   if (!tenantTracking) {
     return config.tracking;
@@ -80,5 +100,6 @@ export async function getTrackingConfig(
   return mergeTenantTrackingConfig({
     base: config.tracking,
     tenant: tenantTracking,
+    metaEventMappings,
   });
 }

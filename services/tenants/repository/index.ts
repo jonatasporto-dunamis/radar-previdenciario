@@ -6,6 +6,7 @@ export {
   getTenantDomainByHostname,
   getPrimaryTenantDomain,
   getTenantSecretRow,
+  getTenantMetaEventMappingsByTenantId,
   getTenantTrackingConfigByTenantId,
   TenantRepositoryError,
 } from "./getTenant";

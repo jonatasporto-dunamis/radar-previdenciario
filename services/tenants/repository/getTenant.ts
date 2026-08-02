@@ -143,6 +143,29 @@ export async function getTenantTrackingConfigByTenantId(
   return data ? mapTenantTrackingConfigRow(data) : null;
 }
 
+export async function getTenantMetaEventMappingsByTenantId(
+  tenantId: string,
+): Promise<Record<string, string>> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("tenant_event_mappings")
+    .select("internal_event, external_event")
+    .eq("tenant_id", tenantId)
+    .eq("provider", "meta")
+    .eq("enabled", true);
+
+  if (error) {
+    throw new TenantRepositoryError(
+      "Failed to load tenant Meta event mappings.",
+    );
+  }
+
+  return (data ?? []).reduce<Record<string, string>>((mappings, row) => {
+    mappings[row.internal_event] = row.external_event;
+    return mappings;
+  }, {});
+}
+
 export async function getTenantSecretRow(input: {
   tenantId: string;
   secretKey: TenantSecretKey | string;

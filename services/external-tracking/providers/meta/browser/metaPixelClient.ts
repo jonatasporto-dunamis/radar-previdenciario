@@ -42,7 +42,10 @@ export function initializeMetaPixel(pixelId: string) {
   window.fbq("init", pixelId, {}, { autoConfig: false });
 }
 
-export function trackMetaBrowserEvent(event: ExternalTrackingEvent) {
+export function trackMetaBrowserEvent(
+  event: ExternalTrackingEvent,
+  metaEventName?: string,
+) {
   const mapping = externalEventMappings[event.eventName];
 
   if (!window.fbq) {
@@ -56,7 +59,7 @@ export function trackMetaBrowserEvent(event: ExternalTrackingEvent) {
 
   window.fbq(
     "track",
-    mapping.meta,
+    metaEventName ?? mapping.meta,
     {
       content_name: "Radar Previdenciário",
       content_category: "lead_generation",

@@ -58,6 +58,7 @@ export function buildMetaConversionsPayload(input: {
   userAgent?: string | null;
   cookieHeader?: string | null;
   testEventCode?: string;
+  metaEventName?: string;
 }): MetaConversionsApiPayload {
   const mapping = externalEventMappings[input.event.eventName];
   const userData: MetaConversionsApiPayload["data"][number]["user_data"] = {};
@@ -100,7 +101,7 @@ export function buildMetaConversionsPayload(input: {
   const payload: MetaConversionsApiPayload = {
     data: [
       {
-        event_name: mapping.meta,
+        event_name: input.metaEventName ?? mapping.meta,
         event_time: input.event.eventTime,
         event_id: input.event.eventId,
         action_source: "website",

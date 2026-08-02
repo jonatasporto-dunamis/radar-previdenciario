@@ -25,6 +25,7 @@ export interface TrackingConfig {
       enabled: boolean;
       browser: boolean;
       server: boolean;
+      metaEventName?: string;
     }
   >;
 }
