@@ -84,6 +84,19 @@ describe("Meta external tracking", () => {
     });
   });
 
+  it("uses the tenant Meta event mapping when provided", () => {
+    const payload = buildMetaConversionsPayload({
+      event: {
+        eventName: "QuizCompleted",
+        eventId: "rp_QuizCompleted_11111111-1111-4111-8111-111111111111",
+        eventTime: 1_785_000_000,
+      },
+      metaEventName: "CompleteRegistration",
+    });
+
+    expect(payload.data[0].event_name).toBe("CompleteRegistration");
+  });
+
   it("classifies Meta CAPI responses without leaking tokens", async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response("too many requests", {

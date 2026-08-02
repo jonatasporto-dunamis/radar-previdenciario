@@ -186,6 +186,7 @@ export async function dispatchExternalEvent(
       userAgent: context.userAgent,
       cookieHeader: context.cookieHeader,
       testEventCode: testEventCode ?? undefined,
+      metaEventName: eventConfig.metaEventName,
     });
     const payloadHash = hashExternalPayload(payload);
     const queuedAt = new Date().toISOString();

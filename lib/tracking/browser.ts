@@ -37,6 +37,7 @@ export type PublicTrackingConfig = {
     {
       enabled: boolean;
       browser: boolean;
+      metaEventName?: string;
     }
   >;
 };
@@ -119,7 +120,10 @@ export function dispatchBrowserExternalEvent(input: {
       initializeMetaPixel(input.config.meta.pixelId);
     }
 
-    trackMetaBrowserEvent(event);
+    trackMetaBrowserEvent(
+      event,
+      input.config.events[input.eventName].metaEventName,
+    );
   }
 
   if (input.config.ga4.enabled && !input.config.gtm.enabled) {
