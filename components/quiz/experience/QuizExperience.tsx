@@ -190,7 +190,7 @@ export function QuizExperience({
 
       if (result.completed) {
         if (result.externalEventId) {
-          dispatchBrowserExternalEvent({
+          await dispatchBrowserExternalEvent({
             config: trackingConfig,
             eventName: "QuizCompleted",
             eventId: result.externalEventId,

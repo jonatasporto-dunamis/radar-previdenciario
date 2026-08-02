@@ -132,7 +132,7 @@ export function dispatchBrowserExternalEvent(input: {
 
   const mapping = externalEventMappings[input.eventName];
 
-  void recordBrowserExternalDeliveryAction({
+  return recordBrowserExternalDeliveryAction({
     eventName: input.eventName,
     eventId,
     leadId: input.leadId,
@@ -150,5 +150,8 @@ export function dispatchBrowserExternalEvent(input: {
       eventId,
       pagePath: getPagePath(),
     }),
-  }).catch(() => undefined);
+  }).then(
+    () => undefined,
+    () => undefined,
+  );
 }
