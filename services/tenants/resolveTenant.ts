@@ -15,7 +15,7 @@ import type {
 } from "@/types/tenants";
 import {
   getDefaultTenant,
-  getTenantByHostname,
+  getTenantDomainByHostname,
   getTenantById,
   getTenantBySlug,
 } from "./repository";
@@ -29,6 +29,7 @@ export class TenantResolutionError extends Error {
 
 function toTenantContext(input: {
   tenant: Tenant;
+  domain?: TenantContext["domain"];
   hostname?: string | null;
   source: TenantResolutionSource;
 }): TenantContext {
@@ -38,6 +39,7 @@ function toTenantContext(input: {
     hostname: input.hostname ?? undefined,
     source: input.source,
     tenant: input.tenant,
+    domain: input.domain,
   };
 }
 
@@ -94,10 +96,16 @@ export async function resolveTenant(
   );
 
   if (hostname) {
-    const tenant = await getTenantByHostname(hostname);
+    const domain = await getTenantDomainByHostname(hostname);
+    const tenant = domain ? await getTenantById(domain.tenantId) : null;
 
     if (tenant?.status === "active") {
-      return toTenantContext({ tenant, hostname, source: "hostname" });
+      return toTenantContext({
+        tenant,
+        domain: domain ?? undefined,
+        hostname,
+        source: "hostname",
+      });
     }
 
     if (shouldUseDevelopmentFallback(hostname)) {

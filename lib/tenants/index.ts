@@ -12,3 +12,4 @@ export {
 export { normalizeTenantSlug } from "./slug";
 export { readTenantSlugCookieValue } from "./cookies";
 export { assertTenantAccess, TenantAccessError } from "./access";
+export { shouldRedirectTenantToCanonical } from "./canonical";
