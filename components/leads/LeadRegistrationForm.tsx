@@ -277,9 +277,8 @@ export function LeadRegistrationForm({
               {...register("marketingConsent")}
             />
             <span className="text-muted-foreground">
-              Desejo receber conteúdos informativos e comunicações futuras da
-              equipe responsável. Esta opção é facultativa e não impede a
-              triagem.
+              Quero receber conteúdos e informações do escritório. Esta opção é
+              facultativa e não impede a triagem.
               <span className="sr-only"> Escritório: {officeName}.</span>
             </span>
           </label>

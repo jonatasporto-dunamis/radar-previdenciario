@@ -126,7 +126,7 @@ export const defaultTenantBrandingSettings: TenantBrandingSettings =
     registrationEmailPlaceholder: "voce@email.com",
     registrationPhonePlaceholder: "(00) 00000-0000",
     whatsappMessage:
-      "Olá! Acessei o Radar Previdenciário e gostaria de falar com a equipe.",
+      "Olá! Acessei o Radar Previdenciário de {{officeName}} e gostaria de falar com a equipe.",
   });
 
 function channelToLinear(value: number): number {
