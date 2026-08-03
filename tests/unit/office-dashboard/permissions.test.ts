@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  canManageBranding,
   canChangeLeadStatus,
   canCreateLeadNote,
   canDeleteLeadNote,
   canEditLeadNote,
   canManageDomains,
+  canViewBranding,
   canViewLead,
   canViewDomains,
   canViewMetrics,
@@ -31,6 +33,13 @@ describe("office dashboard permissions", () => {
     expect(canViewDomains("viewer")).toBe(false);
     expect(canManageDomains("admin")).toBe(true);
     expect(canManageDomains("manager")).toBe(false);
+  });
+
+  it("limits branding management to administrators and managers", () => {
+    expect(canViewBranding("admin")).toBe(true);
+    expect(canManageBranding("manager")).toBe(true);
+    expect(canViewBranding("agent")).toBe(false);
+    expect(canManageBranding("viewer")).toBe(false);
   });
 
   it("allows note edits only for owners or admins", () => {

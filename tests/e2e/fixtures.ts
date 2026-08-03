@@ -42,7 +42,7 @@ export async function startLeadRegistration(
     `/cadastro?utm_source=e2e&utm_medium=quality_gate&utm_campaign=playwright&utm_content=${lead.email}`,
   );
   await expect(
-    page.getByRole("button", { name: /Iniciar triagem informativa/i }),
+    page.getByRole("button", { name: /Iniciar minha triagem/i }),
   ).toBeEnabled({ timeout: 30_000 });
   const fullNameInput = page.getByLabel("Nome completo", { exact: true });
   await fullNameInput.fill(lead.fullName);
@@ -56,9 +56,7 @@ export async function startLeadRegistration(
     /^\(\d{2}\) \d{5}-\d{4}$/,
   );
   await page.getByLabel(/Li a Política de Privacidade/i).check();
-  await page
-    .getByRole("button", { name: /Iniciar triagem informativa/i })
-    .click();
+  await page.getByRole("button", { name: /Iniciar minha triagem/i }).click();
   await page.waitForURL(/\/quiz$/, { timeout: 120_000 });
 }
 

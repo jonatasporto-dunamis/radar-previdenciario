@@ -6,6 +6,8 @@ import { defaultSeoConfig } from "@/config/seo/default";
 import { defaultThemeConfig } from "@/config/theme/default";
 import { defaultTrackingConfig } from "@/config/tracking/default";
 import type { AppConfig, ConfigurationContext } from "@/types/configuration";
+import { defaultTenantBrandingSettings } from "@/lib/branding";
+import { tenantBrandingSettingsSchema } from "@/lib/branding/validation";
 import {
   appConfigSchema,
   brandConfigSchema,
@@ -31,11 +33,7 @@ function parseDomainConfig<T>(
 export async function loadLocalConfig(
   context?: ConfigurationContext,
 ): Promise<AppConfig> {
-  // Future tenant resolution may use hostname -> slug -> tenantId -> default.
-  // The MVP intentionally ignores context and returns the local configuration.
-  void context;
-
-  const config = {
+  const baseConfig = {
     brand: parseDomainConfig("brand", brandConfigSchema, defaultBrandConfig),
     office: parseDomainConfig(
       "office",
@@ -50,6 +48,114 @@ export async function loadLocalConfig(
       trackingConfigSchema,
       defaultTrackingConfig,
     ),
+  };
+
+  const tenant = context?.tenant;
+
+  if (!tenant) {
+    return appConfigSchema.parse(baseConfig) as AppConfig;
+  }
+
+  const storedBranding = tenantBrandingSettingsSchema.safeParse(
+    tenant.metadata.branding,
+  );
+  const branding = storedBranding.success
+    ? storedBranding.data
+    : defaultTenantBrandingSettings;
+  const keepDefaultTenantContact = tenant.isDefault && !storedBranding.success;
+  const brand = {
+    ...baseConfig.brand,
+    name: tenant.name,
+    legalName: tenant.legalName,
+    logo: branding.logoUrl || branding.iconUrl || baseConfig.brand.logo,
+    icon: branding.iconUrl || undefined,
+    favicon: branding.faviconUrl || baseConfig.brand.favicon,
+    socialImage: branding.socialImageUrl || undefined,
+    primaryColor: branding.primaryColor,
+    secondaryColor: branding.secondaryColor,
+    accentColor: branding.accentColor,
+    backgroundColor: branding.backgroundColor,
+    foregroundColor: branding.textColor,
+    buttonColor: branding.buttonColor,
+    buttonTextColor: branding.buttonTextColor,
+    whatsappColor: branding.whatsappColor,
+    whatsapp: storedBranding.success
+      ? branding.whatsappNumber
+      : keepDefaultTenantContact
+        ? baseConfig.brand.whatsapp
+        : "",
+    whatsappDefaultMessage: storedBranding.success
+      ? branding.whatsappMessage
+      : keepDefaultTenantContact
+        ? baseConfig.brand.whatsappDefaultMessage
+        : branding.whatsappMessage,
+    phone: storedBranding.success
+      ? branding.contactPhone || undefined
+      : keepDefaultTenantContact
+        ? baseConfig.brand.phone
+        : undefined,
+    email: storedBranding.success
+      ? branding.contactEmail || undefined
+      : keepDefaultTenantContact
+        ? baseConfig.brand.email
+        : undefined,
+    shortContactText: branding.shortContactText || undefined,
+    institutionalMessage: branding.institutionalMessage || undefined,
+    registrationTitle: branding.registrationTitle,
+    registrationSubtitle: branding.registrationSubtitle,
+    registrationSupportText: branding.registrationSupportText,
+    registrationButtonLabel: branding.registrationButtonLabel,
+    registrationNamePlaceholder: branding.registrationNamePlaceholder,
+    registrationEmailPlaceholder: branding.registrationEmailPlaceholder,
+    registrationPhonePlaceholder: branding.registrationPhonePlaceholder,
+  };
+  const theme = {
+    ...baseConfig.theme,
+    colors: {
+      ...baseConfig.theme.colors,
+      light: {
+        ...baseConfig.theme.colors.light,
+        background: branding.backgroundColor,
+        foreground: branding.textColor,
+        primary: branding.buttonColor,
+        primaryForeground: branding.buttonTextColor,
+        secondary: branding.secondaryColor,
+        accent: branding.accentColor,
+        ring: branding.primaryColor,
+      },
+    },
+  };
+  const config = {
+    ...baseConfig,
+    brand,
+    theme,
+    office: {
+      ...baseConfig.office,
+      legalIdentity: {
+        ...baseConfig.office.legalIdentity,
+        officeName: tenant.name,
+        responsibleProfessionalName:
+          branding.responsibleProfessionalName ||
+          baseConfig.office.legalIdentity.responsibleProfessionalName,
+        professionalRegistration:
+          branding.professionalRegistration ||
+          baseConfig.office.legalIdentity.professionalRegistration,
+      },
+      whatsappDefaultMessage: brand.whatsappDefaultMessage,
+      email: {
+        ...baseConfig.office.email,
+        fromName: tenant.name,
+      },
+    },
+    seo: {
+      ...baseConfig.seo,
+      ogImage: branding.socialImageUrl || baseConfig.seo.ogImage,
+      twitterImage: branding.socialImageUrl || baseConfig.seo.twitterImage,
+    },
+    legal: {
+      ...baseConfig.legal,
+      privacyPolicyCompany: tenant.legalName,
+    },
   };
 
   try {

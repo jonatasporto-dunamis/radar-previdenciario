@@ -68,6 +68,33 @@ test.describe("office dashboard", () => {
     );
   });
 
+  test("publishes tenant branding with live responsive preview", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.goto("/painel/configuracoes/identidade");
+
+    await expect(
+      page.getByRole("heading", { name: "Identidade visual do escritório" }),
+    ).toBeVisible();
+    await page.getByLabel("Nome exibido").fill("Resende Advogados");
+    await page.getByRole("button", { name: "Preview mobile" }).click();
+    await expect(page.getByText("Cadastro inicial").last()).toBeVisible();
+    await page
+      .getByRole("button", { name: "Salvar e publicar identidade" })
+      .click();
+    await expect(page).toHaveURL(/saved=1/);
+    await expect(
+      page.getByText("Identidade publicada com sucesso."),
+    ).toBeVisible();
+  });
+
+  test("blocks viewer access to tenant branding", async ({ page }) => {
+    await login(page, "viewer@example.com");
+    await page.goto("/painel/configuracoes/identidade");
+    await expect(page).toHaveURL(/\/painel\/acesso-negado/);
+  });
+
   test("lists and filters leads", async ({ page, browserName }) => {
     await login(page);
     await page.goto("/painel/leads");

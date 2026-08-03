@@ -4,6 +4,7 @@ import {
   Globe2,
   LayoutDashboard,
   PlugZap,
+  Palette,
   Users,
 } from "lucide-react";
 
@@ -13,6 +14,11 @@ const links = [
   { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/painel/integracoes", label: "Integrações", icon: PlugZap },
   { href: "/painel/configuracoes/dominio", label: "Domínios", icon: Globe2 },
+  {
+    href: "/painel/configuracoes/identidade",
+    label: "Identidade",
+    icon: Palette,
+  },
 ];
 
 export function MobileNavigation() {
@@ -21,7 +27,7 @@ export function MobileNavigation() {
       aria-label="Navegação mobile"
       className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t px-2 py-2 backdrop-blur lg:hidden"
     >
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-6 gap-1">
         {links.map((link) => {
           const Icon = link.icon;
 

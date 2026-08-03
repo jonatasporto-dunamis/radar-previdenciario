@@ -1,101 +1,89 @@
 import type { Metadata } from "next";
-import { CheckCircle2, FileText, ShieldCheck } from "lucide-react";
-import { ContactCard } from "@/components/common/contact-card";
-import { ContentContainer } from "@/components/common/content-container";
-import { PageContainer } from "@/components/common/page-container";
-import { SectionTitle } from "@/components/common/section-title";
-import { TrustCard } from "@/components/common/trust-card";
+import { MessageCircle, ShieldCheck } from "lucide-react";
 import { LeadRegistrationForm } from "@/components/leads/LeadRegistrationForm";
+import { TrackedWhatsAppLink } from "@/components/tracking/TrackedWhatsAppLink";
+import { normalizeValidWhatsappNumber } from "@/lib/branding/whatsapp";
 import { getAppConfig } from "@/services/configuration";
+import { getTenantContext } from "@/services/tenants";
 
 export const metadata: Metadata = {
   title: "Cadastro",
   description:
-    "Cadastro inicial para continuidade da triagem previdenciária informativa.",
-  alternates: {
-    canonical: "/cadastro",
-  },
+    "Cadastro inicial para iniciar uma triagem rápida e informativa.",
+  alternates: { canonical: "/cadastro" },
 };
 
-const readinessItems = [
-  {
-    icon: <FileText aria-hidden="true" className="size-5" />,
-    title: "Dados pessoais",
-    description: "Área reservada para identificação do interessado.",
-  },
-  {
-    icon: <ShieldCheck aria-hidden="true" className="size-5" />,
-    title: "Consentimento",
-    description: "Registro de ciência sobre privacidade, termos e contato.",
-  },
-  {
-    icon: <CheckCircle2 aria-hidden="true" className="size-5" />,
-    title: "Próximo passo",
-    description: "Estrutura preparada para encaminhar ao questionário.",
-  },
-];
-
-type CadastroPageProps = {
-  searchParams?: Promise<{
-    next?: string;
-  }>;
-};
+type CadastroPageProps = { searchParams?: Promise<{ next?: string }> };
 
 function normalizeNextPath(value: string | undefined): string {
-  if (!value?.startsWith("/quiz")) {
+  if (!value?.startsWith("/quiz")) return "/quiz";
+  if (value.includes("//") || value.includes("\\") || value.includes(".."))
     return "/quiz";
-  }
-
-  if (value.includes("//") || value.includes("\\") || value.includes("..")) {
-    return "/quiz";
-  }
-
   return value;
 }
 
 export default async function CadastroPage({
   searchParams,
 }: CadastroPageProps) {
-  const { brand, legal } = await getAppConfig();
+  const tenantContext = await getTenantContext();
+  const { brand, legal } = await getAppConfig(tenantContext);
   const nextPath = normalizeNextPath((await searchParams)?.next);
+  const whatsappNumber =
+    normalizeValidWhatsappNumber(brand.whatsapp) ||
+    (tenantContext.tenant.isDefault
+      ? normalizeValidWhatsappNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER)
+      : "");
+  const whatsappHref = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(brand.whatsappDefaultMessage)}`
+    : null;
 
   return (
-    <PageContainer>
-      <section className="py-section">
-        <ContentContainer>
-          <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-start">
-            <div>
-              <SectionTitle
-                description="Informe seus dados para iniciar a triagem informativa. O identificador do atendimento é preservado com cookie seguro, sem aparecer na URL."
-                eyebrow={brand.poweredBy}
-                title="Cadastro inicial para continuar a triagem"
-              />
+    <section className="px-page py-10 sm:py-14">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="text-center">
+          <p className="text-primary text-sm font-semibold">{brand.name}</p>
+          <h1 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            {brand.registrationTitle || "Cadastro inicial"}
+          </h1>
+          <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-base leading-7">
+            {brand.registrationSubtitle}
+          </p>
+          <p className="text-foreground mx-auto mt-2 max-w-xl text-sm leading-6">
+            {brand.registrationSupportText}
+          </p>
+        </div>
 
-              <div className="mt-10 grid gap-4 md:grid-cols-3">
-                {readinessItems.map((item) => (
-                  <TrustCard key={item.title} {...item} />
-                ))}
-              </div>
+        <LeadRegistrationForm
+          buttonLabel={brand.registrationButtonLabel}
+          emailPlaceholder={brand.registrationEmailPlaceholder}
+          namePlaceholder={brand.registrationNamePlaceholder}
+          nextPath={nextPath}
+          officeName={brand.name}
+          phonePlaceholder={brand.registrationPhonePlaceholder}
+        />
 
-              <LeadRegistrationForm
-                nextPath={nextPath}
-                officeName={brand.name}
-              />
+        {whatsappHref ? (
+          <TrackedWhatsAppLink
+            className="hover:bg-muted mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            href={whatsappHref}
+            location="registration_cta"
+            rel="noopener noreferrer"
+            style={{
+              borderColor: brand.whatsappColor,
+              color: brand.whatsappColor,
+            }}
+            target="_blank"
+          >
+            <MessageCircle aria-hidden="true" className="size-5" />
+            Prefiro falar pelo WhatsApp
+          </TrackedWhatsAppLink>
+        ) : null}
 
-              <p className="text-muted-foreground mt-5 text-sm leading-6">
-                Seus dados serão utilizados para dar continuidade à triagem,
-                registrar sua autorização de contato e permitir que o escritório
-                responsável avalie se há necessidade de conversa individual.
-              </p>
-              <p className="text-muted-foreground mt-3 text-sm leading-6">
-                {legal.disclaimer}
-              </p>
-            </div>
-
-            <ContactCard />
-          </div>
-        </ContentContainer>
-      </section>
-    </PageContainer>
+        <div className="text-muted-foreground mt-6 flex items-start gap-2 text-xs leading-5">
+          <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <p>{legal.disclaimer}</p>
+        </div>
+      </div>
+    </section>
   );
 }
