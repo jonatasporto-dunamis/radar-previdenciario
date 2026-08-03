@@ -19,11 +19,17 @@ const genericFormError =
 
 export function LeadRegistrationForm({
   buttonLabel,
+  emailPlaceholder,
+  namePlaceholder,
   officeName,
+  phonePlaceholder,
   nextPath = "/quiz",
 }: {
   buttonLabel?: string;
+  emailPlaceholder?: string;
+  namePlaceholder?: string;
   officeName: string;
+  phonePlaceholder?: string;
   nextPath?: string;
 }) {
   const router = useRouter();
@@ -142,7 +148,7 @@ export function LeadRegistrationForm({
             autoComplete="name"
             className="border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring mt-2 h-12 w-full rounded-md border px-3 text-sm transition outline-none focus-visible:ring-2"
             id="fullName"
-            placeholder="Informe seu nome e sobrenome"
+            placeholder={namePlaceholder || "Informe seu nome e sobrenome"}
             type="text"
             {...register("fullName")}
           />
@@ -168,7 +174,7 @@ export function LeadRegistrationForm({
               className="border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring mt-2 h-12 w-full rounded-md border px-3 text-sm transition outline-none focus-visible:ring-2"
               id="email"
               inputMode="email"
-              placeholder="voce@email.com"
+              placeholder={emailPlaceholder || "voce@email.com"}
               type="email"
               {...register("email")}
             />
@@ -193,7 +199,7 @@ export function LeadRegistrationForm({
               className="border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring mt-2 h-12 w-full rounded-md border px-3 text-sm transition outline-none focus-visible:ring-2"
               id="phone"
               inputMode="tel"
-              placeholder="(00) 00000-0000"
+              placeholder={phonePlaceholder || "(00) 00000-0000"}
               type="tel"
               value={phoneValue}
               {...register("phone", {

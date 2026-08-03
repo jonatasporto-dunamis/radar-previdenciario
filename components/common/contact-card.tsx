@@ -36,6 +36,11 @@ export async function ContactCard() {
       <h2 className="text-foreground text-xl font-semibold">
         Contato institucional
       </h2>
+      {brand.shortContactText ? (
+        <p className="text-muted-foreground mt-2 text-sm leading-6">
+          {brand.shortContactText}
+        </p>
+      ) : null}
       {contactItems.length > 0 ? (
         <div className="mt-5 grid gap-3">
           {contactItems.map(({ label, href, Icon }) => (

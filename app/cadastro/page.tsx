@@ -55,8 +55,11 @@ export default async function CadastroPage({
 
         <LeadRegistrationForm
           buttonLabel={brand.registrationButtonLabel}
+          emailPlaceholder={brand.registrationEmailPlaceholder}
+          namePlaceholder={brand.registrationNamePlaceholder}
           nextPath={nextPath}
           officeName={brand.name}
+          phonePlaceholder={brand.registrationPhonePlaceholder}
         />
 
         {whatsappHref ? (

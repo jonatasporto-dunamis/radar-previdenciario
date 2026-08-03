@@ -40,6 +40,9 @@ export type BrandConfig = {
   registrationSubtitle: string;
   registrationSupportText: string;
   registrationButtonLabel: string;
+  registrationNamePlaceholder: string;
+  registrationEmailPlaceholder: string;
+  registrationPhonePlaceholder: string;
 };
 
 export type LegalProfessionalConfig = {

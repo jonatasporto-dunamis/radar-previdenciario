@@ -15,12 +15,17 @@ export type TenantBrandingSettings = {
   whatsappNumber: string;
   contactEmail: string;
   contactPhone: string;
+  responsibleProfessionalName: string;
+  professionalRegistration: string;
   shortContactText: string;
   institutionalMessage: string;
   registrationTitle: string;
   registrationSubtitle: string;
   registrationSupportText: string;
   registrationButtonLabel: string;
+  registrationNamePlaceholder: string;
+  registrationEmailPlaceholder: string;
+  registrationPhonePlaceholder: string;
   whatsappMessage: string;
   publishedAt: string | null;
 };

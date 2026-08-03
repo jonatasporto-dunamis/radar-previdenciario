@@ -12,9 +12,16 @@ export async function FooterCompany() {
         <BrandName />
       </div>
       <p className="text-muted-foreground mt-4 max-w-md text-sm leading-6">
-        {brand.legalName}
+        {brand.institutionalMessage || brand.legalName}
       </p>
-      {office.legalProfessional ? (
+      {office.legalIdentity.responsibleProfessionalName ? (
+        <p className="text-muted-foreground mt-2 text-sm">
+          {office.legalIdentity.responsibleProfessionalName}
+          {office.legalIdentity.professionalRegistration
+            ? ` — ${office.legalIdentity.professionalRegistration}`
+            : ""}
+        </p>
+      ) : office.legalProfessional ? (
         <p className="text-muted-foreground mt-2 text-sm">
           {office.legalProfessional.name} —{" "}
           {office.legalProfessional.displayRegistration}

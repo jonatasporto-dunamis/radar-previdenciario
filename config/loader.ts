@@ -67,7 +67,7 @@ export async function loadLocalConfig(
     ...baseConfig.brand,
     name: tenant.name,
     legalName: tenant.legalName,
-    logo: branding.logoUrl || baseConfig.brand.logo,
+    logo: branding.logoUrl || branding.iconUrl || baseConfig.brand.logo,
     icon: branding.iconUrl || undefined,
     favicon: branding.faviconUrl || baseConfig.brand.favicon,
     socialImage: branding.socialImageUrl || undefined,
@@ -105,6 +105,9 @@ export async function loadLocalConfig(
     registrationSubtitle: branding.registrationSubtitle,
     registrationSupportText: branding.registrationSupportText,
     registrationButtonLabel: branding.registrationButtonLabel,
+    registrationNamePlaceholder: branding.registrationNamePlaceholder,
+    registrationEmailPlaceholder: branding.registrationEmailPlaceholder,
+    registrationPhonePlaceholder: branding.registrationPhonePlaceholder,
   };
   const theme = {
     ...baseConfig.theme,
@@ -131,6 +134,12 @@ export async function loadLocalConfig(
       legalIdentity: {
         ...baseConfig.office.legalIdentity,
         officeName: tenant.name,
+        responsibleProfessionalName:
+          branding.responsibleProfessionalName ||
+          baseConfig.office.legalIdentity.responsibleProfessionalName,
+        professionalRegistration:
+          branding.professionalRegistration ||
+          baseConfig.office.legalIdentity.professionalRegistration,
       },
       whatsappDefaultMessage: brand.whatsappDefaultMessage,
       email: {

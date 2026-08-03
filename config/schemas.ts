@@ -73,6 +73,9 @@ export const brandConfigSchema = z.object({
   registrationSubtitle: requiredString,
   registrationSupportText: requiredString,
   registrationButtonLabel: requiredString,
+  registrationNamePlaceholder: requiredString,
+  registrationEmailPlaceholder: requiredString,
+  registrationPhonePlaceholder: requiredString,
 });
 
 export const officeConfigSchema = z.object({

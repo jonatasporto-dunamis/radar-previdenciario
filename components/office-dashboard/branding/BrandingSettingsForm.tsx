@@ -64,6 +64,18 @@ export function BrandingSettingsForm({
             onChange={(v) => update("contactPhone", v)}
           />
           <Field
+            label="Responsável profissional"
+            name="responsibleProfessionalName"
+            value={draft.responsibleProfessionalName}
+            onChange={(v) => update("responsibleProfessionalName", v)}
+          />
+          <Field
+            label="Registro profissional / OAB"
+            name="professionalRegistration"
+            value={draft.professionalRegistration}
+            onChange={(v) => update("professionalRegistration", v)}
+          />
+          <Field
             label="E-mail de contato"
             name="contactEmail"
             type="email"
@@ -137,6 +149,27 @@ export function BrandingSettingsForm({
             name="registrationButtonLabel"
             value={draft.registrationButtonLabel}
             onChange={(v) => update("registrationButtonLabel", v)}
+            required
+          />
+          <Field
+            label="Placeholder de nome"
+            name="registrationNamePlaceholder"
+            value={draft.registrationNamePlaceholder}
+            onChange={(v) => update("registrationNamePlaceholder", v)}
+            required
+          />
+          <Field
+            label="Placeholder de e-mail"
+            name="registrationEmailPlaceholder"
+            value={draft.registrationEmailPlaceholder}
+            onChange={(v) => update("registrationEmailPlaceholder", v)}
+            required
+          />
+          <Field
+            label="Placeholder de telefone"
+            name="registrationPhonePlaceholder"
+            value={draft.registrationPhonePlaceholder}
+            onChange={(v) => update("registrationPhonePlaceholder", v)}
             required
           />
           <TextArea

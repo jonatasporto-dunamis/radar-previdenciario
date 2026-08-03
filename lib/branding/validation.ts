@@ -56,12 +56,17 @@ const tenantBrandingSettingsObjectSchema = z.object({
   whatsappNumber: optionalWhatsapp.default(""),
   contactEmail: optionalEmail.default(""),
   contactPhone: z.string().trim().max(40).default(""),
+  responsibleProfessionalName: z.string().trim().max(160).default(""),
+  professionalRegistration: z.string().trim().max(80).default(""),
   shortContactText: z.string().trim().max(180).default(""),
   institutionalMessage: z.string().trim().max(220).default(""),
   registrationTitle: z.string().trim().min(3).max(80),
   registrationSubtitle: z.string().trim().min(10).max(180),
   registrationSupportText: z.string().trim().min(10).max(180),
   registrationButtonLabel: z.string().trim().min(3).max(50),
+  registrationNamePlaceholder: z.string().trim().min(3).max(80),
+  registrationEmailPlaceholder: z.string().trim().min(3).max(80),
+  registrationPhonePlaceholder: z.string().trim().min(3).max(30),
   whatsappMessage: z.string().trim().min(10).max(300),
   publishedAt: z.string().datetime().nullable().default(null),
 });
@@ -117,6 +122,9 @@ export const defaultTenantBrandingSettings: TenantBrandingSettings =
     registrationSupportText:
       "Leva poucos minutos. Ao final, você receberá uma orientação inicial sobre o seu caso.",
     registrationButtonLabel: "Iniciar minha triagem",
+    registrationNamePlaceholder: "Informe seu nome e sobrenome",
+    registrationEmailPlaceholder: "voce@email.com",
+    registrationPhonePlaceholder: "(00) 00000-0000",
     whatsappMessage:
       "Olá! Acessei o Radar Previdenciário e gostaria de falar com a equipe.",
   });

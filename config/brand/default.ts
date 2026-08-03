@@ -43,4 +43,7 @@ export const defaultBrandConfig: BrandConfig = {
   registrationSupportText:
     "Leva poucos minutos. Ao final, você receberá uma orientação inicial sobre o seu caso.",
   registrationButtonLabel: "Iniciar minha triagem",
+  registrationNamePlaceholder: "Informe seu nome e sobrenome",
+  registrationEmailPlaceholder: "voce@email.com",
+  registrationPhonePlaceholder: "(00) 00000-0000",
 };
