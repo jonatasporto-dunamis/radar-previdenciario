@@ -71,7 +71,7 @@ test("Cadastro mantém foco em uma única conversão e shell mínimo", async ({
     page.getByRole("navigation", { name: "Menu principal" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: /Prefiro falar pelo WhatsApp/i }),
+    page.getByRole("link", { name: /Falar com o escritório/i }),
   ).toHaveAttribute("target", "_blank");
   await expect(page.getByLabel("Nome completo")).toBeVisible();
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");

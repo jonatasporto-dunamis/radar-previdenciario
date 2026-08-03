@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { MessageCircle, ShieldCheck } from "lucide-react";
 import { LeadRegistrationForm } from "@/components/leads/LeadRegistrationForm";
 import { TrackedWhatsAppLink } from "@/components/tracking/TrackedWhatsAppLink";
-import { normalizeValidWhatsappNumber } from "@/lib/branding/whatsapp";
+import {
+  formatTenantWhatsappMessage,
+  normalizeValidWhatsappNumber,
+} from "@/lib/branding/whatsapp";
 import { getAppConfig } from "@/services/configuration";
 import { getTenantContext } from "@/services/tenants";
 
@@ -26,7 +29,7 @@ export default async function CadastroPage({
   searchParams,
 }: CadastroPageProps) {
   const tenantContext = await getTenantContext();
-  const { brand, legal } = await getAppConfig(tenantContext);
+  const { brand } = await getAppConfig(tenantContext);
   const nextPath = normalizeNextPath((await searchParams)?.next);
   const whatsappNumber =
     normalizeValidWhatsappNumber(brand.whatsapp) ||
@@ -34,7 +37,9 @@ export default async function CadastroPage({
       ? normalizeValidWhatsappNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER)
       : "");
   const whatsappHref = whatsappNumber
-    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(brand.whatsappDefaultMessage)}`
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        formatTenantWhatsappMessage(brand.whatsappDefaultMessage, brand.name),
+      )}`
     : null;
 
   return (
@@ -75,13 +80,16 @@ export default async function CadastroPage({
             target="_blank"
           >
             <MessageCircle aria-hidden="true" className="size-5" />
-            Prefiro falar pelo WhatsApp
+            Falar com o escritório
           </TrackedWhatsAppLink>
         ) : null}
 
         <div className="text-muted-foreground mt-6 flex items-start gap-2 text-xs leading-5">
           <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <p>{legal.disclaimer}</p>
+          <p>
+            O resultado é uma orientação inicial e não substitui a análise
+            individual de um profissional.
+          </p>
         </div>
       </div>
     </section>

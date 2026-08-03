@@ -13,3 +13,10 @@ export function normalizeValidWhatsappNumber(value: string | undefined) {
 
   return digits;
 }
+
+export function formatTenantWhatsappMessage(
+  message: string,
+  officeName: string,
+) {
+  return message.replaceAll("{{officeName}}", officeName).trim();
+}

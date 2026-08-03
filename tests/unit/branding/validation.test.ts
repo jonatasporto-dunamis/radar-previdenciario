@@ -5,7 +5,10 @@ import {
   readTenantBrandingSettings,
   tenantBrandingFormSchema,
 } from "@/lib/branding";
-import { normalizeValidWhatsappNumber } from "@/lib/branding/whatsapp";
+import {
+  formatTenantWhatsappMessage,
+  normalizeValidWhatsappNumber,
+} from "@/lib/branding/whatsapp";
 
 describe("tenant branding validation", () => {
   it("uses safe defaults when tenant metadata is absent or invalid", () => {
@@ -15,6 +18,12 @@ describe("tenant branding validation", () => {
     expect(
       readTenantBrandingSettings({ branding: { primaryColor: "red" } }),
     ).toEqual(defaultTenantBrandingSettings);
+  });
+
+  it("formats the tenant name in the WhatsApp message", () => {
+    expect(
+      formatTenantWhatsappMessage("Olá, {{officeName}}!", "Escritório Teste"),
+    ).toBe("Olá, Escritório Teste!");
   });
 
   it("rejects color combinations below WCAG AA", () => {
