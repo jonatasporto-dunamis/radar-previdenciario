@@ -1,5 +1,6 @@
 import {
   answerRequiredQuiz,
+  continueWithoutTrackingIfPrompted,
   expect,
   startLeadRegistration,
   test,
@@ -45,6 +46,7 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
 
 test("Cadastro inválido mostra mensagens de validação", async ({ page }) => {
   await page.goto("/cadastro");
+  await continueWithoutTrackingIfPrompted(page);
   await page.getByRole("button", { name: /Iniciar minha triagem/i }).click();
 
   await expect(page.getByText(/Informe seu nome completo/i)).toBeVisible();
@@ -71,7 +73,7 @@ test("Cadastro mantém foco em uma única conversão e shell mínimo", async ({
     page.getByRole("navigation", { name: "Menu principal" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: /Prefiro falar pelo WhatsApp/i }),
+    page.getByRole("link", { name: /Falar com o escritório/i }),
   ).toHaveAttribute("target", "_blank");
   await expect(page.getByLabel("Nome completo")).toBeVisible();
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");

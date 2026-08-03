@@ -17,7 +17,7 @@ export const defaultBrandConfig: BrandConfig = {
   socialImage: undefined,
   whatsapp: "5500000000000",
   whatsappDefaultMessage:
-    "Olá, concluí a triagem informativa no Radar Previdenciário e gostaria de obter mais informações sobre os próximos passos.",
+    "Olá! Acessei o Radar Previdenciário da Resende Advogados e gostaria de falar com a equipe.",
   phone: undefined,
   email: undefined,
   website: "https://radarprevidenciario.com.br",

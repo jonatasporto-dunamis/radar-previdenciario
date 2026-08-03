@@ -1,7 +1,10 @@
 import { MessageCircle } from "lucide-react";
 import { TrackedWhatsAppLink } from "@/components/tracking/TrackedWhatsAppLink";
 import { getAppConfig } from "@/services/configuration";
-import { normalizeValidWhatsappNumber } from "@/lib/branding/whatsapp";
+import {
+  formatTenantWhatsappMessage,
+  normalizeValidWhatsappNumber,
+} from "@/lib/branding/whatsapp";
 import { getTenantContext } from "@/services/tenants";
 
 export async function FloatingWhatsApp() {
@@ -14,7 +17,9 @@ export async function FloatingWhatsApp() {
       : "");
   const defaultMessage =
     brand.whatsappDefaultMessage || office.whatsappDefaultMessage;
-  const encodedMessage = encodeURIComponent(defaultMessage);
+  const encodedMessage = encodeURIComponent(
+    formatTenantWhatsappMessage(defaultMessage, brand.name),
+  );
 
   if (!whatsappNumber) {
     return null;

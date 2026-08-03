@@ -88,7 +88,7 @@ export async function loadLocalConfig(
       ? branding.whatsappMessage
       : keepDefaultTenantContact
         ? baseConfig.brand.whatsappDefaultMessage
-        : branding.whatsappMessage,
+        : `Olá! Acessei o Radar Previdenciário de ${tenant.name} e gostaria de falar com a equipe.`,
     phone: storedBranding.success
       ? branding.contactPhone || undefined
       : keepDefaultTenantContact
