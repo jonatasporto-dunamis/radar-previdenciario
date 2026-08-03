@@ -34,6 +34,26 @@ async function waitForAutosave(page: import("@playwright/test").Page) {
   });
 }
 
+export async function continueWithoutTrackingIfPrompted(
+  page: import("@playwright/test").Page,
+) {
+  const continueButton = page.getByRole("button", {
+    name: "Continuar sem mensuração",
+    exact: true,
+  });
+
+  await continueButton
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .catch(() => undefined);
+
+  if (await continueButton.isVisible()) {
+    await continueButton.click();
+    await expect(
+      page.getByRole("dialog", { name: "Preferências de mensuração" }),
+    ).toHaveCount(0);
+  }
+}
+
 export async function startLeadRegistration(
   page: import("@playwright/test").Page,
   lead: LeadFixture,
@@ -41,6 +61,7 @@ export async function startLeadRegistration(
   await page.goto(
     `/cadastro?utm_source=e2e&utm_medium=quality_gate&utm_campaign=playwright&utm_content=${lead.email}`,
   );
+  await continueWithoutTrackingIfPrompted(page);
   await expect(
     page.getByRole("button", { name: /Iniciar minha triagem/i }),
   ).toBeEnabled({ timeout: 30_000 });

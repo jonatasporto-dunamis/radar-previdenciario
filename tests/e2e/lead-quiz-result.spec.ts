@@ -1,5 +1,6 @@
 import {
   answerRequiredQuiz,
+  continueWithoutTrackingIfPrompted,
   expect,
   startLeadRegistration,
   test,
@@ -45,6 +46,7 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
 
 test("Cadastro inválido mostra mensagens de validação", async ({ page }) => {
   await page.goto("/cadastro");
+  await continueWithoutTrackingIfPrompted(page);
   await page.getByRole("button", { name: /Iniciar minha triagem/i }).click();
 
   await expect(page.getByText(/Informe seu nome completo/i)).toBeVisible();
