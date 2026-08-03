@@ -1,4 +1,4 @@
-import type { ThemeColorScale, ThemeConfig } from "@/types/brand";
+import type { BrandConfig, ThemeColorScale, ThemeConfig } from "@/types/brand";
 
 const colorVariableMap: Record<keyof ThemeColorScale, string> = {
   background: "--background",
@@ -37,10 +37,23 @@ function serializeColors(colors: ThemeColorScale) {
     .join("\n");
 }
 
-export function buildThemeCss(theme: ThemeConfig) {
+export function buildThemeCss(theme: ThemeConfig, brand?: BrandConfig) {
+  const tenantVariables = brand
+    ? `
+  --tenant-primary: ${brand.primaryColor};
+  --tenant-secondary: ${brand.secondaryColor};
+  --tenant-accent: ${brand.accentColor};
+  --tenant-background: ${brand.backgroundColor};
+  --tenant-text: ${brand.foregroundColor};
+  --tenant-button: ${brand.buttonColor};
+  --tenant-button-text: ${brand.buttonTextColor};
+  --tenant-whatsapp: ${brand.whatsappColor};`
+    : "";
+
   return `
 :root {
 ${serializeColors(theme.colors.light)}
+${tenantVariables}
   --font-sans-config: ${theme.fonts.sans};
   --font-mono-config: ${theme.fonts.mono};
   --radius: ${theme.radius.lg};

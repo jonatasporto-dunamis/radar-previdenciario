@@ -43,7 +43,12 @@ export const brandConfigSchema = z.object({
   accentColor: hexColor,
   backgroundColor: hexColor,
   foregroundColor: hexColor,
-  whatsapp: requiredString,
+  buttonColor: hexColor,
+  buttonTextColor: hexColor,
+  whatsappColor: hexColor,
+  icon: optionalConfiguredString,
+  socialImage: optionalConfiguredString,
+  whatsapp: z.string().trim(),
   whatsappDefaultMessage: requiredString,
   phone: optionalConfiguredString,
   email: z.string().email().optional(),
@@ -62,6 +67,12 @@ export const brandConfigSchema = z.object({
   supportEmail: z.string().email().optional(),
   copyright: requiredString,
   poweredBy: requiredString,
+  shortContactText: optionalConfiguredString,
+  institutionalMessage: optionalConfiguredString,
+  registrationTitle: requiredString,
+  registrationSubtitle: requiredString,
+  registrationSupportText: requiredString,
+  registrationButtonLabel: requiredString,
 });
 
 export const officeConfigSchema = z.object({

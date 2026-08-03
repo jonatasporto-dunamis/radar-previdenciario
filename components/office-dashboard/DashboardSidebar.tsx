@@ -4,6 +4,7 @@ import {
   Globe2,
   LayoutDashboard,
   PlugZap,
+  Palette,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -14,6 +15,11 @@ const links = [
   { href: "/painel/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/painel/integracoes", label: "Integrações", icon: PlugZap },
   { href: "/painel/configuracoes/dominio", label: "Domínios", icon: Globe2 },
+  {
+    href: "/painel/configuracoes/identidade",
+    label: "Identidade visual",
+    icon: Palette,
+  },
   { href: "/painel/conta", label: "Minha conta", icon: UserCircle },
 ];
 

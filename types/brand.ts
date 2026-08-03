@@ -10,6 +10,11 @@ export type BrandConfig = {
   accentColor: string;
   backgroundColor: string;
   foregroundColor: string;
+  buttonColor: string;
+  buttonTextColor: string;
+  whatsappColor: string;
+  icon?: string;
+  socialImage?: string;
   whatsapp: string;
   whatsappDefaultMessage: string;
   phone?: string;
@@ -29,6 +34,12 @@ export type BrandConfig = {
   supportEmail?: string;
   copyright: string;
   poweredBy: string;
+  shortContactText?: string;
+  institutionalMessage?: string;
+  registrationTitle: string;
+  registrationSubtitle: string;
+  registrationSupportText: string;
+  registrationButtonLabel: string;
 };
 
 export type LegalProfessionalConfig = {

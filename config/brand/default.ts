@@ -10,6 +10,11 @@ export const defaultBrandConfig: BrandConfig = {
   accentColor: "#b78b3b",
   backgroundColor: "#fbfaf7",
   foregroundColor: "#171717",
+  buttonColor: "#12312f",
+  buttonTextColor: "#ffffff",
+  whatsappColor: "#166534",
+  icon: undefined,
+  socialImage: undefined,
   whatsapp: "5500000000000",
   whatsappDefaultMessage:
     "Olá, concluí a triagem informativa no Radar Previdenciário e gostaria de obter mais informações sobre os próximos passos.",
@@ -30,4 +35,12 @@ export const defaultBrandConfig: BrandConfig = {
   supportEmail: undefined,
   copyright: "Todos os direitos reservados.",
   poweredBy: "Radar Previdenciário",
+  shortContactText: undefined,
+  institutionalMessage: undefined,
+  registrationTitle: "Cadastro inicial",
+  registrationSubtitle:
+    "Preencha seus dados para iniciar uma triagem rápida e informativa.",
+  registrationSupportText:
+    "Leva poucos minutos. Ao final, você receberá uma orientação inicial sobre o seu caso.",
+  registrationButtonLabel: "Iniciar minha triagem",
 };

@@ -78,3 +78,11 @@ export function canViewDomains(role: OfficeRole): boolean {
 export function canManageDomains(role: OfficeRole): boolean {
   return role === "admin";
 }
+
+export function canViewBranding(role: OfficeRole): boolean {
+  return managerRoles.includes(role);
+}
+
+export function canManageBranding(role: OfficeRole): boolean {
+  return managerRoles.includes(role);
+}

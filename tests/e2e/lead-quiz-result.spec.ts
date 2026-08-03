@@ -45,9 +45,7 @@ test("Home -> Cadastro -> Quiz -> Resultado -> WhatsApp CTA", async ({
 
 test("Cadastro inválido mostra mensagens de validação", async ({ page }) => {
   await page.goto("/cadastro");
-  await page
-    .getByRole("button", { name: /Iniciar triagem informativa/i })
-    .click();
+  await page.getByRole("button", { name: /Iniciar minha triagem/i }).click();
 
   await expect(page.getByText(/Informe seu nome completo/i)).toBeVisible();
   await expect(page.getByText(/Informe um e-mail válido/i)).toBeVisible();
@@ -55,6 +53,28 @@ test("Cadastro inválido mostra mensagens de validação", async ({ page }) => {
   await expect(
     page.getByText(/É necessário autorizar o uso das informações/i),
   ).toBeVisible();
+});
+
+test("Cadastro mantém foco em uma única conversão e shell mínimo", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/cadastro");
+
+  await expect(
+    page.getByRole("heading", { name: "Cadastro inicial" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Preencha seus dados para iniciar uma triagem rápida/i),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Menu principal" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: /Prefiro falar pelo WhatsApp/i }),
+  ).toHaveAttribute("target", "_blank");
+  await expect(page.getByLabel("Nome completo")).toBeVisible();
+  await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
 });
 
 test("Retomada mantém o usuário na pergunta anterior não finalizada", async ({
@@ -138,6 +158,6 @@ test("Mobile possui labels, foco e navegação por teclado básicos", async ({
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("E-mail")).toBeFocused();
   await expect(
-    page.getByRole("button", { name: /Iniciar triagem informativa/i }),
+    page.getByRole("button", { name: /Iniciar minha triagem/i }),
   ).toBeVisible();
 });

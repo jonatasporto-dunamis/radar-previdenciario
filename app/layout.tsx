@@ -12,6 +12,8 @@ import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { FloatingWhatsApp } from "@/components/common/floating-whatsapp";
+import { RegistrationFooter } from "@/components/registration/RegistrationFooter";
+import { RegistrationHeader } from "@/components/registration/RegistrationHeader";
 import {
   getBrandConfig,
   getSeoConfig,
@@ -100,8 +102,10 @@ export default async function RootLayout({
   const isOfficePanelPath =
     currentPathname === "/painel" ||
     Boolean(currentPathname?.startsWith("/painel/"));
+  const isRegistrationPath = currentPathname === "/cadastro";
   const tenantContext = await getTenantContext({ hostname });
-  const [theme, tracking, siteUrl] = await Promise.all([
+  const [brand, theme, tracking, siteUrl] = await Promise.all([
+    getBrandConfig(tenantContext),
     getThemeConfig(tenantContext),
     getTrackingConfig(tenantContext),
     getTenantSiteUrl(tenantContext),
@@ -123,7 +127,7 @@ export default async function RootLayout({
     redirect(`${siteUrl}${currentPathname ?? "/"}${search}`);
   }
 
-  const themeCss = buildThemeCss(theme);
+  const themeCss = buildThemeCss(theme, brand);
   const publicTrackingConfig: PublicTrackingConfig = {
     enabled: tracking.enabled,
     consentRequired: tracking.consentRequired,
@@ -181,13 +185,13 @@ export default async function RootLayout({
               <AttributionCapture />
             </Suspense>
             <div className="flex min-h-svh flex-col">
-              <Header />
+              {isRegistrationPath ? <RegistrationHeader /> : <Header />}
               <main id="conteudo" className="flex-1">
                 {children}
               </main>
-              <Footer />
+              {isRegistrationPath ? <RegistrationFooter /> : <Footer />}
             </div>
-            <FloatingWhatsApp />
+            {isRegistrationPath ? null : <FloatingWhatsApp />}
             <TrackingConsentBanner />
           </TrackingProvider>
         )}

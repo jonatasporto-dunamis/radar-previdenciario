@@ -26,7 +26,13 @@ export type OfficeAuditAction =
   | "domain_verified"
   | "domain_activated"
   | "domain_primary_changed"
-  | "domain_disabled";
+  | "domain_disabled"
+  | "branding_created"
+  | "branding_updated"
+  | "logo_uploaded"
+  | "logo_removed"
+  | "colors_updated"
+  | "whatsapp_updated";
 
 export type OfficeAuditLog = {
   id: string;
@@ -46,7 +52,8 @@ export type OfficeAuditLog = {
     | "tenant_event_mapping"
     | "integration_delivery_log"
     | "integration_test_run"
-    | "tenant_domain";
+    | "tenant_domain"
+    | "tenant_branding";
   entityId: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;

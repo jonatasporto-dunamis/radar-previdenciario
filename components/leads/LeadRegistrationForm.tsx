@@ -18,9 +18,11 @@ const genericFormError =
   "Não foi possível concluir seu cadastro agora. Revise os dados ou tente novamente.";
 
 export function LeadRegistrationForm({
+  buttonLabel,
   officeName,
   nextPath = "/quiz",
 }: {
+  buttonLabel?: string;
   officeName: string;
   nextPath?: string;
 }) {
@@ -151,7 +153,7 @@ export function LeadRegistrationForm({
           ) : null}
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5">
           <div>
             <label
               className="text-foreground text-sm font-medium"
@@ -238,18 +240,22 @@ export function LeadRegistrationForm({
               <Link
                 className="text-foreground underline underline-offset-4"
                 href="/privacidade"
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 Política de Privacidade
               </Link>{" "}
-              e autorizo o uso das informações fornecidas para realizar esta
-              triagem e tratar desta solicitação. Consulte também os{" "}
+              e os{" "}
               <Link
                 className="text-foreground underline underline-offset-4"
                 href="/termos"
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 Termos de Uso
               </Link>
-              .
+              , e autorizo o uso dos meus dados para realizar esta triagem e
+              entrar em contato sobre esta solicitação.
             </span>
           </label>
           {errors.triageConsent?.message ? (
@@ -280,7 +286,7 @@ export function LeadRegistrationForm({
         ) : null}
 
         <PrimaryButton
-          className="w-full sm:w-fit"
+          className="w-full"
           disabled={isPending || !isHydrated}
           size="lg"
         >
@@ -291,7 +297,7 @@ export function LeadRegistrationForm({
             </>
           ) : (
             <>
-              Iniciar triagem informativa
+              {buttonLabel || "Iniciar minha triagem"}
               <ArrowRight aria-hidden="true" className="size-4" />
             </>
           )}

@@ -4,7 +4,8 @@ import type { AnchorHTMLAttributes } from "react";
 import { useTrackingConfig } from "./TrackingProvider";
 import { dispatchBrowserExternalEvent } from "@/lib/tracking";
 
-type WhatsAppClickLocation = "floating_button" | "home_cta" | "result_cta";
+type WhatsAppClickLocation =
+  "floating_button" | "home_cta" | "result_cta" | "registration_cta";
 
 type TrackedWhatsAppLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   location: WhatsAppClickLocation;

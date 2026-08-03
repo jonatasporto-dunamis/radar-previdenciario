@@ -6,8 +6,10 @@ import {
   canCreateLeadNote,
   canEditQuizTemplate,
   canManageDomains,
+  canManageBranding,
   canManageIntegrations,
   canViewDomains,
+  canViewBranding,
   canPublishQuizTemplate,
   canViewIntegrations,
   canViewLead,
@@ -29,7 +31,9 @@ type Permission =
   | "viewIntegrations"
   | "manageIntegrations"
   | "viewDomains"
-  | "manageDomains";
+  | "manageDomains"
+  | "viewBranding"
+  | "manageBranding";
 
 function hasPermission(
   context: OfficeUserContext,
@@ -77,6 +81,14 @@ function hasPermission(
 
   if (permission === "manageDomains") {
     return canManageDomains(context.role);
+  }
+
+  if (permission === "viewBranding") {
+    return canViewBranding(context.role);
+  }
+
+  if (permission === "manageBranding") {
+    return canManageBranding(context.role);
   }
 
   return canViewMetrics(context.role);
